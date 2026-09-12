@@ -1,4 +1,3 @@
-package main
 package services
 
 import (
@@ -31,7 +30,7 @@ func (s *APIService) SetToken(token string) {
 
 func (s *APIService) makeRequest(method, endpoint string, body interface{}) ([]byte, error) {
 	url := fmt.Sprintf("%s%s", s.baseURL, endpoint)
-	
+
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)

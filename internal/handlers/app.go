@@ -1,10 +1,9 @@
 package handlers
-package handlers
 
 import (
-	"context"
 	"MatchCoreArena-Client/internal/config"
 	"MatchCoreArena-Client/internal/services"
+	"context"
 )
 
 type AppHandler struct {
@@ -20,7 +19,7 @@ type AppHandler struct {
 func NewAppHandler() *AppHandler {
 	cfg, _ := config.LoadConfig()
 	api := services.NewAPIService(cfg.ServerURL)
-	
+
 	return &AppHandler{
 		config:  cfg,
 		api:     api,

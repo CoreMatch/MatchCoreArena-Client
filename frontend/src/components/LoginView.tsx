@@ -214,7 +214,9 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
                 required
-                inputProps={{ maxLength: 6 }}
+                slotProps={{
+                  htmlInput: { maxLength: 6 }
+                }}
                 sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {

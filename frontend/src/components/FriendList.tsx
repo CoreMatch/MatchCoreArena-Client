@@ -350,11 +350,13 @@ export default function FriendList() {
       <Dialog 
         open={addDialogOpen} 
         onClose={() => setAddDialogOpen(false)}
-        PaperProps={{
-          sx: {
-            backgroundColor: '#16213e',
-            color: 'white',
-            minWidth: 400,
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: '#16213e',
+              color: 'white',
+              minWidth: 400,
+            }
           }
         }}
       >

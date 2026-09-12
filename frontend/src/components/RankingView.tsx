@@ -20,7 +20,6 @@ import {
   Alert,
   Avatar,
   IconButton,
-  Tooltip
 } from '@mui/material';
 import {
   EmojiEvents as TrophyIcon,
@@ -155,12 +154,14 @@ export default function RankingView() {
                 },
               }}
               MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: '#16213e',
-                    color: 'white',
-                  },
-                },
+                slotProps: {
+                  paper: {
+                    sx: {
+                      backgroundColor: '#16213e',
+                      color: 'white',
+                    },
+                  }
+                }
               }}
             >
               <MenuItem value="1v1">1v1</MenuItem>
@@ -190,12 +191,14 @@ export default function RankingView() {
                 },
               }}
               MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: '#16213e',
-                    color: 'white',
-                  },
-                },
+                slotProps: {
+                  paper: {
+                    sx: {
+                      backgroundColor: '#16213e',
+                      color: 'white',
+                    },
+                  }
+                }
               }}
             >
               <MenuItem value={1}>Season 1</MenuItem>
@@ -226,12 +229,14 @@ export default function RankingView() {
                 },
               }}
               MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: '#16213e',
-                    color: 'white',
-                  },
-                },
+                slotProps: {
+                  paper: {
+                    sx: {
+                      backgroundColor: '#16213e',
+                      color: 'white',
+                    },
+                  }
+                }
               }}
             >
               <MenuItem value={50}>Top 50</MenuItem>

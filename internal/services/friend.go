@@ -1,10 +1,9 @@
-package main
 package services
 
 import (
+	"MatchCoreArena-Client/internal/models"
 	"encoding/json"
 	"fmt"
-	"MatchCoreArena-Client/internal/models"
 )
 
 type FriendService struct {
@@ -20,7 +19,7 @@ func (s *FriendService) GetFriends() ([]models.Friend, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get friends: %w", err)
 	}
-	
+
 	var friendsResp struct {
 		Success bool            `json:"success"`
 		Data    []models.Friend `json:"data"`
@@ -28,7 +27,7 @@ func (s *FriendService) GetFriends() ([]models.Friend, error) {
 	if err := json.Unmarshal(resp, &friendsResp); err != nil {
 		return nil, fmt.Errorf("failed to parse friends response: %w", err)
 	}
-	
+
 	return friendsResp.Data, nil
 }
 
@@ -38,12 +37,12 @@ func (s *FriendService) SendFriendRequest(targetUID int64) (*models.Friend, erro
 	}{
 		TargetUID: targetUID,
 	}
-	
+
 	resp, err := s.api.Post("/api/friends", reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send friend request: %w", err)
 	}
-	
+
 	var friendResp struct {
 		Success bool          `json:"success"`
 		Data    models.Friend `json:"data"`
@@ -51,7 +50,7 @@ func (s *FriendService) SendFriendRequest(targetUID int64) (*models.Friend, erro
 	if err := json.Unmarshal(resp, &friendResp); err != nil {
 		return nil, fmt.Errorf("failed to parse friend response: %w", err)
 	}
-	
+
 	return &friendResp.Data, nil
 }
 
@@ -60,7 +59,7 @@ func (s *FriendService) AcceptFriendRequest(friendID int64) error {
 	if err != nil {
 		return fmt.Errorf("failed to accept friend request: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -69,7 +68,7 @@ func (s *FriendService) RejectFriendRequest(friendID int64) error {
 	if err != nil {
 		return fmt.Errorf("failed to reject friend request: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -78,6 +77,6 @@ func (s *FriendService) DeleteFriend(friendID int64) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete friend: %w", err)
 	}
-	
+
 	return nil
 }

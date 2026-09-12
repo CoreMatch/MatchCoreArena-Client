@@ -20,7 +20,6 @@ import {
   Home, 
   Group, 
   Leaderboard, 
-  Login, 
   Logout, 
   Person, 
   Menu as MenuIcon,
@@ -167,11 +166,13 @@ export default function App() {
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    backgroundColor: '#16213e',
-                    color: 'white',
-                    minWidth: 200,
+                slotProps={{
+                  paper: {
+                    sx: {
+                      backgroundColor: '#16213e',
+                      color: 'white',
+                      minWidth: 200,
+                    }
                   }
                 }}
               >

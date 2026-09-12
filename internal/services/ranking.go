@@ -1,10 +1,9 @@
-package main
 package services
 
 import (
+	"MatchCoreArena-Client/internal/models"
 	"encoding/json"
 	"fmt"
-	"MatchCoreArena-Client/internal/models"
 )
 
 type RankingService struct {
@@ -20,15 +19,15 @@ func (s *RankingService) GetTopRankings(rankType string, limit, season int) ([]m
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rankings: %w", err)
 	}
-	
+
 	var rankingsResp struct {
-		Success bool              `json:"success"`
-		Data    []models.Ranking  `json:"data"`
+		Success bool             `json:"success"`
+		Data    []models.Ranking `json:"data"`
 	}
 	if err := json.Unmarshal(resp, &rankingsResp); err != nil {
 		return nil, fmt.Errorf("failed to parse rankings response: %w", err)
 	}
-	
+
 	return rankingsResp.Data, nil
 }
 
@@ -37,14 +36,14 @@ func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Rank
 	if err != nil {
 		return nil, fmt.Errorf("failed to get my ranking: %w", err)
 	}
-	
+
 	var rankingResp struct {
-		Success bool            `json:"success"`
-		Data    models.Ranking  `json:"data"`
+		Success bool           `json:"success"`
+		Data    models.Ranking `json:"data"`
 	}
 	if err := json.Unmarshal(resp, &rankingResp); err != nil {
 		return nil, fmt.Errorf("failed to parse ranking response: %w", err)
 	}
-	
+
 	return &rankingResp.Data, nil
 }

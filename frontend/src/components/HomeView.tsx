@@ -18,7 +18,7 @@ export default function HomeView({ user }: HomeViewProps) {
 
       <Grid container spacing={3}>
         {/* User Stats Card */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ 
             backgroundColor: '#16213e', 
             color: 'white',
@@ -63,7 +63,7 @@ export default function HomeView({ user }: HomeViewProps) {
         </Grid>
 
         {/* Rank Card */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ 
             backgroundColor: '#16213e', 
             color: 'white',
@@ -87,7 +87,7 @@ export default function HomeView({ user }: HomeViewProps) {
         </Grid>
 
         {/* Friends Card */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ 
             backgroundColor: '#16213e', 
             color: 'white',
@@ -111,7 +111,7 @@ export default function HomeView({ user }: HomeViewProps) {
         </Grid>
 
         {/* Recent Activity */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Card sx={{ 
             backgroundColor: '#16213e', 
             color: 'white',
