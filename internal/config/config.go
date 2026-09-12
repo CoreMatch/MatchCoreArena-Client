@@ -16,7 +16,7 @@ func LoadConfig() (*Config, error) {
 
 	// Default config
 	config := &Config{
-		ServerURL: "http://localhost:8080",
+		ServerURL: "https://arena.mcnb.dev/",
 		Debug:     false,
 	}
 

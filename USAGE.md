@@ -51,7 +51,7 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 
 ```json
 {
-  "server_url": "http://localhost:8080",
+  "server_url": "https://arena.mcnb.dev/",
   "debug": false
 }
 ```
@@ -60,7 +60,7 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `server_url` | string | `http://localhost:8080` | MatchCoreArena server URL |
+| `server_url` | string | `https://arena.mcnb.dev/` | MatchCoreArena server URL |
 | `debug` | boolean | `false` | Enable debug logging |
 
 ## Keyboard Shortcuts

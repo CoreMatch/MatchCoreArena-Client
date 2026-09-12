@@ -90,7 +90,7 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 
 ```json
 {
-  "server_url": "http://localhost:8080",
+  "server_url": "https://arena.mcnb.dev/",
   "debug": false
 }
 ```
