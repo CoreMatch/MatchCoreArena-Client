@@ -11,6 +11,7 @@ import {
   Link
 } from '@mui/material';
 import { Login as LoginIcon } from '@mui/icons-material';
+import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
 
 interface LoginViewProps {
   onLoginSuccess: (tokenData: any) => void;
@@ -31,30 +32,23 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/login-ticket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const resp = await Login(email, password);
+      // Go returns LoginResponse { success, message, data, meta }
+      const loginData = resp?.data ?? resp;
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      if (data.data?.totp_required) {
+      if (loginData?.totp_required) {
         // TOTP verification needed
-        setLoginTicket(data.data.login_ticket);
+        setLoginTicket(loginData.login_ticket);
         setShowTotp(true);
-      } else {
+      } else if (loginData?.access_token) {
         // Direct login success
-        onLoginSuccess(data.data);
+        await SetToken(loginData.access_token);
+        onLoginSuccess(loginData);
+      } else {
+        throw new Error(resp?.message || 'Unexpected login response');
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err?.message || String(err) || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -66,26 +60,16 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/totp-verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          login_ticket: loginTicket,
-          passcode: totpCode,
-        }),
-      });
+      const tokenData = await VerifyTOTP(loginTicket, totpCode);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'TOTP verification failed');
+      if (tokenData?.access_token) {
+        await SetToken(tokenData.access_token);
+        onLoginSuccess(tokenData);
+      } else {
+        throw new Error('Unexpected TOTP response');
       }
-
-      onLoginSuccess(data.data);
     } catch (err: any) {
-      setError(err.message || 'TOTP verification failed');
+      setError(err?.message || String(err) || 'TOTP verification failed');
     } finally {
       setLoading(false);
     }
