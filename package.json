@@ -1,0 +1,25 @@
+{
+  "name": "matchcorearena-client",
+  "version": "1.0.0",
+  "description": "MatchCoreArena Desktop Client",
+  "private": true,
+  "scripts": {
+    "dev": "wails dev",
+    "build": "wails build",
+    "install:frontend": "cd frontend && npm install",
+    "install:go": "go mod tidy",
+    "test": "go test ./...",
+    "lint": "cd frontend && npm run lint",
+    "typecheck": "cd frontend && npm run typecheck",
+    "clean": "rm -rf build/bin/ frontend/dist/ frontend/node_modules/"
+  },
+  "keywords": [
+    "matchcorearena",
+    "gaming",
+    "esports",
+    "desktop",
+    "wails"
+  ],
+  "author": "MatchCoreArena",
+  "license": "AGPL-3.0"
+}

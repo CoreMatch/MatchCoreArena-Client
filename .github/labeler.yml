@@ -1,0 +1,38 @@
+# Configuration for the labeler GitHub Action
+# https://github.com/actions/labeler
+
+# Add 'go' label to any Go file changes
+go:
+  - '**/*.go'
+  - 'go.mod'
+  - 'go.sum'
+
+# Add 'frontend' label to any frontend file changes
+frontend:
+  - 'frontend/**'
+  - '*.tsx'
+  - '*.ts'
+  - '*.css'
+  - '*.html'
+
+# Add 'documentation' label to any documentation file changes
+documentation:
+  - '**/*.md'
+  - 'docs/**'
+
+# Add 'docker' label to any Docker file changes
+docker:
+  - 'Dockerfile'
+  - 'docker-compose.yml'
+  - '.dockerignore'
+
+# Add 'ci' label to any CI/CD file changes
+ci:
+  - '.github/**'
+
+# Add 'dependencies' label to any dependency file changes
+dependencies:
+  - 'go.mod'
+  - 'go.sum'
+  - 'frontend/package.json'
+  - 'frontend/package-lock.json'

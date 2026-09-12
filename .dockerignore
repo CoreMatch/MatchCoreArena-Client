@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Build outputs
+build/bin
+frontend/dist
+frontend/node_modules
+
+# Dependencies
+vendor
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Documentation
+*.md
+LICENSE
+
+# Docker
+Dockerfile
+docker-compose.yml

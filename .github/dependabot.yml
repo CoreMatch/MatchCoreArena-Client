@@ -1,0 +1,37 @@
+version: 2
+updates:
+  # Maintain dependencies for Go modules
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "matchcorearena/maintainers"
+    labels:
+      - "dependencies"
+      - "go"
+
+  # Maintain dependencies for npm
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "matchcorearena/maintainers"
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "matchcorearena/maintainers"
+    labels:
+      - "dependencies"
+      - "github-actions"

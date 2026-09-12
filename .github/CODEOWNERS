@@ -1,0 +1,21 @@
+# These owners will be automatically requested for review
+# when someone opens a pull request.
+
+# Default owners for everything
+*       @matchcorearena/maintainers
+
+# Go code
+*.go    @matchcorearena/go-team
+
+# Frontend code
+frontend/ @matchcorearena/frontend-team
+
+# Documentation
+*.md    @matchcorearena/docs-team
+
+# CI/CD
+.github/ @matchcorearena/devops-team
+
+# Docker
+Dockerfile @matchcorearena/devops-team
+docker-compose.yml @matchcorearena/devops-team

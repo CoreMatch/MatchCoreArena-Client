@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: matchcorearena-client
+    environment:
+      - SERVER_URL=http://host.docker.internal:8080
+    volumes:
+      - ~/.matchcorearena:/root/.matchcorearena
+    network_mode: host
+    restart: unless-stopped
