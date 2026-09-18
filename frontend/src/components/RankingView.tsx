@@ -29,7 +29,7 @@ import {
 
 interface RankingEntry {
   id: number;
-  user_uid: number;
+  user_uuid: string;
   rank_type: string;
   score: number;
   rank_position: number;
@@ -379,7 +379,7 @@ export default function RankingView() {
                         {entry.username?.charAt(0)?.toUpperCase() || 'U'}
                       </Avatar>
                       <Typography>
-                        {entry.username || `User ${entry.user_uid}`}
+                        {entry.username || `User ${entry.user_uuid}`}
                       </Typography>
                     </Box>
                   </TableCell>

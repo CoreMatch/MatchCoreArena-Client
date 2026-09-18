@@ -31,8 +31,8 @@ import {
 
 interface Friend {
   id: number;
-  user_uid: number;
-  friend_uid: number;
+  user_uuid: string;
+  friend_uuid: string;
   status: number; // 0=pending, 1=accepted, 2=rejected
   created_at: string;
   username?: string;
@@ -44,7 +44,7 @@ export default function FriendList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [targetUid, setTargetUid] = useState('');
+  const [targetUuid, setTargetUuid] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function FriendList() {
   };
 
   const handleAddFriend = async () => {
-    if (!targetUid) return;
+    if (!targetUuid) return;
     
     setAddLoading(true);
     setError(null);
@@ -99,7 +99,7 @@ export default function FriendList() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ target_uid: parseInt(targetUid) }),
+        body: JSON.stringify({ target_uuid: targetUuid }),
       });
 
       const data = await response.json();
@@ -109,7 +109,7 @@ export default function FriendList() {
       }
 
       setAddDialogOpen(false);
-      setTargetUid('');
+      setTargetUuid('');
       fetchFriends(); // Refresh list
     } catch (err: any) {
       setError(err.message || 'Failed to send friend request');
@@ -290,7 +290,7 @@ export default function FriendList() {
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                            {friend.username || `User ${friend.friend_uid}`}
+                            {friend.username || `User ${friend.friend_uuid}`}
                           </Typography>
                           <Chip 
                             label={getStatusLabel(friend.status)} 
@@ -363,17 +363,17 @@ export default function FriendList() {
         <DialogTitle>Add Friend</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2, color: 'rgba(255,255,255,0.7)' }}>
-            Enter the user ID of the friend you want to add:
+            Enter the UUID (32-char hex) of the friend you want to add:
           </Typography>
           <TextField
             autoFocus
             margin="dense"
-            label="User ID"
-            type="number"
+            label="User UUID"
+            type="text"
             fullWidth
             variant="outlined"
-            value={targetUid}
-            onChange={(e) => setTargetUid(e.target.value)}
+            value={targetUuid}
+            onChange={(e) => setTargetUuid(e.target.value)}
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: 'white',
@@ -406,7 +406,7 @@ export default function FriendList() {
           <Button 
             onClick={handleAddFriend}
             variant="contained"
-            disabled={addLoading || !targetUid}
+            disabled={addLoading || !targetUuid}
             sx={{
               backgroundColor: '#e94560',
               '&:hover': {
