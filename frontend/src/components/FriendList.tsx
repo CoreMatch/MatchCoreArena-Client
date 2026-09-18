@@ -94,7 +94,7 @@ export default function FriendList() {
         throw new Error('Invalid UUID format. Must be 32 characters hex.');
       }
 
-      const resp = await SendFriendRequest(formattedUuid);
+      await SendFriendRequest(formattedUuid);
       
       setAddDialogOpen(false);
       setTargetUuid('');
