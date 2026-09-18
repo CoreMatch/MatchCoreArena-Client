@@ -28,6 +28,13 @@ import {
   Close as CloseIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
+import { 
+  GetFriends, 
+  SendFriendRequest, 
+  AcceptFriendRequest, 
+  RejectFriendRequest, 
+  DeleteFriend 
+} from '../../wailsjs/go/main/App';
 
 interface Friend {
   id: number;
@@ -51,31 +58,25 @@ export default function FriendList() {
     fetchFriends();
   }, []);
 
+  const formatUUID = (uuid: string) => {
+    return uuid.replace(/-/g, '').toLowerCase();
+  };
+
   const fetchFriends = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch('/api/friends', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch friends');
-      }
-
-      setFriends(data.data || []);
+      const resp = await GetFriends();
+      // Go returns models.SuccessEnvelope { success, message, data, meta }
+      // The wails binding might return the unwrapped data if the Go method returns (interface{}, error)
+      // or it might return the full struct. Based on my APIService, it returns []byte which is unmarshaled in Go.
+      // But wait, my Go handlers return (interface{}, error).
+      
+      const data = resp?.data ?? resp;
+      setFriends(data || []);
     } catch (err: any) {
-      setError(err.message || 'Failed to load friends');
+      setError(err?.message || String(err) || 'Failed to load friends');
     } finally {
       setLoading(false);
     }
@@ -88,31 +89,18 @@ export default function FriendList() {
     setError(null);
     
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
+      const formattedUuid = formatUUID(targetUuid);
+      if (formattedUuid.length !== 32) {
+        throw new Error('Invalid UUID format. Must be 32 characters hex.');
       }
 
-      const response = await fetch('/api/friends', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ target_uuid: targetUuid }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send friend request');
-      }
-
+      const resp = await SendFriendRequest(formattedUuid);
+      
       setAddDialogOpen(false);
       setTargetUuid('');
       fetchFriends(); // Refresh list
     } catch (err: any) {
-      setError(err.message || 'Failed to send friend request');
+      setError(err?.message || String(err) || 'Failed to send friend request');
     } finally {
       setAddLoading(false);
     }
@@ -120,76 +108,28 @@ export default function FriendList() {
 
   const handleAcceptFriend = async (friendId: number) => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(`/api/friends/${friendId}/accept`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to accept friend request');
-      }
-
+      await AcceptFriendRequest(friendId);
       fetchFriends(); // Refresh list
     } catch (err: any) {
-      setError(err.message || 'Failed to accept friend request');
+      setError(err?.message || String(err) || 'Failed to accept friend request');
     }
   };
 
   const handleRejectFriend = async (friendId: number) => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(`/api/friends/${friendId}/reject`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to reject friend request');
-      }
-
+      await RejectFriendRequest(friendId);
       fetchFriends(); // Refresh list
     } catch (err: any) {
-      setError(err.message || 'Failed to reject friend request');
+      setError(err?.message || String(err) || 'Failed to reject friend request');
     }
   };
 
   const handleDeleteFriend = async (friendId: number) => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(`/api/friends/${friendId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to delete friend');
-      }
-
+      await DeleteFriend(friendId);
       fetchFriends(); // Refresh list
     } catch (err: any) {
-      setError(err.message || 'Failed to delete friend');
+      setError(err?.message || String(err) || 'Failed to delete friend');
     }
   };
 

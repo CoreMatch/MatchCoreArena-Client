@@ -26,6 +26,7 @@ import {
   Refresh as RefreshIcon,
   Star as StarIcon
 } from '@mui/icons-material';
+import { GetTopRankings, GetMyRanking } from '../../wailsjs/go/main/App';
 
 interface RankingEntry {
   id: number;
@@ -57,45 +58,21 @@ export default function RankingView() {
     setError(null);
     
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
+      // Fetch top rankings using Go bindings
+      const rankingsResp = await GetTopRankings(rankType, limit, season);
+      const rankingsData = rankingsResp?.data ?? rankingsResp;
+      setRankings(rankingsData || []);
 
-      // Fetch top rankings
-      const rankingsResponse = await fetch(
-        `/api/rankings/${rankType}?limit=${limit}&season=${season}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-
-      const rankingsData = await rankingsResponse.json();
-
-      if (!rankingsResponse.ok) {
-        throw new Error(rankingsData.message || 'Failed to fetch rankings');
-      }
-
-      setRankings(rankingsData.data || []);
-
-      // Fetch my ranking
-      const myRankResponse = await fetch(
-        `/api/rankings/me?type=${rankType}&season=${season}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (myRankResponse.ok) {
-        const myRankData = await myRankResponse.json();
-        setMyRanking(myRankData.data);
+      // Fetch my ranking using Go bindings
+      try {
+        const myRankResp = await GetMyRanking(rankType, season);
+        const myRankData = myRankResp?.data ?? myRankResp;
+        setMyRanking(myRankData);
+      } catch (e) {
+        console.error('Failed to fetch my ranking:', e);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load rankings');
+      setError(err?.message || String(err) || 'Failed to load rankings');
     } finally {
       setLoading(false);
     }

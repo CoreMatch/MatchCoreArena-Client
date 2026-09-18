@@ -25,6 +25,7 @@ import {
   Menu as MenuIcon,
   ChevronLeft
 } from '@mui/icons-material';
+import { GetCurrentUser, Logout as LogoutAPI } from '../wailsjs/go/main/App';
 import LoginView from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
@@ -55,25 +56,19 @@ export default function App() {
     // Check if user is already logged in
     const token = localStorage.getItem('access_token');
     if (token) {
-      // Validate token and get user info
-      checkAuthStatus();
+      setIsLoggedIn(true);
+      fetchUserProfile();
     }
   }, []);
 
-  const checkAuthStatus = async () => {
+  const fetchUserProfile = async () => {
     try {
-      // TODO: Implement token validation and user info fetch
-      // For now, just check if token exists
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        setIsLoggedIn(true);
-        // TODO: Fetch user info from /api/users/me
-      }
+      const resp = await GetCurrentUser();
+      const userData = resp?.data ?? resp;
+      setUser(userData);
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      setIsLoggedIn(false);
+      console.error('Failed to fetch user profile:', error);
+      handleLogout();
     }
   };
 
@@ -81,20 +76,21 @@ export default function App() {
     localStorage.setItem('access_token', tokenData.access_token);
     localStorage.setItem('refresh_token', tokenData.refresh_token);
     setIsLoggedIn(true);
-    // TODO: Fetch user info
+    fetchUserProfile();
     setSelectedView('home');
   };
 
   const handleLogout = async () => {
     try {
-      // TODO: Call /api/auth/logout
+      await LogoutAPI();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       setIsLoggedIn(false);
       setUser(null);
       setSelectedView('home');
-    } catch (error) {
-      console.error('Logout failed:', error);
     }
   };
 
