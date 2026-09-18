@@ -25,7 +25,7 @@ import {
   Menu as MenuIcon,
   ChevronLeft
 } from '@mui/icons-material';
-import { GetCurrentUser, Logout as LogoutAPI } from '../wailsjs/go/main/App';
+import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import LoginView from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
@@ -56,19 +56,36 @@ export default function App() {
     // Check if user is already logged in
     const token = localStorage.getItem('access_token');
     if (token) {
-      setIsLoggedIn(true);
-      fetchUserProfile();
+      // Restore token to Go backend on refresh
+      SetToken(token).then(() => {
+        setIsLoggedIn(true);
+        fetchUserProfile();
+      }).catch(err => {
+        console.error('Failed to restore session:', err);
+        handleLogout();
+      });
     }
   }, []);
 
   const fetchUserProfile = async () => {
     try {
+      console.log('Fetching user profile...');
       const resp = await GetCurrentUser();
+      console.log('User profile received:', resp);
       const userData = resp?.data ?? resp;
       setUser(userData);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
-      handleLogout();
+      
+      const errorMsg = String(error).toLowerCase();
+      // Only logout if it's explicitly an authentication error (401 Unauthorized)
+      // We check for "401" or "unauthorized" in the error message
+      if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
+        console.warn('Auth error detected, logging out...');
+        handleLogout();
+      } else {
+        console.error('Non-auth error in fetchUserProfile, staying logged in:', error);
+      }
     }
   };
 
