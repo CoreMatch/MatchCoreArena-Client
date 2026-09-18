@@ -6,6 +6,8 @@ A cross-platform desktop client for MatchCoreArena built with [Wails](https://wa
 
 - **User Authentication** — Login with email/password, TOTP verification, token management
 - **Friend System** — View friends, send/accept/reject friend requests, delete friends
+- **Team Management** — Create/disband teams, manage members and roles
+- **Match Reporting** — Record and view match history
 - **Rankings** — View top rankings by type and season, see your current ranking
 - **User Profile** — View and manage your profile, level, and experience
 
@@ -102,8 +104,10 @@ This client connects to the MatchCoreArena server API. Make sure the server is r
 ### API Endpoints Used
 
 - **Authentication**: `/api/auth/login-ticket`, `/api/auth/totp-verify`, `/api/auth/refresh`, `/api/auth/logout`
-- **Users**: `/api/users/me`, `/api/users/{uid}`, `/api/users/me/experience`
+- **Users**: `/api/users/me`, `/api/users/{uuid}`, `/api/users/me/experience`
 - **Friends**: `/api/friends`, `/api/friends/{id}/accept`, `/api/friends/{id}/reject`, `/api/friends/{id}`
+- **Teams**: `/api/teams`, `/api/teams/{id}`, `/api/teams/{id}/members`, `/api/teams/{id}/members/{uuid}/role`
+- **Matches**: `/api/matches`, `/api/matches/{id}`, `/api/matches/me`
 - **Rankings**: `/api/rankings/{type}`, `/api/rankings/me`
 
 ## License

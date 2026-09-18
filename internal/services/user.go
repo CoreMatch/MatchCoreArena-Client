@@ -20,32 +20,46 @@ func (s *UserService) GetCurrentUser() (*models.User, error) {
 		return nil, fmt.Errorf("failed to get current user: %w", err)
 	}
 
-	var userResp struct {
-		Success bool        `json:"success"`
-		Data    models.User `json:"data"`
-	}
+	var userResp models.SuccessEnvelope
 	if err := json.Unmarshal(resp, &userResp); err != nil {
 		return nil, fmt.Errorf("failed to parse user response: %w", err)
 	}
 
-	return &userResp.Data, nil
+	dataBytes, err := json.Marshal(userResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal user data: %w", err)
+	}
+
+	var user models.User
+	if err := json.Unmarshal(dataBytes, &user); err != nil {
+		return nil, fmt.Errorf("failed to parse user data: %w", err)
+	}
+
+	return &user, nil
 }
 
-func (s *UserService) GetUserByUID(uid int64) (*models.User, error) {
-	resp, err := s.api.Get(fmt.Sprintf("/api/users/%d", uid))
+func (s *UserService) GetUserByUUID(uuid string) (*models.User, error) {
+	resp, err := s.api.Get(fmt.Sprintf("/api/users/%s", uuid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	var userResp struct {
-		Success bool        `json:"success"`
-		Data    models.User `json:"data"`
-	}
+	var userResp models.SuccessEnvelope
 	if err := json.Unmarshal(resp, &userResp); err != nil {
 		return nil, fmt.Errorf("failed to parse user response: %w", err)
 	}
 
-	return &userResp.Data, nil
+	dataBytes, err := json.Marshal(userResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal user data: %w", err)
+	}
+
+	var user models.User
+	if err := json.Unmarshal(dataBytes, &user); err != nil {
+		return nil, fmt.Errorf("failed to parse user data: %w", err)
+	}
+
+	return &user, nil
 }
 
 func (s *UserService) AddExperience(amount int) error {

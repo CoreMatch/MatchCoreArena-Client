@@ -121,6 +121,8 @@ This client connects to the MatchCoreArena server API. The following endpoints a
 - **Authentication**: Login, TOTP verification, token refresh, logout
 - **Users**: Get user profile, add experience
 - **Friends**: Friend list management, friend requests
+- **Teams**: Team creation, member management, roles
+- **Matches**: Reporting match results, match history
 - **Rankings**: Leaderboards and personal ranking
 
 ## Support

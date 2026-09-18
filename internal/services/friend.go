@@ -20,22 +20,29 @@ func (s *FriendService) GetFriends() ([]models.Friend, error) {
 		return nil, fmt.Errorf("failed to get friends: %w", err)
 	}
 
-	var friendsResp struct {
-		Success bool            `json:"success"`
-		Data    []models.Friend `json:"data"`
-	}
+	var friendsResp models.SuccessEnvelope
 	if err := json.Unmarshal(resp, &friendsResp); err != nil {
 		return nil, fmt.Errorf("failed to parse friends response: %w", err)
 	}
 
-	return friendsResp.Data, nil
+	dataBytes, err := json.Marshal(friendsResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal friends data: %w", err)
+	}
+
+	var friends []models.Friend
+	if err := json.Unmarshal(dataBytes, &friends); err != nil {
+		return nil, fmt.Errorf("failed to parse friends data: %w", err)
+	}
+
+	return friends, nil
 }
 
-func (s *FriendService) SendFriendRequest(targetUID int64) (*models.Friend, error) {
+func (s *FriendService) SendFriendRequest(targetUUID string) (*models.Friend, error) {
 	reqBody := struct {
-		TargetUID int64 `json:"target_uid"`
+		TargetUUID string `json:"target_uuid"`
 	}{
-		TargetUID: targetUID,
+		TargetUUID: targetUUID,
 	}
 
 	resp, err := s.api.Post("/api/friends", reqBody)
@@ -43,15 +50,22 @@ func (s *FriendService) SendFriendRequest(targetUID int64) (*models.Friend, erro
 		return nil, fmt.Errorf("failed to send friend request: %w", err)
 	}
 
-	var friendResp struct {
-		Success bool          `json:"success"`
-		Data    models.Friend `json:"data"`
-	}
+	var friendResp models.SuccessEnvelope
 	if err := json.Unmarshal(resp, &friendResp); err != nil {
 		return nil, fmt.Errorf("failed to parse friend response: %w", err)
 	}
 
-	return &friendResp.Data, nil
+	dataBytes, err := json.Marshal(friendResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal friend data: %w", err)
+	}
+
+	var friend models.Friend
+	if err := json.Unmarshal(dataBytes, &friend); err != nil {
+		return nil, fmt.Errorf("failed to parse friend data: %w", err)
+	}
+
+	return &friend, nil
 }
 
 func (s *FriendService) AcceptFriendRequest(friendID int64) error {

@@ -10,8 +10,20 @@ export function AddExperience(arg1) {
   return window['go']['main']['App']['AddExperience'](arg1);
 }
 
+export function AddTeamMember(arg1, arg2, arg3) {
+  return window['go']['main']['App']['AddTeamMember'](arg1, arg2, arg3);
+}
+
+export function CreateTeam(arg1, arg2) {
+  return window['go']['main']['App']['CreateTeam'](arg1, arg2);
+}
+
 export function DeleteFriend(arg1) {
   return window['go']['main']['App']['DeleteFriend'](arg1);
+}
+
+export function DisbandTeam(arg1) {
+  return window['go']['main']['App']['DisbandTeam'](arg1);
 }
 
 export function GetCurrentUser() {
@@ -22,16 +34,32 @@ export function GetFriends() {
   return window['go']['main']['App']['GetFriends']();
 }
 
+export function GetMatch(arg1) {
+  return window['go']['main']['App']['GetMatch'](arg1);
+}
+
+export function GetMyMatches(arg1, arg2) {
+  return window['go']['main']['App']['GetMyMatches'](arg1, arg2);
+}
+
 export function GetMyRanking(arg1, arg2) {
   return window['go']['main']['App']['GetMyRanking'](arg1, arg2);
+}
+
+export function GetTeam(arg1) {
+  return window['go']['main']['App']['GetTeam'](arg1);
+}
+
+export function GetTeamMembers(arg1) {
+  return window['go']['main']['App']['GetTeamMembers'](arg1);
 }
 
 export function GetTopRankings(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetTopRankings'](arg1, arg2, arg3);
 }
 
-export function GetUserByUID(arg1) {
-  return window['go']['main']['App']['GetUserByUID'](arg1);
+export function GetUserByUUID(arg1) {
+  return window['go']['main']['App']['GetUserByUUID'](arg1);
 }
 
 export function Login(arg1, arg2) {
@@ -50,12 +78,24 @@ export function RejectFriendRequest(arg1) {
   return window['go']['main']['App']['RejectFriendRequest'](arg1);
 }
 
+export function RemoveTeamMember(arg1, arg2) {
+  return window['go']['main']['App']['RemoveTeamMember'](arg1, arg2);
+}
+
+export function ReportMatchResult(arg1) {
+  return window['go']['main']['App']['ReportMatchResult'](arg1);
+}
+
 export function SendFriendRequest(arg1) {
   return window['go']['main']['App']['SendFriendRequest'](arg1);
 }
 
 export function SetToken(arg1) {
   return window['go']['main']['App']['SetToken'](arg1);
+}
+
+export function UpdateMemberRole(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UpdateMemberRole'](arg1, arg2, arg3);
 }
 
 export function VerifyTOTP(arg1, arg2) {

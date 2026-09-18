@@ -4,7 +4,7 @@ import "time"
 
 type Ranking struct {
 	ID           int64     `json:"id"`
-	UserUID      int64     `json:"user_uid"`
+	UserUUID     string    `json:"user_uuid"`
 	RankType     string    `json:"rank_type"`
 	Score        int64     `json:"score"`
 	RankPosition int       `json:"rank_position"`

@@ -20,15 +20,22 @@ func (s *RankingService) GetTopRankings(rankType string, limit, season int) ([]m
 		return nil, fmt.Errorf("failed to get rankings: %w", err)
 	}
 
-	var rankingsResp struct {
-		Success bool             `json:"success"`
-		Data    []models.Ranking `json:"data"`
-	}
+	var rankingsResp models.SuccessEnvelope
 	if err := json.Unmarshal(resp, &rankingsResp); err != nil {
 		return nil, fmt.Errorf("failed to parse rankings response: %w", err)
 	}
 
-	return rankingsResp.Data, nil
+	dataBytes, err := json.Marshal(rankingsResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal rankings data: %w", err)
+	}
+
+	var rankings []models.Ranking
+	if err := json.Unmarshal(dataBytes, &rankings); err != nil {
+		return nil, fmt.Errorf("failed to parse rankings data: %w", err)
+	}
+
+	return rankings, nil
 }
 
 func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Ranking, error) {
@@ -37,13 +44,20 @@ func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Rank
 		return nil, fmt.Errorf("failed to get my ranking: %w", err)
 	}
 
-	var rankingResp struct {
-		Success bool           `json:"success"`
-		Data    models.Ranking `json:"data"`
-	}
+	var rankingResp models.SuccessEnvelope
 	if err := json.Unmarshal(resp, &rankingResp); err != nil {
 		return nil, fmt.Errorf("failed to parse ranking response: %w", err)
 	}
 
-	return &rankingResp.Data, nil
+	dataBytes, err := json.Marshal(rankingResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal ranking data: %w", err)
+	}
+
+	var ranking models.Ranking
+	if err := json.Unmarshal(dataBytes, &ranking); err != nil {
+		return nil, fmt.Errorf("failed to parse ranking data: %w", err)
+	}
+
+	return &ranking, nil
 }
