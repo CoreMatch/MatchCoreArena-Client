@@ -75,8 +75,8 @@ export default function FriendList() {
       
       const data = resp?.data ?? resp;
       setFriends(data || []);
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to load friends');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to load friends');
     } finally {
       setLoading(false);
     }
@@ -99,8 +99,8 @@ export default function FriendList() {
       setAddDialogOpen(false);
       setTargetUuid('');
       fetchFriends(); // Refresh list
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to send friend request');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to send friend request');
     } finally {
       setAddLoading(false);
     }
@@ -110,8 +110,8 @@ export default function FriendList() {
     try {
       await AcceptFriendRequest(friendId);
       fetchFriends(); // Refresh list
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to accept friend request');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to accept friend request');
     }
   };
 
@@ -119,8 +119,8 @@ export default function FriendList() {
     try {
       await RejectFriendRequest(friendId);
       fetchFriends(); // Refresh list
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to reject friend request');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to reject friend request');
     }
   };
 
@@ -128,8 +128,8 @@ export default function FriendList() {
     try {
       await DeleteFriend(friendId);
       fetchFriends(); // Refresh list
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to delete friend');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to delete friend');
     }
   };
 
@@ -142,7 +142,7 @@ export default function FriendList() {
     }
   };
 
-  const getStatusColor = (status: number) => {
+  const getStatusColor = (status: number): 'warning' | 'success' | 'error' | 'default' => {
     switch (status) {
       case 0: return 'warning';
       case 1: return 'success';
@@ -235,7 +235,7 @@ export default function FriendList() {
                           <Chip 
                             label={getStatusLabel(friend.status)} 
                             size="small" 
-                            color={getStatusColor(friend.status) as any}
+                            color={getStatusColor(friend.status)}
                             variant="outlined"
                           />
                         </Box>

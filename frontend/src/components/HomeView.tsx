@@ -5,8 +5,16 @@ import {
   TrendingUp as TrendingUpIcon 
 } from '@mui/icons-material';
 
+export interface UserProfile {
+  username?: string;
+  level?: number;
+  experience?: number;
+  rank_score?: number;
+  friend_count?: number;
+}
+
 interface HomeViewProps {
-  user: any;
+  user: UserProfile | null;
 }
 
 export default function HomeView({ user }: HomeViewProps) {

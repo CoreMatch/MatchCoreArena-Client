@@ -26,10 +26,10 @@ import {
   ChevronLeft
 } from '@mui/icons-material';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
-import LoginView from './components/LoginView';
+import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
-import HomeView from './components/HomeView';
+import HomeView, { type UserProfile } from './components/HomeView';
 
 const drawerWidth = 240;
 
@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
 export default function App() {
   const [selectedView, setSelectedView] = useState<string>('home');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
 
@@ -89,7 +89,7 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = (tokenData: any) => {
+  const handleLoginSuccess = (tokenData: TokenData) => {
     localStorage.setItem('access_token', tokenData.access_token);
     localStorage.setItem('refresh_token', tokenData.refresh_token);
     setIsLoggedIn(true);
