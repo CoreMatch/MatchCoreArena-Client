@@ -43,6 +43,6 @@ Verified boundary (repository-wide searches on the 2026-11-05 HEAD):
 
 ## Evidence
 - Repository-wide case-insensitive search on 2026-11-05 HEAD across `*.go`, `*.ts`, `*.tsx`, `*.json` (excluding node_modules/dist/wailsjs): `hrpauth|yggdrasil|winnerproxy|skinlib|skinproxy` → 0 hits
-- internal/services/api.go:12-69 (single APIService, single base URL, Bearer header)
-- internal/config/config.go:14-36 (only `server_url` + `debug` are configured)
+- internal/services/api.go::APIService (single APIService, single base URL, Bearer header)
+- internal/config/config.go::Config (only `server_url` + `debug` are configured)
 - Cross-references: 0002 (single base URL), 0004 (auth via the server's transparent proxy)
