@@ -50,13 +50,13 @@ This client is a pure consumer/display layer for the rating system:
   fallback scores — nothing rating-related is stored locally.
 
 ## Evidence
-- internal/services/ranking.go:17-63 (GetTopRankings / GetMyRanking are GET-and-parse only)
-- internal/models/ranking.go:5-13 (`Score`, `RankPosition` received from server)
-- internal/models/user.go:5-12 (`RankScore`, `Level`, `Experience` fields consumed for display)
-- internal/models/match.go:16-38 (`TeamReportInput`/`ParticipantReport`: raw report fields, no score fields computed client-side)
-- frontend/src/components/RankingView.tsx:56-79 (fetch + render), :266-274 and :363-369 (renders `rank_position`/`score` verbatim)
-- frontend/src/components/HomeView.tsx:79-84 (displays `rank_score` from user object)
-- app.go:84-91,122-133 (ranking/match bindings exposed)
+- internal/services/ranking.go::GetTopRankings, internal/services/ranking.go::GetMyRanking (GetTopRankings / GetMyRanking are GET-and-parse only)
+- internal/models/ranking.go::RankPosition (`Score`, `RankPosition` received from server)
+- internal/models/user.go::RankScore (`RankScore`, `Level`, `Experience` fields consumed for display)
+- internal/models/match.go::TeamReportInput (`TeamReportInput`/`ParticipantReport`: raw report fields, no score fields computed client-side)
+- frontend/src/components/RankingView.tsx::RankingView (fetch + render), frontend/src/components/RankingView.tsx::rank_position (renders `rank_position`/`score` verbatim)
+- frontend/src/components/HomeView.tsx::rank_score (displays `rank_score` from user object)
+- app.go::GetTopRankings, app.go::ReportMatchResult (ranking/match bindings exposed)
 - Repo-wide case-insensitive search for `elo|mmr|rating|glicko|trueskill`: no scoring-logic matches (verified at HEAD 537b39a29cef1ff8df0ede011ed44828f55b8f8e)
 - Repo-wide search of `frontend/src` for `ReportMatchResult|GetMyMatches|GetMatch|CreateTeam|AddExperience|RefreshToken`: no matches (bindings unused by UI)
-- Cross-repo (read-only): MatchCoreArena-Server knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and knowledge/0002 (match reports pushed by BedwarsRel-MCA with `match:report` scope)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0002-match-results-are-pushed-by-bedwarsrel-mca.md (match reports pushed by BedwarsRel-MCA with `match:report` scope)

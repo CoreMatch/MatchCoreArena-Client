@@ -55,12 +55,12 @@ Everything builds through the Wails CLI:
   to a specific Wails release.
 
 ## Evidence
-- Makefile:4-9 (`dev`/`build` targets wrapping `wails dev`/`wails build`)
-- wails.json:4-8 (`outputfilename`, `frontend:install`, `frontend:build`)
-- start.sh:10-51 (toolchain bootstrap, config seeding, `wails dev`)
-- .github/workflows/build.yml:9-54 (Go test, typecheck, lint, frontend build, `wails build`, artifact upload of `build/bin/`)
-- .github/workflows/release.yml:1-47 (tag trigger `v*`, ubuntu-latest only, uploads `MatchCoreArenaClient` and `.exe` via softprops/action-gh-release)
-- Dockerfile:1-48 (multi-stage build, non-root runtime user, `CMD ["./MatchCoreArenaClient"]`)
-- docker-compose.yml:1-12 (container build, host network, config volume)
-- main_test.go:14-21 (`TestGreet` calling `app.Greet`) vs app.go:9-133 (no `Greet` method defined; repo-wide search for `Greet` matches only main_test.go)
+- Makefile::dev (`dev`/`build` targets wrapping `wails dev`/`wails build`)
+- wails.json (field: outputfilename) (`outputfilename`, `frontend:install`, `frontend:build`)
+- start.sh::wails (toolchain bootstrap, config seeding, `wails dev`)
+- .github/workflows/build.yml::wails (Go test, typecheck, lint, frontend build, `wails build`, artifact upload of `build/bin/`)
+- .github/workflows/release.yml::softprops (tag trigger `v*`, ubuntu-latest only, uploads `MatchCoreArenaClient` and `.exe` via softprops/action-gh-release)
+- Dockerfile::MatchCoreArenaClient (multi-stage build, non-root runtime user, `CMD ["./MatchCoreArenaClient"]`)
+- docker-compose.yml (field: network_mode) (container build, host network, config volume)
+- main_test.go:L14-L21 @ 3ebbb42029bac3e929b502860dd3e057cf2059d1 (`TestGreet` calling `app.Greet`; snapshot before removal in 7ef8d17) vs app.go::App (no `Greet` method defined; repo-wide search for `Greet` matches only main_test.go)
 - Commit e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8 — "feat: initial commit of MatchCoreArena Client" (introduced Makefile, workflows, Dockerfile, start.sh)

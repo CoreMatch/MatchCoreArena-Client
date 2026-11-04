@@ -53,13 +53,13 @@ The application is built with Wails v2:
   and runtime.
 
 ## Evidence
-- wails.json:1-14 (project name, npm install/build steps, `webkit2_41` build tag)
-- go.mod:1-5 (module name, Go 1.25.0, direct dep `wails/v2 v2.15.0`)
-- main.go:11-31 (`//go:embed all:frontend/dist`, `wails.Run` with `Bind: []interface{}{app}`)
-- app.go:28-133 (all bound methods: auth, user, friend, ranking, team, match)
-- internal/handlers/app.go:10-36 (AppHandler composing config + per-domain services)
-- frontend/package.json:13-35 (React ^19.1.0, @mui/material ^9.0.1, TypeScript ^5.5.0, Vite ^6.3.5)
-- frontend/wailsjs/go/main/App.d.ts:5-53 (generated binding surface)
-- README.md:16-20 (tech-stack table; aligned with the code on 2026-11-04, commit fbc3ade)
+- wails.json (field: build:tags) (project name, npm install/build steps, `webkit2_41` build tag)
+- go.mod (field: module) (module name, Go 1.25.0, direct dep `wails/v2 v2.15.0`)
+- main.go::assets (`//go:embed all:frontend/dist`, `wails.Run` with `Bind: []interface{}{app}`)
+- app.go::App (all bound methods: auth, user, friend, ranking, team, match)
+- internal/handlers/app.go::AppHandler (AppHandler composing config + per-domain services)
+- frontend/package.json (field: @mui/material) (React ^19.1.0, @mui/material ^9.0.1, TypeScript ^5.5.0, Vite ^6.3.5)
+- frontend/wailsjs/go/main/App.d.ts::Login (generated binding surface)
+- README.md::Wails (tech-stack table; aligned with the code on 2026-11-04, commit fbc3ade)
 - Commit e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8 — "feat: initial commit of MatchCoreArena Client" (2026-09-12)
 - Commit 4fff5f55cd9c7344cedda14a1d8b23093ec82a9b — "feat: Add Wails runtime and API definitions for frontend integration" (2026-09-12)
