@@ -16,6 +16,7 @@ conflicts with HA-Contract, fix the entry, not the contract.
 | [0003](0003-client-displays-ratings-but-never-computes-them.md) | The Client Only Displays Ratings; It Never Computes Them | Accepted | No Elo/MMR/rating math exists in this repository; the client fetches leaderboards and personal scores from the server and renders them, and match reporting is a raw-data pass-through. |
 | [0004](0004-token-session-via-arena-server-login-ticket-and-totp.md) | Player Identity Is a Bearer-Token Session Obtained from the Arena Server (login-ticket + Optional TOTP) | Accepted | Login is email/password → `/api/auth/login-ticket` → optional TOTP step → access/refresh token pair; tokens are stored in browser localStorage and mirrored into the in-memory Go APIService via `SetToken`, then sent as `Authorization: Bearer`. |
 | [0005](0005-wails-cli-build-ci-artifacts-and-tagged-releases.md) | Build and Distribution: Wails CLI Builds, CI Artifacts, GitHub Releases on Tags | Accepted | `wails dev`/`wails build` (wrapped by Makefile) are the only build paths; CI builds and uploads artifacts on main/develop, and a release workflow publishes binaries on `v*` tags; a Dockerfile exists but its runtime purpose is undocumented. |
+| [0006](0006-cleanup-pass-checklist.md) | Cleanup Pass Checklist: Fixed Items and Pending Decisions | Accepted | 2026-11-04 low-risk cleanup: fixed the compile-breaking test, doc-vs-code mismatches, and a dead env var; design-level issues are listed as pending author decisions. |
 
 ## Maintenance
 
