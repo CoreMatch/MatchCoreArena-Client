@@ -43,10 +43,11 @@ The application is built with Wails v2:
   failure mode (see entry 0004 for the session-restore fix).
 - Any new capability needs a Go method plus regenerated bindings before the
   frontend can use it.
-- Cost/limitation: the README tech-stack table has drifted from the code —
-  it lists "Gin" as backend framework, but go.mod contains no Gin (the HTTP
-  layer is plain `net/http`), and it says "Material UI v6" while
-  frontend/package.json pins `@mui/material ^9.0.1`. The code, not the
+- Cost/limitation (historical): the README tech-stack table had drifted from
+  the code — it listed "Gin" as backend framework (go.mod contains no Gin;
+  the HTTP layer is plain `net/http`) and "Material UI v6" while
+  frontend/package.json pins `@mui/material ^9.0.1`. The README was aligned
+  with the code on 2026-11-04 (commit fbc3ade, see 0006); the code, not the
   README, is what was verified.
 - Limitation: on Linux the app depends on system WebKitGTK 2.41+ at build
   and runtime.
@@ -59,6 +60,6 @@ The application is built with Wails v2:
 - internal/handlers/app.go:10-36 (AppHandler composing config + per-domain services)
 - frontend/package.json:13-35 (React ^19.1.0, @mui/material ^9.0.1, TypeScript ^5.5.0, Vite ^6.3.5)
 - frontend/wailsjs/go/main/App.d.ts:5-53 (generated binding surface)
-- README.md:16-20 (tech-stack table; contains the Gin/MUI-version drift noted above)
+- README.md:16-20 (tech-stack table; aligned with the code on 2026-11-04, commit fbc3ade)
 - Commit e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8 — "feat: initial commit of MatchCoreArena Client" (2026-09-12)
 - Commit 4fff5f55cd9c7344cedda14a1d8b23093ec82a9b — "feat: Add Wails runtime and API definitions for frontend integration" (2026-09-12)

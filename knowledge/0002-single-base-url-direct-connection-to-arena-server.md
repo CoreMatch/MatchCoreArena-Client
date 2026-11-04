@@ -49,10 +49,12 @@ HTTP verbs (PUT for accept/reject, DELETE for removals).
   `config.example.json` on first run.
 - Single point of failure: no fallback URL, no retry logic; any HTTP status
   ≥ 400 becomes a plain error string surfaced to the UI.
-- The `SERVER_URL` environment variable set in `docker-compose.yml` is not
-  read anywhere in the Go code (no `os.Getenv`/`LookupEnv` in the repo);
-  configuration effectively comes only from the mounted
-  `~/.matchcorearena/config.json`. The env var has no effect as written.
+- The `SERVER_URL` environment variable formerly set in `docker-compose.yml`
+  was not read anywhere in the Go code (no `os.Getenv`/`LookupEnv` in the
+  repo); configuration effectively comes only from the mounted
+  `~/.matchcorearena/config.json`. The dead env var was removed from
+  docker-compose.yml on 2026-11-04 (commit e4ffeac, see 0006); wiring a
+  real env override remains a pending decision.
 - The arena REST API itself is defined inside MatchCoreArena-Server, not in
   HA-Contract (HA-Contract's documented scope covers HRPAuth, HASkinLib,
   WinnerProxy, Cascade, etc.). This entry documents internal client
@@ -69,5 +71,5 @@ HTTP verbs (PUT for accept/reject, DELETE for removals).
 - Commit 71ef6acf495282d1dab091a4ba475ceeb4011b6f — "feat: update server URL to production endpoint" (diff changes `http://localhost:8080` → `https://arena.mcnb.dev/` in config.go and config.example.json)
 - Commit fcec9aa044bc80554691877a09ca49da920d2541 and commit 54ebf36c0a5066c4686f16fef82382c71ea967e6 (removal of frontend `fetch` in favor of Wails bindings)
 - Cross-repo (read-only): MatchCoreArena-Server api/router.go:48-94 (matching route registrations)
-- docker-compose.yml:7-11 (SERVER_URL env var + volume mount; env var unread by code — verified by repo-wide search finding no `os.Getenv`)
+- docker-compose.yml:6-9 (volume mount for `~/.matchcorearena`; the formerly committed SERVER_URL env var was removed on 2026-11-04, commit e4ffeac, because no code reads it)
 - start.sh:40-47 (seeds default config on first run)
