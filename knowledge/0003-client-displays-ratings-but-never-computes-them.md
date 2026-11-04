@@ -1,0 +1,62 @@
+# 0003. The Client Only Displays Ratings; It Never Computes Them
+
+## Status
+Accepted
+
+## Date
+2026-09-12 (ranking display present since initial commit
+e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8; current ranking/match model shape
+from commit f19d969a8c5cee7b1ed889c8d7e630f564a77796, 2026-09-19)
+
+## Context
+The MatchCoreArena ecosystem has a competitive scoring system. Rating
+computation (a weighted Elo model) is implemented and documented on the
+server side: MatchCoreArena-Server knowledge entry 0001 ("Server-Side
+Weighted Elo Rating Applied at Match Report Time", Accepted) states ratings
+are computed exclusively inside the server's match-report transaction. The
+boundary question is what this client does with scores.
+
+## Decision
+This client is a pure consumer/display layer for the rating system:
+
+- Rankings are fetched, never computed: `GET /api/rankings/{type}?limit=&season=`
+  and `GET /api/rankings/me?type=&season=`, returning server-computed
+  `score` and `rank_position` fields that the UI renders as-is.
+- The user profile shows `rank_score`, `level` and `experience` exactly as
+  returned by `/api/users/me`; no local derivation.
+- Match reporting is a raw pass-through: `TeamReportInput` carries observed
+  facts (winner/loser teams, alive counts, per-player kills/deaths/survival
+  time, a reporter-supplied `perf_tweak`) to `POST /api/matches` without any
+  score arithmetic.
+- Verified absence of rating logic: a case-insensitive search of the whole
+  repository for `elo`, `mmr`, `rating`, `glicko`, `trueskill` matches no
+  scoring code (only unrelated words such as "Envelope", "developers",
+  "WindowReload").
+
+## Consequences
+- The client cannot show an updated rating until the server has processed a
+  match report; leaderboard freshness is bounded by server-side computation.
+- The `ReportMatchResult` Go binding exists (and is exposed to the
+  frontend), but no frontend component calls it — a repo-wide search of
+  `frontend/src` finds zero usages of `ReportMatchResult`, `GetMatch`,
+  `GetMyMatches`, `CreateTeam`, `AddExperience` and `RefreshToken`. Why
+  these bindings were shipped without UI is intent not documented in repo.
+  (Cross-repo note: the server's own knowledge entry 0002 says match results
+  are pushed by BedwarsRel-MCA with a scoped `match:report` token, so it is
+  not verified that a normal player token could successfully report.)
+- Benefit: rating-model changes (K-factor, weights) require no client
+  release; the client only needs the response fields to stay stable.
+- Limitation: if the server is unreachable, the client has no cached or
+  fallback scores — nothing rating-related is stored locally.
+
+## Evidence
+- internal/services/ranking.go:17-63 (GetTopRankings / GetMyRanking are GET-and-parse only)
+- internal/models/ranking.go:5-13 (`Score`, `RankPosition` received from server)
+- internal/models/user.go:5-12 (`RankScore`, `Level`, `Experience` fields consumed for display)
+- internal/models/match.go:16-38 (`TeamReportInput`/`ParticipantReport`: raw report fields, no score fields computed client-side)
+- frontend/src/components/RankingView.tsx:56-79 (fetch + render), :266-274 and :363-369 (renders `rank_position`/`score` verbatim)
+- frontend/src/components/HomeView.tsx:79-84 (displays `rank_score` from user object)
+- app.go:84-91,122-133 (ranking/match bindings exposed)
+- Repo-wide case-insensitive search for `elo|mmr|rating|glicko|trueskill`: no scoring-logic matches (verified at HEAD 537b39a29cef1ff8df0ede011ed44828f55b8f8e)
+- Repo-wide search of `frontend/src` for `ReportMatchResult|GetMyMatches|GetMatch|CreateTeam|AddExperience|RefreshToken`: no matches (bindings unused by UI)
+- Cross-repo (read-only): MatchCoreArena-Server knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and knowledge/0002 (match reports pushed by BedwarsRel-MCA with `match:report` scope)
