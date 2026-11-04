@@ -23,15 +23,15 @@ that requires a design decision. This entry is the checklist for this repository
 2. Aligned documentation with the code (commit `fbc3ade`):
    - README tech stack listed Gin for the backend; `go.mod` has no Gin
      dependency and the API layer is the standard library `net/http`
-     (`internal/services/api.go:1-10`). Now states `net/http`.
-   - README tech stack listed Material UI v6; `frontend/package.json:16-17`
+     (`internal/services/api.go::APIService`). Now states `net/http`.
+   - README tech stack listed Material UI v6; `frontend/package.json (field: @mui/material)`
      pins `^9.0.1`. Now states v9.
    - README and USAGE claimed the MIT License while the `LICENSE` file is
      AGPL-3.0 (661-line AGPL v3 text). Statements now say AGPL-3.0; the
      LICENSE file itself was not touched.
 3. Removed the dead `SERVER_URL` environment variable from
    `docker-compose.yml` (commit `e4ffeac`): the config loader only reads
-   `~/.matchcorearena/config.json` (`internal/config/config.go:14-36`); no code
+   `~/.matchcorearena/config.json` (`internal/config/config.go::LoadConfig`); no code
    path consumes any environment variable.
 
 ### Not fixed — requires author decision
@@ -42,7 +42,7 @@ that requires a design decision. This entry is the checklist for this repository
    container behavior.
 2. **UUID vs UID drift**: the client calls `GET /api/users/{uuid}`
    (`internal/services/user.go`) while the server parses `:uid` as an int64
-   (`MatchCoreArena-Server api/handler/user.go GetByUID` via
+   (`/home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID` via
    `strconv.ParseInt`). The server currently rejects these calls. Direction to
    choose: client switches to numeric UID, or server adds a UUID lookup.
 3. **"Automatic token refresh" claim in USAGE.md**: the `RefreshToken` binding
@@ -75,7 +75,7 @@ that requires a design decision. This entry is the checklist for this repository
 - `7ef8d17` test: remove obsolete TestGreet referencing non-existent App.Greet
 - `fbc3ade` docs: align tech stack and license statements with the code
 - `e4ffeac` chore(docker): drop SERVER_URL env var that no code consumes
-- `internal/config/config.go:14-36` (config only from JSON file, no env reads)
-- `internal/services/api.go:1-10` (net/http, no Gin)
-- `frontend/package.json:16-17` (MUI ^9.0.1)
-- `LICENSE:1-3` (AGPL v3 header) vs README/USAGE license statements before the fix
+- `internal/config/config.go::LoadConfig` (config only from JSON file, no env reads)
+- `internal/services/api.go::APIService` (net/http, no Gin)
+- `frontend/package.json (field: @mui/material)` (MUI ^9.0.1)
+- `LICENSE::GNU` (AGPL v3 header) vs README/USAGE license statements before the fix
