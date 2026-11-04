@@ -13,8 +13,13 @@ import {
 import { Login as LoginIcon } from '@mui/icons-material';
 import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
 
+export interface TokenData {
+  access_token: string;
+  refresh_token: string;
+}
+
 interface LoginViewProps {
-  onLoginSuccess: (tokenData: any) => void;
+  onLoginSuccess: (tokenData: TokenData) => void;
 }
 
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
@@ -47,8 +52,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       } else {
         throw new Error(resp?.message || 'Unexpected login response');
       }
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Login failed');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -68,8 +73,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       } else {
         throw new Error('Unexpected TOTP response');
       }
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'TOTP verification failed');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'TOTP verification failed');
     } finally {
       setLoading(false);
     }

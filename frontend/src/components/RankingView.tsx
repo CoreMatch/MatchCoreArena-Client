@@ -71,8 +71,8 @@ export default function RankingView() {
       } catch (e) {
         console.error('Failed to fetch my ranking:', e);
       }
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to load rankings');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to load rankings');
     } finally {
       setLoading(false);
     }
