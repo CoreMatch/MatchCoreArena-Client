@@ -49,11 +49,11 @@ Record the following verified inventory:
   facts; it prescribes no fix.
 
 ## Evidence
-- internal/services/user.go:41-42 (`GetUserByUUID` → `GET /api/users/%s` with a UUID string)
-- Cross-repo (read-only): MatchCoreArena-Server api/handler/user.go:35-37 (`GetByUID` parses `:uid` via `strconv.ParseInt`)
+- internal/services/user.go::GetUserByUUID (`GetUserByUUID` → `GET /api/users/%s` with a UUID string)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID (`GetByUID` parses `:uid` via `strconv.ParseInt`)
 - Search of `frontend/src` on 2026-11-05 HEAD: 0 hits for `GetUserByUUID`, `RefreshToken`, `ReportMatchResult`, `GetMatch`, `GetMyMatches`, `CreateTeam`, `AddExperience`
-- app.go:38-40, 55-57, 59-61, 94-95, 123-132 (the bindings exist on the Go side)
-- USAGE.md:28 ("Automatic token refresh" feature claim)
-- .github/workflows/release.yml:10 (single job, `runs-on: ubuntu-latest`), :42 (uploads `MatchCoreArenaClient.exe`)
+- app.go::RefreshToken, app.go::GetUserByUUID, app.go::AddExperience, app.go::CreateTeam, app.go::ReportMatchResult, app.go::GetMatch, app.go::GetMyMatches (the bindings exist on the Go side)
+- USAGE.md::Automatic ("Automatic token refresh" feature claim)
+- .github/workflows/release.yml::ubuntu (single job, `runs-on: ubuntu-latest`), .github/workflows/release.yml::exe (uploads `MatchCoreArenaClient.exe`)
 - .github/workflows/build.yml (no WebKitGTK/`apt` installation step found on search)
 - Cross-reference: 0006 (all items listed there as pending author decisions)
