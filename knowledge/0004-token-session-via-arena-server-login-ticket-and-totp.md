@@ -67,13 +67,13 @@ from the client's point of view the arena server is the only auth counterparty.
   "Forgot password?" link is an inert `href="#"`).
 
 ## Evidence
-- internal/services/auth.go:17-88 (login-ticket, totp-verify, refresh, logout calls)
-- internal/models/auth.go:3-28 (LoginRequest, TokenResponse, TOTPRequiredResponse, TOTPRequest, RefreshRequest)
-- internal/services/api.go:15,27-29,49-51 (in-memory token, SetToken, Bearer header)
-- frontend/src/components/LoginView.tsx:29-76 (login + TOTP flow via bindings)
-- frontend/src/App.tsx:55-68 (startup restore: `localStorage.getItem('access_token')` → `SetToken`), :80-88 (logout only on 401/unauthorized), :92-98 (stores both tokens), :100-112 (logout clears storage)
+- internal/services/auth.go::AuthService (login-ticket, totp-verify, refresh, logout calls)
+- internal/models/auth.go::TokenResponse (LoginRequest, TokenResponse, TOTPRequiredResponse, TOTPRequest, RefreshRequest)
+- internal/services/api.go::SetToken (in-memory token, SetToken, Bearer header in internal/services/api.go::makeRequest)
+- frontend/src/components/LoginView.tsx::handleLogin (login + TOTP flow via bindings)
+- frontend/src/App.tsx::SetToken (startup restore: `localStorage.getItem('access_token')` → `SetToken`), frontend/src/App.tsx::unauthorized (logout only on 401/unauthorized), frontend/src/App.tsx::setItem (stores both tokens), frontend/src/App.tsx::removeItem (logout clears storage)
 - Commit 537b39a29cef1ff8df0ede011ed44828f55b8f8e — "fix(frontend): restore session token and fix auth errors" (2026-09-19; message: "pass stored access token to the Go backend on page reload")
 - Commit fcec9aa044bc80554691877a09ca49da920d2541 — "feat: refactor login process to use Wails API for authentication and TOTP verification" (diff removes direct `fetch('/api/auth/...')` from LoginView)
-- USAGE.md:25-29 ("Automatic token refresh" claim; not implemented at HEAD — `RefreshToken` has zero callers in `frontend/src`, verified by search)
-- frontend/src/components/LoginView.tsx:245-258 (inert "Forgot password?" link)
-- Cross-repo (read-only): MatchCoreArena-Server api/handler/auth.go:13-57 (auth endpoints are a transparent proxy to HRPAuth), api/middleware/auth.go:23-61 (Bearer verification, 401/expired codes), api/handler/user.go:35-48 (`GetByUID` parses `:uid` as int64 — the drift noted above)
+- USAGE.md::Automatic ("Automatic token refresh" claim; not implemented at HEAD — `RefreshToken` has zero callers in `frontend/src`, verified by search)
+- frontend/src/components/LoginView.tsx::href (inert "Forgot password?" link)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/auth.go::AuthHandler (auth endpoints are a transparent proxy to HRPAuth), /home/lnb/Desktop/HA/MatchCoreArena-Server/api/middleware/auth.go::Auth (Bearer verification, 401/expired codes), /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID (`GetByUID` parses `:uid` as int64 — the drift noted above)
