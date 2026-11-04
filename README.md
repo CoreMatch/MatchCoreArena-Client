@@ -15,8 +15,8 @@ A cross-platform desktop client for MatchCoreArena built with [Wails](https://wa
 
 | Layer    | Technology |
 |----------|------------|
-| Backend  | Go 1.25, [Wails v2](https://wails.io/), [Gin](https://gin-gonic.com/) |
-| Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), [Material UI v6](https://mui.com/) |
+| Backend  | Go 1.25, [Wails v2](https://wails.io/), standard library `net/http` for API calls |
+| Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), [Material UI v9](https://mui.com/) |
 | Build    | Wails CLI (WebKitGTK 2.41+ on Linux) |
 
 ## Project Layout
@@ -112,4 +112,4 @@ This client connects to the MatchCoreArena server API. Make sure the server is r
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
