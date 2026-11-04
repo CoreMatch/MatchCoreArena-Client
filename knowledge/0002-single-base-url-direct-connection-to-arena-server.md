@@ -6,7 +6,7 @@ Accepted
 ## Date
 2026-09-12 (HTTP service layer in initial commit
 e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8; default switched from
-`http://localhost:8080` to the production endpoint in commit
+`http://localhost:8080` [xref] to the production endpoint in commit
 71ef6acf495282d1dab091a4ba475ceeb4011b6f the same day)
 
 ## Context
@@ -39,9 +39,9 @@ configurable base URL:
 
 Cross-verification against the read-only MatchCoreArena-Server worktree:
 every client endpoint above matches a route registered in the server's
-`api/router.go` (auth group lines 48-53; logout line 60; users 63-65;
-friends 68-72; teams 75-81; matches 84-86; rankings 89-90), including the
-HTTP verbs (PUT for accept/reject, DELETE for removals).
+/home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Register
+(auth group, logout, users, friends, teams, matches, rankings routes),
+including the HTTP verbs (PUT for accept/reject, DELETE for removals).
 
 ## Consequences
 - One config value redirects the whole client (useful for dev vs.
@@ -64,12 +64,12 @@ HTTP verbs (PUT for accept/reject, DELETE for removals).
   (see entry 0004 for one observed drift).
 
 ## Evidence
-- internal/config/config.go:14-36 (LoadConfig with default `https://arena.mcnb.dev/`), :55-58 (config path `~/.matchcorearena/config.json`)
-- config.example.json:1-4
-- internal/services/api.go:12-69 (APIService, 10s timeout at :21-23, Bearer header at :49-51)
-- Endpoint call sites: internal/services/auth.go:23,42,64,82; user.go:18,42,72; friend.go:18,48,72,81,90; team.go:26,44,62,70,96,120,128; match.go:18,36,54; ranking.go:18,42
-- Commit 71ef6acf495282d1dab091a4ba475ceeb4011b6f — "feat: update server URL to production endpoint" (diff changes `http://localhost:8080` → `https://arena.mcnb.dev/` in config.go and config.example.json)
+- internal/config/config.go::LoadConfig (LoadConfig with default `https://arena.mcnb.dev/`), internal/config/config.go::getConfigPath (config path `~/.matchcorearena/config.json`)
+- config.example.json (field: server_url)
+- internal/services/api.go::APIService (APIService, 10s timeout in internal/services/api.go::NewAPIService, Bearer header in internal/services/api.go::makeRequest)
+- Endpoint call sites: internal/services/auth.go::Login, internal/services/auth.go::VerifyTOTP, internal/services/auth.go::RefreshToken, internal/services/auth.go::Logout; internal/services/user.go::GetCurrentUser, internal/services/user.go::GetUserByUUID, internal/services/user.go::AddExperience; internal/services/friend.go::GetFriends, internal/services/friend.go::SendFriendRequest, internal/services/friend.go::AcceptFriendRequest, internal/services/friend.go::RejectFriendRequest, internal/services/friend.go::DeleteFriend; internal/services/team.go::CreateTeam, internal/services/team.go::GetTeam, internal/services/team.go::DisbandTeam, internal/services/team.go::GetTeamMembers, internal/services/team.go::AddTeamMember, internal/services/team.go::UpdateMemberRole, internal/services/team.go::RemoveTeamMember; internal/services/match.go::ReportMatchResult, internal/services/match.go::GetMatch, internal/services/match.go::GetMyMatches; internal/services/ranking.go::GetTopRankings, internal/services/ranking.go::GetMyRanking
+- Commit 71ef6acf495282d1dab091a4ba475ceeb4011b6f — "feat: update server URL to production endpoint" (diff changes `http://localhost:8080` [xref] → `https://arena.mcnb.dev/` in config.go and config.example.json)
 - Commit fcec9aa044bc80554691877a09ca49da920d2541 and commit 54ebf36c0a5066c4686f16fef82382c71ea967e6 (removal of frontend `fetch` in favor of Wails bindings)
-- Cross-repo (read-only): MatchCoreArena-Server api/router.go:48-94 (matching route registrations)
-- docker-compose.yml:6-9 (volume mount for `~/.matchcorearena`; the formerly committed SERVER_URL env var was removed on 2026-11-04, commit e4ffeac, because no code reads it)
-- start.sh:40-47 (seeds default config on first run)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Register (matching route registrations)
+- docker-compose.yml (field: volumes) (volume mount for `~/.matchcorearena`; the formerly committed SERVER_URL env var was removed on 2026-11-04, commit e4ffeac, because no code reads it)
+- start.sh::matchcorearena (seeds default config on first run)
