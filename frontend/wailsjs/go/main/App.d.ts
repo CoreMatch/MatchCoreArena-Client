@@ -20,6 +20,8 @@ export function GetFriends():Promise<any>;
 
 export function GetMatch(arg1:number):Promise<any>;
 
+export function GetMatchmakingStatus():Promise<any>;
+
 export function GetMyMatches(arg1:number,arg2:number):Promise<any>;
 
 export function GetMyRanking(arg1:string,arg2:number):Promise<any>;
@@ -32,6 +34,10 @@ export function GetTopRankings(arg1:string,arg2:number,arg3:number):Promise<any>
 
 export function GetUserByUUID(arg1:string):Promise<any>;
 
+export function JoinMatchmaking(arg1:string):Promise<any>;
+
+export function LeaveMatchmaking():Promise<void>;
+
 export function Login(arg1:string,arg2:string):Promise<any>;
 
 export function Logout():Promise<void>;
@@ -43,6 +49,8 @@ export function RejectFriendRequest(arg1:number):Promise<void>;
 export function RemoveTeamMember(arg1:number,arg2:string):Promise<void>;
 
 export function ReportMatchResult(arg1:models.TeamReportInput):Promise<any>;
+
+export function ReportVirtualMatch(arg1:models.VirtualReportInput,arg2:string):Promise<any>;
 
 export function SendFriendRequest(arg1:string):Promise<any>;
 
