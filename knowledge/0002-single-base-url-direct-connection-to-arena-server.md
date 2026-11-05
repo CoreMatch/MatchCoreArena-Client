@@ -3,12 +3,6 @@
 ## Status
 Accepted
 
-## Date
-2026-09-12 (HTTP service layer in initial commit
-e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8; default switched from
-`http://localhost:8080` [xref] to the production endpoint in commit
-71ef6acf495282d1dab091a4ba475ceeb4011b6f the same day)
-
 ## Context
 The client has no backend of its own; all data (profile, friends, teams,
 matches, rankings) lives in MatchCoreArena-Server. The client must know
@@ -30,12 +24,9 @@ configurable base URL:
   `/api/friends` (+ `/{id}/accept`, `/{id}/reject`, `/{id}`),
   `/api/teams` (+ members and role routes), `/api/matches` (+ `/{id}`,
   `/me`), `/api/rankings/{type}`, `/api/rankings/me`.
-- The React frontend makes no direct HTTP calls of its own. Earlier
-  `fetch('/api/...')` calls in LoginView were replaced by Wails bindings in
-  commit fcec9aa044bc80554691877a09ca49da920d2541, and the remaining fetches
-  in App/FriendList/RankingView were replaced in commit
-  54ebf36c0a5066c4686f16fef82382c71ea967e6. A search of `frontend/src` at
-  HEAD finds no `fetch(`, `axios`, or absolute `http(s)://` calls.
+- The React frontend makes no direct HTTP calls of its own: a search of
+  `frontend/src` finds no `fetch(`, `axios`, or absolute `http(s)://`
+  calls; every server interaction goes through the Wails bindings.
 
 Cross-verification against the read-only MatchCoreArena-Server worktree:
 every client endpoint above matches a route registered in the server's
@@ -49,17 +40,15 @@ including the HTTP verbs (PUT for accept/reject, DELETE for removals).
   `config.example.json` on first run.
 - Single point of failure: no fallback URL, no retry logic; any HTTP status
   ≥ 400 becomes a plain error string surfaced to the UI.
-- The `SERVER_URL` environment variable formerly set in `docker-compose.yml`
-  was not read anywhere in the Go code (no `os.Getenv`/`LookupEnv` in the
-  repo); configuration effectively comes only from the mounted
-  `~/.matchcorearena/config.json`. The dead env var was removed from
-  docker-compose.yml on 2026-11-04 (commit e4ffeac, see 0006); wiring a
-  real env override remains a pending decision.
+- Configuration comes only from the mounted `~/.matchcorearena/config.json`:
+  no code path reads environment variables (no `os.Getenv`/`LookupEnv` in
+  the repo). Wiring a real env override (e.g. `SERVER_URL` for the
+  containerized path) is a pending author decision (see 0006).
 - The arena REST API itself is defined inside MatchCoreArena-Server, not in
   HA-Contract (HA-Contract's documented scope covers HRPAuth, HASkinLib,
   WinnerProxy, Cascade, etc.). This entry documents internal client
   behavior only; it does not define that API.
-- Limitation: endpoint paths are hard-coded in seven Go service files; there
+- Limitation: endpoint paths are hard-coded in six Go service files; there
   is no shared/generated client, so client and server can drift silently
   (see entry 0004 for one observed drift).
 
@@ -68,8 +57,6 @@ including the HTTP verbs (PUT for accept/reject, DELETE for removals).
 - config.example.json (field: server_url)
 - internal/services/api.go::APIService (APIService, 10s timeout in internal/services/api.go::NewAPIService, Bearer header in internal/services/api.go::makeRequest)
 - Endpoint call sites: internal/services/auth.go::Login, internal/services/auth.go::VerifyTOTP, internal/services/auth.go::RefreshToken, internal/services/auth.go::Logout; internal/services/user.go::GetCurrentUser, internal/services/user.go::GetUserByUUID, internal/services/user.go::AddExperience; internal/services/friend.go::GetFriends, internal/services/friend.go::SendFriendRequest, internal/services/friend.go::AcceptFriendRequest, internal/services/friend.go::RejectFriendRequest, internal/services/friend.go::DeleteFriend; internal/services/team.go::CreateTeam, internal/services/team.go::GetTeam, internal/services/team.go::DisbandTeam, internal/services/team.go::GetTeamMembers, internal/services/team.go::AddTeamMember, internal/services/team.go::UpdateMemberRole, internal/services/team.go::RemoveTeamMember; internal/services/match.go::ReportMatchResult, internal/services/match.go::GetMatch, internal/services/match.go::GetMyMatches; internal/services/ranking.go::GetTopRankings, internal/services/ranking.go::GetMyRanking
-- Commit 71ef6acf495282d1dab091a4ba475ceeb4011b6f — "feat: update server URL to production endpoint" (diff changes `http://localhost:8080` [xref] → `https://arena.mcnb.dev/` in config.go and config.example.json)
-- Commit fcec9aa044bc80554691877a09ca49da920d2541 and commit 54ebf36c0a5066c4686f16fef82382c71ea967e6 (removal of frontend `fetch` in favor of Wails bindings)
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Register (matching route registrations)
-- docker-compose.yml (field: volumes) (volume mount for `~/.matchcorearena`; the formerly committed SERVER_URL env var was removed on 2026-11-04, commit e4ffeac, because no code reads it)
+- docker-compose.yml (field: volumes) (volume mount for `~/.matchcorearena`)
 - start.sh::matchcorearena (seeds default config on first run)
