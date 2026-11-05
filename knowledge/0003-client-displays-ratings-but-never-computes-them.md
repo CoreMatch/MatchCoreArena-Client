@@ -22,7 +22,9 @@ This client is a pure consumer/display layer for the rating system:
 - Match reporting is a raw pass-through: `TeamReportInput` carries observed
   facts (winner/loser teams, alive counts, per-player kills/deaths/survival
   time, a reporter-supplied `perf_tweak`) to `POST /api/matches` without any
-  score arithmetic.
+  score arithmetic. Virtual-match submission (0009) is the same: the
+  Virtual Match page sends `VirtualReportInput` to `POST /api/matches/virtual`
+  and renders the server-returned before/delta/after values verbatim.
 - Verified absence of rating logic: a case-insensitive search of the whole
   repository for `elo`, `mmr`, `rating`, `glicko`, `trueskill` matches no
   scoring code (only unrelated words such as "Envelope", "developers",

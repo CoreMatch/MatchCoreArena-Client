@@ -32,6 +32,29 @@ func (s *MatchService) ReportMatchResult(report models.TeamReportInput) (*models
 	return &match, nil
 }
 
+// ReportVirtualMatch 提交虚拟对局（POST /api/matches/virtual）。
+// reporterToken 需携带 match:report scope（服务端 tokens.yaml 中的
+// 服务令牌或运维令牌）；为空时使用当前会话令牌（将被服务端 403 拒绝，
+// 除非该令牌本身带有所需 scope）。
+func (s *MatchService) ReportVirtualMatch(report models.VirtualReportInput, reporterToken string) (*models.VirtualMatchResult, error) {
+	resp, err := s.api.PostWithToken("/api/matches/virtual", report, reporterToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to report virtual match: %w", err)
+	}
+
+	var envelope models.SuccessEnvelope
+	if err := json.Unmarshal(resp, &envelope); err != nil {
+		return nil, fmt.Errorf("failed to parse virtual match response: %w", err)
+	}
+
+	dataBytes, _ := json.Marshal(envelope.Data)
+	var result models.VirtualMatchResult
+	if err := json.Unmarshal(dataBytes, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse virtual match result: %w", err)
+	}
+	return &result, nil
+}
+
 func (s *MatchService) GetMatch(id int64) (*models.Match, error) {
 	resp, err := s.api.Get(fmt.Sprintf("/api/matches/%d", id))
 	if err != nil {

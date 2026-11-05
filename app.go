@@ -124,10 +124,27 @@ func (a *App) ReportMatchResult(report models.TeamReportInput) (interface{}, err
 	return a.handler.ReportMatchResult(report)
 }
 
+func (a *App) ReportVirtualMatch(report models.VirtualReportInput, reporterToken string) (interface{}, error) {
+	return a.handler.ReportVirtualMatch(report, reporterToken)
+}
+
 func (a *App) GetMatch(id int64) (interface{}, error) {
 	return a.handler.GetMatch(id)
 }
 
 func (a *App) GetMyMatches(pageNum, pageSize int) (interface{}, error) {
 	return a.handler.GetMyMatches(pageNum, pageSize)
+}
+
+// Matchmaking methods
+func (a *App) JoinMatchmaking(matchType string) (interface{}, error) {
+	return a.handler.JoinMatchmaking(matchType)
+}
+
+func (a *App) LeaveMatchmaking() error {
+	return a.handler.LeaveMatchmaking()
+}
+
+func (a *App) GetMatchmakingStatus() (interface{}, error) {
+	return a.handler.GetMatchmakingStatus()
 }

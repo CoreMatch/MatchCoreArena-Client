@@ -56,6 +56,84 @@ export namespace models {
 		    return a;
 		}
 	}
+	export class VirtualTeamInput {
+	    team_id: string;
+	    result: string;
+	    initial_count: number;
+	    alive_count: number;
+	    members: ParticipantReport[];
+
+	    static createFrom(source: any = {}) {
+	        return new VirtualTeamInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.team_id = source["team_id"];
+	        this.result = source["result"];
+	        this.initial_count = source["initial_count"];
+	        this.alive_count = source["alive_count"];
+	        this.members = this.convertValues(source["members"], ParticipantReport);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class VirtualReportInput {
+	    match_type: string;
+	    teams: VirtualTeamInput[];
+	    duration_seconds?: number;
+	    map_name?: string;
+	    started_at?: string;
+	    finished_at?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VirtualReportInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.match_type = source["match_type"];
+	        this.teams = this.convertValues(source["teams"], VirtualTeamInput);
+	        this.duration_seconds = source["duration_seconds"];
+	        this.map_name = source["map_name"];
+	        this.started_at = source["started_at"];
+	        this.finished_at = source["finished_at"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class TeamReportInput {
 	    match_type: string;
 	    winner_team: TeamReportInfo;

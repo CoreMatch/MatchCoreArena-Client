@@ -23,13 +23,15 @@ import {
   Logout, 
   Person, 
   Menu as MenuIcon,
-  ChevronLeft
+  ChevronLeft,
+  SportsEsports
 } from '@mui/icons-material';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
 import HomeView, { type UserProfile } from './components/HomeView';
+import VirtualMatchView from './components/VirtualMatchView';
 
 const drawerWidth = 240;
 
@@ -43,6 +45,7 @@ const navItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'friends', label: 'Friends', icon: Group },
   { id: 'rankings', label: 'Rankings', icon: Leaderboard },
+  { id: 'virtual', label: 'Virtual Match', icon: SportsEsports },
 ];
 
 export default function App() {
@@ -133,6 +136,8 @@ export default function App() {
         return <FriendList />;
       case 'rankings':
         return <RankingView />;
+      case 'virtual':
+        return <VirtualMatchView />;
       default:
         return <HomeView user={user} />;
     }

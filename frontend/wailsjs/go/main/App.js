@@ -38,6 +38,10 @@ export function GetMatch(arg1) {
   return window['go']['main']['App']['GetMatch'](arg1);
 }
 
+export function GetMatchmakingStatus() {
+  return window['go']['main']['App']['GetMatchmakingStatus']();
+}
+
 export function GetMyMatches(arg1, arg2) {
   return window['go']['main']['App']['GetMyMatches'](arg1, arg2);
 }
@@ -62,6 +66,14 @@ export function GetUserByUUID(arg1) {
   return window['go']['main']['App']['GetUserByUUID'](arg1);
 }
 
+export function JoinMatchmaking(arg1) {
+  return window['go']['main']['App']['JoinMatchmaking'](arg1);
+}
+
+export function LeaveMatchmaking() {
+  return window['go']['main']['App']['LeaveMatchmaking']();
+}
+
 export function Login(arg1, arg2) {
   return window['go']['main']['App']['Login'](arg1, arg2);
 }
@@ -84,6 +96,10 @@ export function RemoveTeamMember(arg1, arg2) {
 
 export function ReportMatchResult(arg1) {
   return window['go']['main']['App']['ReportMatchResult'](arg1);
+}
+
+export function ReportVirtualMatch(arg1, arg2) {
+  return window['go']['main']['App']['ReportVirtualMatch'](arg1, arg2);
 }
 
 export function SendFriendRequest(arg1) {
