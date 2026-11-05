@@ -19,6 +19,7 @@ conflicts with HA-Contract, fix the entry, not the contract.
 | [0006](0006-pending-author-decisions.md) | Pending Author Decisions | Accepted | Open design questions that need author decisions: env-var wiring, UUID vs UID drift, the token-refresh claim, UI-less bindings, README feature list, release artifacts, Docker image purpose. |
 | [0007](0007-ecosystem-boundary-client-talks-only-to-arena-server.md) | Ecosystem Boundary: The Client Talks Only to MatchCoreArena-Server | Accepted | Zero HRPAuth/Yggdrasil/WinnerProxy/skin-service references; HRPAuth is reached only through the server's transparent auth proxy. |
 | [0008](0008-known-broken-or-unreachable-calls.md) | Known Broken or Unreachable Calls (Verified Inventory) | Accepted | The `/api/users/{uuid}` call is rejected by the server and unused by the UI; token refresh and five more bindings have no UI consumer; the release's Windows artifact has no build path. |
+| [0009](0009-virtual-match-and-matchmaking-panel.md) | Virtual Match and Matchmaking Panel | Accepted | The Virtual Match page injects single or batched virtual matches through `POST /api/matches/virtual` (explicit reporter token), renders server-computed rating deltas, and drives the matchmaking queue (join/leave/status) with the session token. |
 
 ## Maintenance
 
