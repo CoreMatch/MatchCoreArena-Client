@@ -3,9 +3,6 @@
 ## Status
 Accepted
 
-## Date
-2026-09-12 (single-base-url design, see 0002); boundary verified against HEAD on 2026-11-05
-
 ## Context
 The client sits in the HA ecosystem next to HRPAuth (accounts),
 HRPAuth-Yggdrasil-API (Minecraft auth), HASkinLib / HASkinProxy (skins) and
@@ -14,7 +11,7 @@ worth recording explicitly whether the client ever talks to those services
 directly.
 
 ## Decision
-Verified boundary (repository-wide searches on the 2026-11-05 HEAD):
+Verified boundary (repository-wide searches):
 
 - The client's only network peer is MatchCoreArena-Server, through the one
   configurable `server_url` (see 0002). Zero occurrences of `hrpauth`,
@@ -42,7 +39,7 @@ Verified boundary (repository-wide searches on the 2026-11-05 HEAD):
   not documented — pending author confirmation.
 
 ## Evidence
-- Repository-wide case-insensitive search on 2026-11-05 HEAD across `*.go`, `*.ts`, `*.tsx`, `*.json` (excluding node_modules/dist/wailsjs): `hrpauth|yggdrasil|winnerproxy|skinlib|skinproxy` → 0 hits
+- Repository-wide case-insensitive search across `*.go`, `*.ts`, `*.tsx`, `*.json` (excluding node_modules/dist/wailsjs): `hrpauth|yggdrasil|winnerproxy|skinlib|skinproxy` → 0 hits
 - internal/services/api.go::APIService (single APIService, single base URL, Bearer header)
 - internal/config/config.go::Config (only `server_url` + `debug` are configured)
 - Cross-references: 0002 (single base URL), 0004 (auth via the server's transparent proxy)

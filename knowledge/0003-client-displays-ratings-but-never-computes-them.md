@@ -3,11 +3,6 @@
 ## Status
 Accepted
 
-## Date
-2026-09-12 (ranking display present since initial commit
-e1f5cd879d3da5e6e18acab811ccf01d35b9d8f8; current ranking/match model shape
-from commit f19d969a8c5cee7b1ed889c8d7e630f564a77796, 2026-09-19)
-
 ## Context
 The MatchCoreArena ecosystem has a competitive scoring system. Rating
 computation (a weighted Elo model) is implemented and documented on the
@@ -40,7 +35,7 @@ This client is a pure consumer/display layer for the rating system:
   frontend), but no frontend component calls it — a repo-wide search of
   `frontend/src` finds zero usages of `ReportMatchResult`, `GetMatch`,
   `GetMyMatches`, `CreateTeam`, `AddExperience` and `RefreshToken`. Why
-  these bindings were shipped without UI is intent not documented in repo.
+  these bindings exist without UI is intent not documented in repo.
   (Cross-repo note: the server's own knowledge entry 0002 says match results
   are pushed by BedwarsRel-MCA with a scoped `match:report` token, so it is
   not verified that a normal player token could successfully report.)
@@ -57,6 +52,6 @@ This client is a pure consumer/display layer for the rating system:
 - frontend/src/components/RankingView.tsx::RankingView (fetch + render), frontend/src/components/RankingView.tsx::rank_position (renders `rank_position`/`score` verbatim)
 - frontend/src/components/HomeView.tsx::rank_score (displays `rank_score` from user object)
 - app.go::GetTopRankings, app.go::ReportMatchResult (ranking/match bindings exposed)
-- Repo-wide case-insensitive search for `elo|mmr|rating|glicko|trueskill`: no scoring-logic matches (verified at HEAD 537b39a29cef1ff8df0ede011ed44828f55b8f8e)
+- Repo-wide case-insensitive search for `elo|mmr|rating|glicko|trueskill`: no scoring-logic matches
 - Repo-wide search of `frontend/src` for `ReportMatchResult|GetMyMatches|GetMatch|CreateTeam|AddExperience|RefreshToken`: no matches (bindings unused by UI)
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0002-match-results-are-pushed-by-bedwarsrel-mca.md (match reports pushed by BedwarsRel-MCA with `match:report` scope)
