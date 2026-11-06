@@ -18,10 +18,13 @@ The invariant has three parts, each pinned by a test in
    over `*App` and asserts the exported bound methods are exactly:
    `Login`, `VerifyTOTP`, `RefreshToken`, `Logout`, `SetToken` (session
    auth), `GetCurrentUser`, `GetFriends`, `GetTopRankings`,
-   `GetMyRanking`, `GetMatch`, `GetMyMatches` (read queries) and
+   `GetMyRanking`, `GetMatch`, `GetMyMatches` (read queries),
    `JoinMatchmaking`, `LeaveMatchmaking`, `GetMatchmakingStatus` (the
-   player's own queue operations). Policy (author-directed): session auth,
-   read queries and queue operations are allowed; match reporting and any
+   player's own queue operations) and `PrepareHandoff`,
+   `GetHandoffStatus`, `GetGameServerConfig`, `SetGameServerConfig`
+   (local handoff delivery and local settings; see 0012). Policy
+   (author-directed): session auth, read queries, queue operations and the
+   local handoff/settings plumbing are allowed; match reporting and any
    other match-data write binding are forbidden. Any added or renamed
    binding fails the test; a forbidden binding can only land by consciously
    editing the allow-list.

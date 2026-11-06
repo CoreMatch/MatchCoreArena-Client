@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -5,11 +6,15 @@ import {
   CardContent,
   Stack,
   Chip,
+  TextField,
+  Button,
+  Alert,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
 } from '@mui/material';
+import { GetGameServerConfig, SetGameServerConfig } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
 import type { UserProfile } from '../types';
 
@@ -19,6 +24,34 @@ interface SettingsViewProps {
 
 export default function SettingsView({ user }: SettingsViewProps) {
   const msg = t();
+
+  const [gameHost, setGameHost] = useState('');
+  const [gamePort, setGamePort] = useState('');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const resp = await GetGameServerConfig();
+        const data = resp?.data ?? resp;
+        setGameHost(data?.host ?? '');
+        setGamePort(data?.port ? String(data.port) : '');
+      } catch {
+        // Keep the fields empty; saving will surface errors.
+      }
+    })();
+  }, []);
+
+  const saveGameServer = async () => {
+    setSaveState('saving');
+    try {
+      const port = Number(gamePort);
+      await SetGameServerConfig(gameHost.trim(), Number.isFinite(port) ? port : 0);
+      setSaveState('saved');
+    } catch {
+      setSaveState('failed');
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -69,6 +102,60 @@ export default function SettingsView({ user }: SettingsViewProps) {
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
                 {msg.settings.accountMissing}
               </Typography>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              {msg.settings.gameServer}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>
+              {msg.settings.gameServerHint}
+            </Typography>
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              <TextField
+                label={msg.settings.gameServerHost}
+                size="small"
+                value={gameHost}
+                onChange={(e) => setGameHost(e.target.value)}
+                sx={{
+                  minWidth: 260,
+                  '& .MuiOutlinedInput-root': { color: 'white' },
+                  '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
+                }}
+              />
+              <TextField
+                label={msg.settings.gameServerPort}
+                size="small"
+                type="number"
+                value={gamePort}
+                onChange={(e) => setGamePort(e.target.value)}
+                sx={{
+                  width: 120,
+                  '& .MuiOutlinedInput-root': { color: 'white' },
+                  '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
+                }}
+              />
+              <Button
+                onClick={saveGameServer}
+                disabled={saveState === 'saving'}
+                variant="contained"
+                sx={{ backgroundColor: '#e94560', '&:hover': { backgroundColor: '#c81e45' } }}
+              >
+                {saveState === 'saving' ? msg.settings.saving : msg.settings.save}
+              </Button>
+            </Stack>
+            {saveState === 'saved' && (
+              <Alert severity="success" sx={{ mt: 2, backgroundColor: 'rgba(102,187,106,0.1)', color: '#a5d6a7' }}>
+                {msg.settings.saved}
+              </Alert>
+            )}
+            {saveState === 'failed' && (
+              <Alert severity="error" sx={{ mt: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
+                {msg.settings.saveFailed}
+              </Alert>
             )}
           </CardContent>
         </Card>
