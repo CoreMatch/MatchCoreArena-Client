@@ -9,6 +9,9 @@ interface RankCardProps {
   rankType: string;
   season: number;
   winsCount?: number;
+  // When embedded (inside a bigger block, e.g. the Play "You" panel) the
+  // card renders without its own Panel frame.
+  embedded?: boolean;
 }
 
 interface MyRank {
@@ -51,7 +54,7 @@ function topPercentLabel(position: number, total: number): string | null {
   return msg.topPercentTemplate.replace('{pct}', pct.toFixed(1));
 }
 
-export default function RankCard({ rankType, season, winsCount }: RankCardProps) {
+export default function RankCard({ rankType, season, winsCount, embedded = false }: RankCardProps) {
   const msg = t();
   const [state, setState] = useState<'loading' | 'unranked' | 'ranked' | 'error'>('loading');
   const [myRank, setMyRank] = useState<MyRank | null>(null);
@@ -112,32 +115,29 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
   }, [load]);
 
   if (state === 'loading') {
-    return (
-      <Panel className="p-6">
-        <Skeleton className="mb-3 h-6 w-40" />
-        <Skeleton className="h-12 w-full" />
-      </Panel>
+    const body = (
+      <>
+        <Skeleton className="mb-4 h-7 w-48" />
+        <Skeleton className="h-14 w-full" />
+      </>
     );
+    return embedded ? body : <Panel className="p-8">{body}</Panel>;
   }
 
   if (state === 'error') {
-    return (
-      <Panel>
-        <ErrorState message={loadErrorMessage(msg.rankCard.loadErrorData)} onRetry={load} />
-      </Panel>
-    );
+    const body = <ErrorState message={loadErrorMessage(msg.rankCard.loadErrorData)} onRetry={load} />;
+    return embedded ? body : <Panel>{body}</Panel>;
   }
 
   if (state === 'unranked' || !myRank) {
-    return (
-      <Panel>
-        <EmptyState
-          icon={<Icon as={Trophy} size={34} />}
-          title={msg.rankCard.unrankedTitle}
-          hint={msg.rankCard.unrankedHint}
-        />
-      </Panel>
+    const body = (
+      <EmptyState
+        icon={<Icon as={Trophy} size={40} />}
+        title={msg.rankCard.unrankedTitle}
+        hint={msg.rankCard.unrankedHint}
+      />
     );
+    return embedded ? body : <Panel>{body}</Panel>;
   }
 
   const topLabel = totalKnown !== null ? topPercentLabel(myRank.rank_position, totalKnown) : null;
@@ -157,12 +157,12 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
       )
     : 0;
 
-  return (
-    <Panel className="p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Icon as={Trophy} className="text-gold" size={20} />
-          <h2 className="text-lg font-bold text-ink">{msg.rankCard.title}</h2>
+  const rankedBody = (
+    <>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Icon as={Trophy} className="text-gold" size={22} />
+          <h2 className="text-2xl font-bold text-ink">{msg.rankCard.title}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {tier?.current && <Badge tone="gold" strong>{tier.current.name}</Badge>}
@@ -171,9 +171,9 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
+      <div className="flex flex-wrap items-end gap-x-12 gap-y-6">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+          <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-faint">
             {msg.rankCard.score}
           </div>
           <div className="font-mono text-hero font-bold tabular-nums text-gold">
@@ -181,17 +181,17 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
           </div>
         </div>
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+          <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-faint">
             {msg.rankCard.rank}
           </div>
           <div className="font-mono text-hero font-bold tabular-nums text-ink">
             #{myRank.rank_position}
-            {topLabel && <span className="ml-2 align-middle text-base font-semibold text-ok">{topLabel}</span>}
+            {topLabel && <span className="ml-3 align-middle text-lg font-semibold text-ok">{topLabel}</span>}
           </div>
         </div>
         {winsCount !== undefined && (
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+            <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-faint">
               {msg.rankCard.wins}
             </div>
             <div className="font-mono text-hero font-bold tabular-nums text-ink">{winsCount}</div>
@@ -201,9 +201,9 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
 
       {/* Tier progress — only when the server provides a ladder */}
       {tier?.next && (
-        <div className="mt-5">
+        <div className="mt-6">
           <Progress value={tierProgress} tone="gold" />
-          <div className="mt-1.5 font-mono text-xs tabular-nums text-ink-faint">
+          <div className="mt-2 font-mono text-sm tabular-nums text-ink-faint">
             {msg.rankCard.toNextTemplate
               .replace('{pts}', String(toNextPts))
               .replace('{tier}', tier.next.name)}
@@ -211,10 +211,12 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
         </div>
       )}
       {tier && tier.current && !tier.next && (
-        <div className="mt-4 text-xs font-bold uppercase tracking-wider text-gold">
+        <div className="mt-5 text-sm font-bold uppercase tracking-wide text-gold">
           {msg.rankCard.topTier}
         </div>
       )}
-    </Panel>
+    </>
   );
+
+  return embedded ? rankedBody : <Panel className="p-8">{rankedBody}</Panel>;
 }

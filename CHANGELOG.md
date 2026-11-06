@@ -87,6 +87,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New read-only binding `GetRankingTiers` (display-only tier ladder);
   the bound-surface allow-list was updated accordingly (knowledge 0014)
 
+### Changed (rescale — spacious, fewer words)
+- Rescaled the whole UI at the @ha/ui token layer (author feedback: the
+  first rebuild felt cramped): body text 16 with 14 secondary, section
+  titles 20–24, page titles 32, hero numerals 52; spacing ladder
+  8/12/16/24/32/48; buttons 36/48/56 and inputs/selects 48 high;
+  table rows ~60; borders restrained (insets and chips drop frames)
+- Merged small parallel cards into big blocks on Play (player + rank in
+  one panel; get-started folded into the queue card); sidebar widened,
+  main column margins widened — fewer elements per screen, scrolling
+  preferred over squeezing
+- Drastically cut UI text: short labels, numbers and status words on
+  screen; full explanations (read-only notice, party hint, join-server
+  hint, dismiss consequences, handoff degradations, settings hints)
+  moved into tooltips; queue busyness rendered as icon + numeral blocks
+  instead of a sentence; handoff states render as icon + short word
+
 ### Changed (frontend rebuild on @ha/ui)
 - The frontend was rebuilt from scratch on the new shared design system
   `@ha/ui` (`/home/lnb/Desktop/HA/ha-ui`, consumed via

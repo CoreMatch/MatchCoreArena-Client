@@ -3,14 +3,22 @@ import {
   CheckCircle2,
   ChevronRight,
   Circle,
+  Clock,
   Copy,
+  Flag,
   History,
+  Hourglass,
+  Info,
   ListChecks,
+  LoaderCircle,
   Play,
   Plus,
   RefreshCw,
+  Swords,
+  TriangleAlert,
   Users,
   XCircle,
+  Zap,
 } from 'lucide-react';
 import {
   Badge,
@@ -440,13 +448,13 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   const phaseBadge = () => {
     switch (phase) {
       case 'queued':
-        return <Badge tone="warn" strong>{msg.play.stateQueued}</Badge>;
+        return <Badge tone="warn" strong><Icon as={Hourglass} size={14} />{msg.play.stateQueued}</Badge>;
       case 'found':
-        return <Badge tone="ok" strong>{msg.play.stateFound}</Badge>;
+        return <Badge tone="ok" strong><Icon as={Zap} size={14} />{msg.play.stateFound}</Badge>;
       case 'in_match':
-        return <Badge tone="info" strong>{msg.play.stateInMatch}</Badge>;
+        return <Badge tone="info" strong><Icon as={Swords} size={14} />{msg.play.stateInMatch}</Badge>;
       case 'settled':
-        return <Badge tone="neutral" strong>{msg.play.stateSettled}</Badge>;
+        return <Badge tone="neutral" strong><Icon as={Flag} size={14} />{msg.play.stateSettled}</Badge>;
       default:
         return null;
     }
@@ -455,151 +463,138 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   const stepIndex = phaseStepIndex(phase);
   const stepLabels = [msg.play.stateQueued, msg.play.stateFound, msg.play.stateInMatch, msg.play.stateSettled];
 
+  // Compact handoff status: short word + icon on screen, full sentence in
+  // the tooltip.
+  const handoffView = (state: string, detail?: string): { short: string; full: string; tone: 'info' | 'ok' | 'warn' } => {
+    switch (state) {
+      case 'delivering':
+        return { short: msg.handoff.deliveringShort, full: msg.handoff.delivering, tone: 'info' };
+      case 'waiting_receiver':
+        return { short: msg.handoff.waitingReceiverShort, full: msg.handoff.waitingReceiver, tone: 'info' };
+      case 'delivered':
+        return { short: msg.handoff.deliveredShort, full: msg.handoff.delivered, tone: 'ok' };
+      case 'busy':
+        return { short: msg.handoff.busyShort, full: msg.handoff.busy, tone: 'warn' };
+      case 'timeout':
+        return { short: msg.handoff.timeoutShort, full: msg.handoff.timeout, tone: 'warn' };
+      case 'no_receiver':
+        return { short: msg.handoff.noReceiverShort, full: msg.handoff.noReceiver, tone: 'warn' };
+      case 'version_mismatch':
+        return { short: msg.handoff.versionMismatchShort, full: msg.handoff.versionMismatch, tone: 'warn' };
+      case 'missing_config':
+        return { short: msg.handoff.missingConfigShort, full: msg.handoff.missingConfig, tone: 'warn' };
+      default:
+        return { short: msg.handoff.errorShort, full: detail || msg.handoff.error, tone: 'warn' };
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <h1 className="text-display font-bold tracking-tight text-ink">{msg.play.title}</h1>
         {phaseBadge()}
+        <span title={msg.readOnly.notice} className="cursor-help text-ink-faint">
+          <Icon as={Info} size={18} />
+        </span>
       </div>
-
-      <Banner tone="info">{msg.readOnly.notice}</Banner>
 
       {error && (
         <Banner tone="danger">
-          {error}
-          {errorDetail && <div className="mt-1 break-all text-xs opacity-80">{errorDetail}</div>}
+          <span title={errorDetail ?? undefined}>{error}</span>
         </Banner>
       )}
 
-      {/* Player stat strip */}
-      <Panel className="px-6 py-5">
-        <div className="flex flex-wrap items-center gap-x-10 gap-y-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-accent text-lg font-bold text-on-accent">
+      {/* Player + rank — one big block instead of small parallel cards */}
+      <Panel className="p-8">
+        <div className="mb-8 flex flex-wrap items-center gap-x-12 gap-y-6 border-b border-edge/60 pb-8">
+          <div className="flex items-center gap-4">
+            <span className="flex h-16 w-16 items-center justify-center rounded-md bg-accent text-2xl font-bold text-on-accent">
               {user?.username?.charAt(0)?.toUpperCase() || 'U'}
             </span>
             <div>
-              <div className="text-base font-bold text-ink">{user?.username || 'Player'}</div>
-              <Badge tone="accent" strong>{msg.play.level} {user?.level || 1}</Badge>
+              <div className="text-2xl font-bold text-ink">{user?.username || 'Player'}</div>
+              <div className="mt-1.5">
+                <Badge tone="accent" strong>{msg.play.level} {user?.level || 1}</Badge>
+              </div>
             </div>
           </div>
           <Stat label={msg.play.experience} value={(user?.experience ?? 0).toLocaleString()} size="display" tone="ok" />
           <Stat label={msg.play.rankScore} value={user?.rank_score ?? '—'} size="display" tone="gold" />
         </div>
+        <RankCard embedded rankType={mode.trim() || '1v1'} season={1} winsCount={user?.wins_count} />
       </Panel>
 
-      {/* Rank card (A4) */}
-      <RankCard rankType={mode.trim() || '1v1'} season={1} winsCount={user?.wins_count} />
-
-      {/* Get-started checklist (guidance state, research 04 §A6 first-run
-          checklist) until the first settled match lands */}
-      {(phase === 'idle' || phase === 'joining') && (user?.wins_count ?? 0) === 0 && (
-        <Panel className="px-6 py-5">
-          <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-faint">
-            <Icon as={ListChecks} size={16} />
-            {msg.play.getStartedTitle}
-          </h2>
-          <ul className="space-y-3">
-            <li className="flex items-center gap-3">
-              <Icon as={CheckCircle2} className="text-ok" />
-              <span className="flex-1 text-sm text-ink-muted">{msg.play.getStartedSignIn}</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <Icon as={Circle} className="text-ink-faint" />
-              <span className="flex-1 text-sm text-ink">{msg.play.getStartedQueue}</span>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={findMatch}
-                disabled={phase === 'joining' || mode.trim() === ''}
-              >
-                {msg.play.findMatch}
-              </Button>
-            </li>
-            <li className="flex items-center gap-3">
-              <Icon as={Circle} className="text-ink-faint" />
-              <span className="flex-1 text-sm text-ink">{msg.play.getStartedRankings}</span>
-              {onOpenRankings && (
-                <Button variant="outline" size="sm" onClick={onOpenRankings}>
-                  {msg.play.viewRankings}
-                </Button>
-              )}
-            </li>
-          </ul>
-        </Panel>
-      )}
-
       {/* Queue card */}
-      <Panel className="px-6 py-5">
-        <h2 className="mb-4 text-lg font-bold text-ink">{msg.play.queueCardTitle}</h2>
+      <Panel className="p-8">
+        <h2 className="mb-6 text-2xl font-bold text-ink">{msg.play.queueCardTitle}</h2>
 
         {/* Phase indicator: one glance tells where the cycle stands */}
         {stepIndex >= 0 && (
-          <div className="mb-6">
+          <div className="mb-8">
             <Stepper steps={stepLabels} active={stepIndex} />
           </div>
         )}
 
         {(phase === 'idle' || phase === 'joining') && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <Field label={msg.play.mode} className="w-40">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-end gap-4">
+              <Field label={msg.play.mode} className="w-48">
                 <Input value={mode} onChange={(e) => setMode(e.target.value)} className="font-mono" />
               </Field>
               <Button
                 variant={partyOpen ? 'primary' : 'outline'}
                 onClick={() => setPartyOpen((v) => !v)}
                 aria-expanded={partyOpen}
+                title={msg.play.partyHint}
               >
-                <Icon as={Users} size={16} />
+                <Icon as={Users} size={18} />
                 {msg.play.partyToggle}
               </Button>
             </div>
 
             {partyOpen && (
-              <div className="space-y-3 rounded-md border border-edge bg-base/40 p-4">
-                  <Banner tone="info">{msg.play.partyHint}</Banner>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={msg.play.partyInputPlaceholder}
-                      value={partyInput}
-                      onChange={(e) => setPartyInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addPartyMember();
-                        }
-                      }}
-                      className="font-mono"
-                    />
-                    <Button variant="outline" onClick={addPartyMember}>
-                      <Icon as={Plus} size={16} />
-                      {msg.play.partyAdd}
-                    </Button>
-                  </div>
-                  {partyError && <div className="text-xs font-medium text-danger">{partyError}</div>}
-                  {partyMembers.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {partyMembers.map((uuid) => (
-                        <span
-                          key={uuid}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-raised px-2 py-1 font-mono text-xs text-ink-muted"
-                        >
-                          {uuid}
-                          <button
-                            type="button"
-                            onClick={() => setPartyMembers((prev) => prev.filter((u) => u !== uuid))}
-                            className="text-ink-faint transition-colors duration-150 hover:text-danger"
-                            aria-label={`Remove ${uuid}`}
-                          >
-                            <XCircle size={13} aria-hidden />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
+              <div className="space-y-4 rounded-md bg-raised p-6">
+                <div className="flex gap-3">
+                  <Input
+                    placeholder={msg.play.partyInputPlaceholder}
+                    value={partyInput}
+                    onChange={(e) => setPartyInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addPartyMember();
+                      }
+                    }}
+                    className="font-mono"
+                  />
+                  <Button variant="outline" onClick={addPartyMember}>
+                    <Icon as={Plus} size={18} />
+                    {msg.play.partyAdd}
+                  </Button>
                 </div>
+                {partyError && <div className="text-sm font-medium text-danger">{partyError}</div>}
+                {partyMembers.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {partyMembers.map((uuid) => (
+                      <span
+                        key={uuid}
+                        className="inline-flex items-center gap-2 rounded-md bg-panel px-3 py-1.5 font-mono text-sm text-ink-muted"
+                      >
+                        {uuid}
+                        <button
+                          type="button"
+                          onClick={() => setPartyMembers((prev) => prev.filter((u) => u !== uuid))}
+                          className="text-ink-faint transition-colors duration-150 hover:text-danger"
+                          aria-label={`Remove ${uuid}`}
+                        >
+                          <XCircle size={15} aria-hidden />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             <Button
@@ -607,65 +602,131 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
               size="lg"
               onClick={findMatch}
               disabled={phase === 'joining' || mode.trim() === ''}
-              className="w-full text-base uppercase tracking-widest"
+              className="w-full uppercase tracking-widest"
             >
-              <Icon as={Play} size={20} />
+              <Icon as={Play} size={22} />
               {phase === 'joining' ? msg.play.joining : msg.play.findMatch}
             </Button>
+
+            {/* Get-started checklist (guidance state, research 04 §A6) —
+                folded into the queue block until the first settled match */}
+            {(user?.wins_count ?? 0) === 0 && (
+              <div className="border-t border-edge/60 pt-6">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-ink-faint">
+                  <Icon as={ListChecks} size={18} />
+                  {msg.play.getStartedTitle}
+                </h3>
+                <ul className="space-y-4">
+                  <li className="flex items-center gap-3">
+                    <Icon as={CheckCircle2} size={20} className="text-ok" />
+                    <span className="flex-1 text-base text-ink-muted">{msg.play.getStartedSignIn}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Icon as={Circle} size={20} className="text-ink-faint" />
+                    <span className="flex-1 text-base text-ink">{msg.play.getStartedQueue}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={findMatch}
+                      disabled={phase === 'joining' || mode.trim() === ''}
+                    >
+                      {msg.play.findMatch}
+                    </Button>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Icon as={Circle} size={20} className="text-ink-faint" />
+                    <span className="flex-1 text-base text-ink">{msg.play.getStartedRankings}</span>
+                    {onOpenRankings && (
+                      <Button variant="outline" size="sm" onClick={onOpenRankings}>
+                        {msg.play.viewRankings}
+                      </Button>
+                    )}
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
         {phase === 'queued' && (
-          <div className="space-y-3">
-            <div className="flex items-baseline gap-4">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
               <span className="font-mono text-hero font-bold tabular-nums text-warn">
                 {formatWait(queueEntry?.enqueued_at ?? '', now)}
               </span>
-              <span className="text-sm text-ink-muted">
+              {queueStats && (
+                <div className="flex items-end gap-8">
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-ink-faint">
+                      <Icon as={Users} size={15} />
+                      {msg.play.playersLabel}
+                    </div>
+                    <div className="font-mono text-display font-bold tabular-nums text-ink">
+                      {queueStats.players}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-ink-faint">
+                      <Icon as={Flag} size={15} />
+                      {msg.play.partiesLabel}
+                    </div>
+                    <div className="font-mono text-display font-bold tabular-nums text-ink">
+                      {queueStats.parties}
+                    </div>
+                  </div>
+                  {queueStats.average_wait_seconds > 0 && (
+                    <div>
+                      <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-ink-faint">
+                        <Icon as={Clock} size={15} />
+                        {msg.play.avgWaitLabel}
+                      </div>
+                      <div className="font-mono text-display font-bold tabular-nums text-ink-muted">
+                        {formatSeconds(queueStats.average_wait_seconds)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-base text-ink-muted">
                 {msg.play.waiting} · {queueEntry?.match_type ?? mode}
                 {queueEntry?.party_id ? ` · ${msg.play.partyToggle}` : ''}
               </span>
+              {waitSeconds(queueEntry?.enqueued_at ?? '', now) >= LONG_WAIT_SECS && (
+                <span title={msg.play.queueLongWait}>
+                  <Badge tone="warn"><Icon as={Hourglass} size={14} />{msg.play.longQueueShort}</Badge>
+                </span>
+              )}
             </div>
-            {waitSeconds(queueEntry?.enqueued_at ?? '', now) >= LONG_WAIT_SECS && (
-              <div className="text-xs text-ink-faint">{msg.play.queueLongWait}</div>
-            )}
-            {queueStats && (
-              <div className="font-mono text-xs tabular-nums text-ink-faint">
-                {msg.play.queueStatsTemplate
-                  .replace('{players}', String(queueStats.players))
-                  .replace('{parties}', String(queueStats.parties))}
-                {queueStats.average_wait_seconds > 0 &&
-                  ` · ${msg.play.avgWaitTemplate.replace('{time}', formatSeconds(queueStats.average_wait_seconds))}`}
-              </div>
-            )}
             <Button variant="outline" onClick={cancelQueue}>
-              <Icon as={XCircle} size={16} />
+              <Icon as={XCircle} size={18} />
               {msg.play.cancelQueue}
             </Button>
           </div>
         )}
 
         {(phase === 'found' || phase === 'in_match') && activeGroup && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div
               className={`text-display font-bold tracking-tight ${
                 phase === 'found' ? 'text-ok' : 'text-info'
               }`}
             >
               {phase === 'found' ? msg.play.stateFound : msg.play.stateInMatch}
-              <span className="ml-3 text-base font-semibold text-ink-muted">
+              <span className="ml-4 text-xl font-semibold text-ink-muted">
                 {msg.play.groupLabel} #{activeGroup.group_id}
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {teamsOfGroup(activeGroup).map(([teamId, members]) => (
-                <div key={teamId} className="flex flex-wrap items-center gap-2">
+                <div key={teamId} className="flex flex-wrap items-center gap-2.5">
                   <Badge tone="accent" strong>{msg.common.team} {teamId}</Badge>
                   {members.map((m) => (
                     <span
                       key={m.uid}
-                      className="rounded-md border border-edge bg-raised px-2 py-1 font-mono text-xs text-ink-muted"
+                      className="rounded-md bg-raised px-3 py-1.5 font-mono text-sm text-ink-muted"
                     >
                       #{m.uid} · {m.rank_score}
                     </span>
@@ -675,110 +736,125 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
             </div>
 
             {phase === 'found' && (
-              <Inset className="space-y-3 p-4">
+              <Inset className="space-y-4 p-6">
                 {activeGroup.join_target ? (
-                  <>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="rounded-md border border-edge bg-base px-3 py-1.5 font-mono text-sm font-medium text-ink">
-                        {activeGroup.join_target.host}:{activeGroup.join_target.port}
-                      </span>
-                      <Button variant="primary" size="sm" onClick={copyGroupAddress}>
-                        <Icon as={Copy} size={14} />
-                        {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
-                      </Button>
-                    </div>
-                    <p className="text-xs leading-relaxed text-ink-faint">{msg.play.joinServerHint}</p>
-                  </>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <span
+                      title={msg.play.joinServerHint}
+                      className="cursor-help rounded-md bg-base px-4 py-2 font-mono text-base font-medium text-ink"
+                    >
+                      {activeGroup.join_target.host}:{activeGroup.join_target.port}
+                    </span>
+                    <Button variant="primary" onClick={copyGroupAddress}>
+                      <Icon as={Copy} size={16} />
+                      {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
+                    </Button>
+                  </div>
                 ) : (
-                  <p className="text-sm leading-relaxed text-ink-muted">{msg.play.joinServerMissing}</p>
+                  <span title={msg.play.joinServerMissing} className="cursor-help text-base text-ink-muted">
+                    <Icon as={Info} size={16} className="mr-2 inline text-ink-faint" />
+                    {msg.play.noAddressShort}
+                  </span>
                 )}
               </Inset>
             )}
 
             {phase === 'in_match' && (
-              <p className="text-sm text-ink-muted">{msg.play.waitingResults}</p>
+              <div title={msg.play.waitingResults} className="flex items-center gap-2 text-base text-ink-muted">
+                <Icon as={Hourglass} size={18} className="text-info" />
+                {msg.play.resultsPending}
+              </div>
             )}
 
             {/* Client-side exit: the formed group itself stays on the
                 server; dismiss only stops tracking it here. */}
             <div>
-              <Button variant="ghost" size="sm" onClick={resetCycle}>
-                {msg.play.dismissMatch}
-              </Button>
-              <p className="mt-1 text-xs text-ink-faint">{msg.play.dismissHint}</p>
+              <span title={msg.play.dismissHint}>
+                <Button variant="ghost" onClick={resetCycle}>
+                  {msg.play.dismissMatch}
+                </Button>
+              </span>
             </div>
           </div>
         )}
 
         {phase === 'settled' && settledMatch && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon as={CheckCircle2} className="text-ok" size={24} />
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Icon as={CheckCircle2} className="text-ok" size={30} />
               <span className="text-display font-bold tracking-tight text-ink">
                 {msg.play.matchRecorded}
               </span>
-              <span className="font-mono text-lg text-ink-muted">#{settledMatch.id}</span>
+              <span className="font-mono text-xl text-ink-muted">#{settledMatch.id}</span>
             </div>
-            <div className="flex gap-3">
-              <Button variant="primary" onClick={() => onViewMatch(settledMatch.id)}>
+            <div className="flex gap-4">
+              <Button variant="primary" size="lg" onClick={() => onViewMatch(settledMatch.id)}>
                 {msg.play.viewDetails}
               </Button>
-              <Button variant="outline" onClick={resetCycle}>
+              <Button variant="outline" size="lg" onClick={resetCycle}>
                 {msg.play.queueAgain}
               </Button>
             </div>
 
             {/* Match handoff (INTEROP-SPEC v1) */}
             {handoff && (
-              <Inset className="space-y-3 p-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-ink-muted">
-                  {msg.handoff.title}
-                </h3>
-
-                {handoff.state === 'delivering' && <Banner tone="info">{msg.handoff.delivering}</Banner>}
-                {handoff.state === 'waiting_receiver' && <Banner tone="info">{msg.handoff.waitingReceiver}</Banner>}
-                {handoff.state === 'delivered' && <Banner tone="ok">{msg.handoff.delivered}</Banner>}
-                {(handoff.state === 'busy' ||
-                  handoff.state === 'timeout' ||
-                  handoff.state === 'no_receiver' ||
-                  handoff.state === 'version_mismatch' ||
-                  handoff.state === 'error') && (
-                  <Banner
-                    tone="warn"
-                    action={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => startHandoff(settledMatch, activeGroup?.join_target)}
+              <Inset className="p-6">
+                {(() => {
+                  const hv = handoffView(handoff.state, handoff.detail);
+                  const toneText =
+                    hv.tone === 'ok' ? 'text-ok' : hv.tone === 'warn' ? 'text-warn' : 'text-info';
+                  const retryable =
+                    handoff.state === 'busy' ||
+                    handoff.state === 'timeout' ||
+                    handoff.state === 'no_receiver' ||
+                    handoff.state === 'version_mismatch' ||
+                    handoff.state === 'error';
+                  return (
+                    <div className="flex flex-wrap items-center gap-4">
+                      <span
+                        title={hv.full}
+                        className={`flex cursor-help items-center gap-2.5 text-base font-semibold ${toneText}`}
                       >
-                        {msg.handoff.retry}
-                      </Button>
-                    }
-                  >
-                    {handoff.state === 'busy' && msg.handoff.busy}
-                    {handoff.state === 'timeout' && msg.handoff.timeout}
-                    {handoff.state === 'no_receiver' && msg.handoff.noReceiver}
-                    {handoff.state === 'version_mismatch' && msg.handoff.versionMismatch}
-                    {handoff.state === 'error' && (handoff.detail || msg.handoff.error)}
-                  </Banner>
-                )}
-                {handoff.state === 'missing_config' && <Banner tone="info">{msg.handoff.missingConfig}</Banner>}
+                        <Icon
+                          as={hv.tone === 'ok' ? CheckCircle2 : hv.tone === 'warn' ? TriangleAlert : LoaderCircle}
+                          size={20}
+                        />
+                        {hv.short}
+                      </span>
+                      {retryable && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startHandoff(settledMatch, activeGroup?.join_target)}
+                        >
+                          {msg.handoff.retry}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {handoff.host && handoff.port && handoff.state !== 'delivered' && (
-                  <div className="space-y-2">
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
                     {!handoff.game_reachable && (
-                      <div className="text-xs font-medium text-warn">{msg.handoff.gameUnreachable}</div>
-                    )}
-                    <p className="text-xs text-ink-faint">{msg.handoff.manualJoinHint}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-md border border-edge bg-base px-3 py-1.5 font-mono text-sm text-ink">
-                        {handoff.host}:{handoff.port}
+                      <span
+                        title={msg.handoff.gameUnreachable}
+                        className="flex cursor-help items-center gap-1.5 text-sm font-medium text-warn"
+                      >
+                        <Icon as={TriangleAlert} size={15} />
+                        {msg.handoff.gameUnreachableShort}
                       </span>
-                      <Button variant="outline" size="sm" onClick={copyJoinAddress}>
-                        <Icon as={Copy} size={14} />
-                        {copied ? msg.handoff.copied : msg.handoff.copy}
-                      </Button>
-                    </div>
+                    )}
+                    <span
+                      title={msg.handoff.manualJoinHint}
+                      className="cursor-help rounded-md bg-base px-4 py-2 font-mono text-base text-ink"
+                    >
+                      {handoff.host}:{handoff.port}
+                    </span>
+                    <Button variant="outline" onClick={copyJoinAddress}>
+                      <Icon as={Copy} size={16} />
+                      {copied ? msg.handoff.copied : msg.handoff.copy}
+                    </Button>
                   </div>
                 )}
               </Inset>
@@ -788,41 +864,41 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
       </Panel>
 
       {/* Recent matches */}
-      <Panel className="px-6 py-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-ink">{msg.play.recentMatches}</h2>
+      <Panel className="p-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-ink">{msg.play.recentMatches}</h2>
           <button
             type="button"
             onClick={refreshRecent}
             title={msg.common.refresh}
-            className="rounded-md p-2 text-ink-faint transition-colors duration-150 hover:bg-raised hover:text-ink"
+            className="rounded-md p-2.5 text-ink-faint transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <Icon as={RefreshCw} size={16} />
+            <Icon as={RefreshCw} size={18} />
           </button>
         </div>
         {recentLoading ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+              <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
         ) : recentMatches.length === 0 ? (
-          <EmptyState icon={<Icon as={History} size={34} />} title={msg.play.noRecentMatches} />
+          <EmptyState icon={<Icon as={History} size={40} />} title={msg.play.noRecentMatches} />
         ) : (
-          <ul className="divide-y divide-edge/70">
+          <ul className="divide-y divide-edge/50">
             {recentMatches.map((m) => (
               <li key={m.id}>
                 <button
                   type="button"
                   onClick={() => onViewMatch(m.id)}
-                  className="flex w-full items-center gap-3 rounded-md px-2 py-3 text-left transition-colors duration-150 hover:bg-raised"
+                  className="flex w-full items-center gap-4 rounded-md px-3 py-4 text-left transition-colors duration-150 hover:bg-raised"
                 >
                   <Badge tone="accent" className="font-mono">{m.match_type}</Badge>
-                  <span className="flex-1 truncate text-sm text-ink">{m.map_name || '—'}</span>
-                  <span className="font-mono text-xs tabular-nums text-ink-faint">
+                  <span className="flex-1 truncate text-base text-ink">{m.map_name || '—'}</span>
+                  <span className="font-mono text-sm tabular-nums text-ink-faint">
                     {new Date(m.finished_at).toLocaleString()}
                   </span>
-                  <Icon as={ChevronRight} size={16} className="text-ink-faint" />
+                  <Icon as={ChevronRight} size={18} className="text-ink-faint" />
                 </button>
               </li>
             ))}
