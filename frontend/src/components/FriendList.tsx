@@ -12,14 +12,15 @@ import {
   Chip,
   IconButton,
   Alert,
-  CircularProgress,
+  Skeleton,
+  Button,
   Divider
 } from '@mui/material';
 import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { GetFriends } from '../../wailsjs/go/main/App';
-import { t } from '../i18n';
+import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
 
 interface Friend {
@@ -51,8 +52,8 @@ export default function FriendList() {
       // Go returns models.SuccessEnvelope { success, message, data, meta }
       const data = resp?.data ?? resp;
       setFriends(data || []);
-    } catch (err: unknown) {
-      setError((err instanceof Error ? err.message || String(err) : String(err)) || msg.friends.loadError);
+    } catch {
+      setError(loadErrorMessage(t().common.dataFriends));
     } finally {
       setLoading(false);
     }
@@ -78,8 +79,15 @@ export default function FriendList() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress sx={{ color: '#e94560' }} />
+      <Box sx={{ p: 3 }}>
+        <Skeleton width={200} height={48} sx={{ mb: 3, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+        <Card sx={{ backgroundColor: '#16213e', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <Box sx={{ p: 2 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} height={56} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
+            ))}
+          </Box>
+        </Card>
       </Box>
     );
   }
@@ -104,7 +112,15 @@ export default function FriendList() {
       </Alert>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}
+          action={
+            <Button color="inherit" size="small" onClick={fetchFriends}>
+              {msg.common.retry}
+            </Button>
+          }
+        >
           {error}
         </Alert>
       )}

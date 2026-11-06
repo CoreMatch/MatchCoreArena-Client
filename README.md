@@ -7,7 +7,7 @@ The client is **read-only**: it displays your match history, rankings and friend
 ## Features
 
 - **User Authentication** — Login with email/password, TOTP verification, token management
-- **My Matches** — Browse your recorded match history with per-match detail (participants, server-computed score deltas)
+- **Career** — Browse your recorded match history with per-match detail (participants, kills/deaths/survival, server-computed score deltas)
 - **Rankings** — View top rankings by type and season, see your current ranking
 - **Friend List** — View your friends (read-only)
 - **User Profile** — View your level, experience, and rank score
@@ -35,7 +35,7 @@ MatchCoreArena-Client/
 │   └── services/           # API service layer
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # React views (Login, Home, My Matches, Friends, Rankings)
+│   │   ├── components/     # React views (Login, Home, Career, Friends, Rankings)
 │   │   ├── App.tsx         # Main app shell with navigation drawer
 │   │   └── main.tsx        # React entry point
 │   ├── index.html

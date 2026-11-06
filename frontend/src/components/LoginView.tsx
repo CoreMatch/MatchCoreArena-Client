@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Login as LoginIcon } from '@mui/icons-material';
 import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
+import { t } from '../i18n';
 
 export interface TokenData {
   access_token: string;
@@ -23,18 +24,27 @@ interface LoginViewProps {
 }
 
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
+  const msg = t();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [showTotp, setShowTotp] = useState(false);
   const [loginTicket, setLoginTicket] = useState('');
   const [totpCode, setTotpCode] = useState('');
+
+  const fail = (message: string, err: unknown) => {
+    setError(message);
+    const raw = err instanceof Error ? err.message || String(err) : String(err);
+    setErrorDetail(raw && raw !== message ? raw : null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
 
     try {
       const resp = await Login(email, password);
@@ -53,7 +63,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         throw new Error(resp?.message || 'Unexpected login response');
       }
     } catch (err: unknown) {
-      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Login failed');
+      fail(msg.login.failed, err);
     } finally {
       setLoading(false);
     }
@@ -63,6 +73,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
 
     try {
       const tokenData = await VerifyTOTP(loginTicket, totpCode);
@@ -74,7 +85,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         throw new Error('Unexpected TOTP response');
       }
     } catch (err: unknown) {
-      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'TOTP verification failed');
+      fail(msg.login.totpInvalid, err);
     } finally {
       setLoading(false);
     }
@@ -112,6 +123,11 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
           {error && (
             <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
               {error}
+              {errorDetail && (
+                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.8 }}>
+                  {errorDetail}
+                </Typography>
+              )}
             </Alert>
           )}
 

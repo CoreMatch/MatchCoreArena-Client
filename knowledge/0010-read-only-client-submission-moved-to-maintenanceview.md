@@ -19,12 +19,16 @@ was relocated to the maintenance panel (MatchCoreArena-MaintenanceView).
   server's authoritative numeric uid (`models.User.UID`,
   `models.Ranking.UserUID`); the former UUID-string lookup was removed.
 - The read-only query pages are:
-  - My Matches (`frontend/src/components/MyMatchesView.tsx`): paginated
+  - Career (`frontend/src/components/MyMatchesView.tsx`): paginated
     `GET /api/matches/me` list plus per-match detail via `GET /api/matches/{id}`
-    (participants and server-computed score deltas, rendered verbatim);
+    (participants with kills/deaths/survival and server-computed score
+    deltas, rendered verbatim; the signed-in player's row and result are
+    highlighted);
   - Rankings (`frontend/src/components/RankingView.tsx`): leaderboards and
     personal rank per type and season;
   - Friends (`frontend/src/components/FriendList.tsx`): view-only friend list.
+  All three follow the unified state convention: skeleton loading, empty
+  state with the next action, and a one-sentence load error with Retry.
 - No write path remains in the Go layer: match reporting, virtual-match
   submission, matchmaking join/leave, team management, friend request
   mutations and experience grants have no binding, service, or model in
