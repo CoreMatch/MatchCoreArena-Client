@@ -28,6 +28,12 @@ Record the following verified inventory:
    the release workflow runs a single `ubuntu-latest` job with no cross-
    compilation, yet uploads `build/bin/MatchCoreArenaClient.exe`. Where the
    `.exe` comes from is not verifiable in the repo (not verified).
+5. **Friend and team endpoints answer `501 mca_not_implemented`.** The
+   server's friend/team features are explicitly unimplemented (author
+   decision; MatchCoreArena-Server knowledge 0010), so the FriendList UI
+   and the team bindings (`CreateTeam` and friends) receive a typed 501
+   error envelope instead of data. The UI surfaces the error; no fake
+   friend/team data is returned anymore.
 
 ## Consequences
 - Items 1–3 are dead or broken surface area: they mislead readers of the
@@ -35,6 +41,8 @@ Record the following verified inventory:
   working UI path today.
 - Item 4 means the release pipeline cannot be confirmed working from inside
   the repository.
+- Item 5 means the friend/team UI surfaces show an error until the server
+  implements the features; this is intentional (no fake successes).
 - Costs/limitations: fixing any item requires a direction choice (e.g. for
   item 1, switch the client to numeric UIDs or add a server-side UUID
   lookup), which is explicitly deferred (0006). This entry only records
@@ -48,3 +56,4 @@ Record the following verified inventory:
 - USAGE.md::Automatic ("Automatic token refresh" feature claim)
 - .github/workflows/release.yml::ubuntu (single job, `runs-on: ubuntu-latest`), .github/workflows/release.yml::exe (uploads `MatchCoreArenaClient.exe`)
 - Cross-reference: 0006 (all items listed there as pending author decisions)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0010-friend-and-team-endpoints-are-explicitly-unimplemented.md (friend/team endpoints answer 501 mca_not_implemented)
