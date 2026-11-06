@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Card, CardContent, Chip, Alert, Button, Skeleton } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, Skeleton } from '@mui/material';
 import { EmojiEvents as TrophyIcon } from '@mui/icons-material';
 import { GetMyRanking, GetTopRankings } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
+import { accentTint } from '../theme';
+import { EmptyState, ErrorState } from './StateViews';
 
 interface RankCardProps {
   rankType: string;
@@ -16,6 +18,12 @@ interface MyRank {
   rank_position: number;
   season: number;
 }
+
+// TOTAL_PROBE_LIMIT bounds the probe used to learn the ranked population.
+// When the probe returns fewer rows than requested, the total is exact and a
+// "Top X%" positioning can be shown; otherwise only the absolute rank is
+// shown (a total-count field is a backend enhancement, see PENDING-DECISIONS).
+const TOTAL_PROBE_LIMIT = 1000;
 
 function topPercentLabel(position: number, total: number): string | null {
   if (total <= 0 || position <= 0) return null;
@@ -36,9 +44,6 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
     setMyRank(null);
     setTotalKnown(null);
 
-    // 1. Fetch personal ranking. The Go backend translates the server's
-    // typed 404 mca_ranking_not_found into (nil, nil); any other error is
-    // propagated as a fault.
     try {
       const resp = await authFetch(() => GetMyRanking(rankType, season));
       const data = resp?.data ?? resp;
@@ -53,16 +58,13 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
       return;
     }
 
-    // 2. Fetch total population count for the "Top X%" positioning
-    // (silent on failure: the absolute rank stays displayable without it).
+    // Population probe for the "Top X%" positioning (silent on failure:
+    // the absolute rank stays displayable without it).
     try {
-      const probe = await authFetch(() => GetTopRankings(rankType, 1, season));
-      const response = probe?.data ?? probe;
-      if (!Array.isArray(response) && response?.total_count !== undefined) {
-        setTotalKnown(response.total_count);
-      } else if (Array.isArray(response)) {
-        // Legacy flat-array fallback
-        setTotalKnown(response.length);
+      const probe = await authFetch(() => GetTopRankings(rankType, TOTAL_PROBE_LIMIT, season));
+      const rows = probe?.data ?? probe;
+      if (Array.isArray(rows) && rows.length < TOTAL_PROBE_LIMIT) {
+        setTotalKnown(rows.length);
       }
     } catch {
       setTotalKnown(null);
@@ -75,10 +77,10 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
 
   if (state === 'loading') {
     return (
-      <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+      <Card sx={{ height: '100%' }}>
         <CardContent>
-          <Skeleton height={28} width={160} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-          <Skeleton height={44} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
+          <Skeleton height={28} width={160} />
+          <Skeleton height={44} />
         </CardContent>
       </Card>
     );
@@ -86,31 +88,21 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
 
   if (state === 'error') {
     return (
-      <Alert
-        severity="error"
-        sx={{ backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}
-        action={
-          <Button color="inherit" size="small" onClick={load}>
-            {msg.common.retry}
-          </Button>
-        }
-      >
-        {loadErrorMessage(msg.rankCard.loadErrorData)}
-      </Alert>
+      <Card sx={{ height: '100%' }}>
+        <ErrorState message={loadErrorMessage(msg.rankCard.loadErrorData)} onRetry={load} />
+      </Card>
     );
   }
 
   if (state === 'unranked' || !myRank) {
     return (
-      <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-        <CardContent sx={{ textAlign: 'center', py: 4 }}>
-          <TrophyIcon sx={{ fontSize: 36, color: 'rgba(255,255,255,0.3)', mb: 1 }} />
-          <Typography variant="h6" sx={{ mb: 0.5 }}>
-            {msg.rankCard.unrankedTitle}
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-            {msg.rankCard.unrankedHint}
-          </Typography>
+      <Card sx={{ height: '100%' }}>
+        <CardContent>
+          <EmptyState
+            icon={<TrophyIcon />}
+            title={msg.rankCard.unrankedTitle}
+            hint={msg.rankCard.unrankedHint}
+          />
         </CardContent>
       </Card>
     );
@@ -119,44 +111,36 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
   const topLabel = totalKnown !== null ? topPercentLabel(myRank.rank_position, totalKnown) : null;
 
   return (
-    <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+    <Card sx={{ height: '100%' }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrophyIcon sx={{ color: '#ffd700' }} />
+            <TrophyIcon sx={{ color: 'secondary.main' }} />
             <Typography variant="h6">{msg.rankCard.title}</Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Chip
-              label={`${msg.career.detailType}: ${rankType}`}
-              size="small"
-              sx={{ backgroundColor: 'rgba(233, 69, 96, 0.2)', color: '#e94560' }}
-            />
-            <Chip
-              label={`${msg.rankCard.season} ${season}`}
-              size="small"
-              sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-            />
+            <Chip label={`${msg.career.detailType}: ${rankType}`} size="small" sx={accentTint} />
+            <Chip label={`${msg.rankCard.season} ${season}`} size="small" />
           </Box>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'baseline' }}>
           <Box>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            <Typography variant="body2" color="text.secondary">
               {msg.rankCard.score}
             </Typography>
-            <Typography variant="h4" sx={{ color: '#ffd700', fontWeight: 'bold' }}>
+            <Typography variant="h4" sx={{ color: 'secondary.main' }}>
               {myRank.score.toLocaleString()}
             </Typography>
           </Box>
           <Box>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            <Typography variant="body2" color="text.secondary">
               {msg.rankCard.rank}
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h4">
               #{myRank.rank_position}
               {topLabel && (
-                <Typography component="span" variant="body2" sx={{ ml: 1, color: '#4ecca3' }}>
+                <Typography component="span" variant="body2" sx={{ ml: 1, color: 'success.main' }}>
                   {topLabel}
                 </Typography>
               )}
@@ -164,12 +148,10 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
           </Box>
           {winsCount !== undefined && (
             <Box>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+              <Typography variant="body2" color="text.secondary">
                 {msg.rankCard.wins}
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {winsCount}
-              </Typography>
+              <Typography variant="h4">{winsCount}</Typography>
             </Box>
           )}
         </Box>
