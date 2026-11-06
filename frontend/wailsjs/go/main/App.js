@@ -54,8 +54,8 @@ export function Logout() {
   return window['go']['main']['App']['Logout']();
 }
 
-export function PrepareHandoff(arg1, arg2, arg3) {
-  return window['go']['main']['App']['PrepareHandoff'](arg1, arg2, arg3);
+export function PrepareHandoff(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['PrepareHandoff'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function RefreshToken(arg1) {

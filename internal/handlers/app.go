@@ -135,14 +135,20 @@ func (h *AppHandler) GetMatchmakingStatus() (interface{}, error) {
 // carries credentials; it only delivers the settled match summary plus the
 // player-configured game server address to SamuelClient on this machine.
 
-func (h *AppHandler) PrepareHandoff(matchID int64, matchType, mapName string) (interface{}, error) {
+// PrepareHandoff starts the handoff delivery for a settled match.
+// serverHost/serverPort carry the join_target the arena server attached to
+// the formed group (may be empty); the local game-server configuration is
+// the fallback.
+func (h *AppHandler) PrepareHandoff(matchID int64, matchType, mapName, serverHost string, serverPort int) (interface{}, error) {
 	if h.interop == nil {
 		return nil, fmt.Errorf("match handoff is unavailable on this system")
 	}
 	return h.interop.PrepareHandoff(interop.MatchInfo{
-		MatchID:   matchID,
-		MatchType: matchType,
-		MapName:   mapName,
+		MatchID:    matchID,
+		MatchType:  matchType,
+		MapName:    mapName,
+		ServerHost: serverHost,
+		ServerPort: serverPort,
 	}), nil
 }
 

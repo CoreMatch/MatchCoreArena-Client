@@ -142,9 +142,9 @@ const en = {
     about: 'About',
     aboutText:
       'MatchCoreArena Client — companion app for the MatchCoreArena arena server: career, rankings, friends and matchmaking queue.',
-    gameServer: 'Game Server',
+    gameServer: 'Game Server (fallback)',
     gameServerHint:
-      'Where matches are played. Used by the automatic handoff to SamuelClient and for the manual-join address.',
+      'Optional fallback. Matches normally carry their own server address from the arena server; this is only used when a formed match does not provide one.',
     gameServerHost: 'Host',
     gameServerPort: 'Port',
     save: 'Save',
@@ -161,7 +161,8 @@ const en = {
     timeout: 'SamuelClient did not come up in time.',
     noReceiver: 'SamuelClient is not installed or not registered for matchcore:// links.',
     versionMismatch: 'Version mismatch between the two apps — update the out-of-date one.',
-    missingConfig: 'Set the game server address in Settings to enable the automatic handoff.',
+    missingConfig:
+      'The arena server did not provide a game server address for this match, and no fallback is set. Add one in Settings or join manually below.',
     error: 'Handoff failed.',
     retry: 'Retry Handoff',
     manualJoin: 'Join manually',

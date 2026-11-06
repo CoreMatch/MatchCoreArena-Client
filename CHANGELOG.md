@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keep a copyable host:port manual-join fallback. Linux-first; Windows/macOS
   degrade to manual join (documented gap)
 
+### Changed (handoff join target)
+- The handoff now prefers the `join_target` the arena server attaches to the
+  formed group (server contract v1.6.0); the local Settings address is the
+  fallback and is documented as optional
+
 ### Changed
 - Client is now read-only for all business data: it only performs session
   auth calls and read queries against the MatchCoreArena server

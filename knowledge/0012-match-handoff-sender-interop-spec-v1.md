@@ -34,9 +34,13 @@ a loopback-only, token-authenticated channel plus a credential-free
   and a copyable `host:port` manual-join fallback so the match result is
   never lost. A 3-second TCP dial reports game-server reachability as a
   warning without blocking delivery.
-- The game server address is not provided by the arena server; it is local
-  configuration (`game_server_host`/`game_server_port` in
-  `~/.matchcorearena/config.json`, editable in Settings).
+- The join target precedence (server contract v1.6.0): the arena server
+  attaches `join_target: {host, port}` to each formed group in
+  `GET /api/matchmaking/status` (omitted when unconfigured). The sender
+  uses it when present and valid, falls back to the local configuration
+  (`game_server_host`/`game_server_port` in
+  `~/.matchcorearena/config.json`, editable in Settings as an optional
+  fallback), and only then degrades to the manual-join state.
 
 ## Consequences
 - Platform gaps (INTEROP-SPEC §10): deep-link wake-up and the pid

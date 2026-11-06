@@ -27,7 +27,7 @@ export function Login(arg1:string,arg2:string):Promise<any>;
 
 export function Logout():Promise<void>;
 
-export function PrepareHandoff(arg1:number,arg2:string,arg3:string):Promise<any>;
+export function PrepareHandoff(arg1:number,arg2:string,arg3:string,arg4:string,arg5:number):Promise<any>;
 
 export function RefreshToken(arg1:string):Promise<any>;
 
