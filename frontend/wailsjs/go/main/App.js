@@ -10,6 +10,14 @@ export function GetFriends() {
   return window['go']['main']['App']['GetFriends']();
 }
 
+export function GetGameServerConfig() {
+  return window['go']['main']['App']['GetGameServerConfig']();
+}
+
+export function GetHandoffStatus() {
+  return window['go']['main']['App']['GetHandoffStatus']();
+}
+
 export function GetMatch(arg1) {
   return window['go']['main']['App']['GetMatch'](arg1);
 }
@@ -46,8 +54,16 @@ export function Logout() {
   return window['go']['main']['App']['Logout']();
 }
 
+export function PrepareHandoff(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PrepareHandoff'](arg1, arg2, arg3);
+}
+
 export function RefreshToken(arg1) {
   return window['go']['main']['App']['RefreshToken'](arg1);
+}
+
+export function SetGameServerConfig(arg1, arg2) {
+  return window['go']['main']['App']['SetGameServerConfig'](arg1, arg2);
 }
 
 export function SetToken(arg1) {

@@ -5,6 +5,10 @@ export function GetCurrentUser():Promise<any>;
 
 export function GetFriends():Promise<any>;
 
+export function GetGameServerConfig():Promise<any>;
+
+export function GetHandoffStatus():Promise<any>;
+
 export function GetMatch(arg1:number):Promise<any>;
 
 export function GetMyMatches(arg1:number,arg2:number):Promise<any>;
@@ -23,7 +27,11 @@ export function Login(arg1:string,arg2:string):Promise<any>;
 
 export function Logout():Promise<void>;
 
+export function PrepareHandoff(arg1:number,arg2:string,arg3:string):Promise<any>;
+
 export function RefreshToken(arg1:string):Promise<any>;
+
+export function SetGameServerConfig(arg1:string,arg2:number):Promise<void>;
 
 export function SetToken(arg1:string):Promise<void>;
 

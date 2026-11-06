@@ -27,6 +27,8 @@ import {
   JoinMatchmaking,
   LeaveMatchmaking,
   GetMyMatches,
+  PrepareHandoff,
+  GetHandoffStatus,
 } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
 import { authFetch } from '../session';
@@ -71,11 +73,23 @@ interface MatchSummary {
   finished_at: string;
 }
 
+// HandoffStatus mirrors the Go interop.Status delivered over the binding.
+interface HandoffStatus {
+  state: string;
+  handoff_id?: string;
+  match_id?: string;
+  host?: string;
+  port?: number;
+  game_reachable: boolean;
+  detail?: string;
+}
+
 // Queue phases of one matchmaking cycle:
 // idle → queued (wait timer) → found → in_match → settled
 type QueuePhase = 'idle' | 'joining' | 'queued' | 'found' | 'in_match' | 'settled';
 
 const POLL_MS = 3000;
+const HANDOFF_POLL_MS = 2000;
 
 function normalizeUuid(raw: string): string {
   return raw.replace(/-/g, '').toLowerCase();
@@ -113,6 +127,12 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
   const [recentMatches, setRecentMatches] = useState<MatchSummary[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
+
+  // Match handoff (INTEROP-SPEC v1 sender side): started automatically once
+  // a cycle settles; never carries credentials.
+  const [handoff, setHandoff] = useState<HandoffStatus | null>(null);
+  const [copied, setCopied] = useState(false);
+  const handoffStartedFor = useRef<number | null>(null);
 
   // Cycle snapshots: groups known before joining and the highest match id
   // seen before joining. A new group/match beyond these snapshots drives the
@@ -272,8 +292,54 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
     setActiveGroup(null);
     setSettledMatch(null);
     setQueueEntry(null);
+    setHandoff(null);
+    handoffStartedFor.current = null;
     baselineGroupIds.current = new Set();
     maxKnownMatchId.current = 0;
+  };
+
+  const startHandoff = useCallback(async (m: MatchSummary) => {
+    try {
+      const resp = await authFetch(() => PrepareHandoff(m.id, m.match_type, m.map_name ?? ''));
+      setHandoff((resp?.data ?? resp) as HandoffStatus);
+    } catch {
+      setHandoff({ state: 'error', game_reachable: false });
+    }
+  }, []);
+
+  // Auto-start the handoff once per settled match.
+  useEffect(() => {
+    if (phase === 'settled' && settledMatch && handoffStartedFor.current !== settledMatch.id) {
+      handoffStartedFor.current = settledMatch.id;
+      startHandoff(settledMatch);
+    }
+  }, [phase, settledMatch, startHandoff]);
+
+  // Poll transient handoff states until delivery settles.
+  useEffect(() => {
+    if (!handoff || (handoff.state !== 'delivering' && handoff.state !== 'waiting_receiver')) {
+      return;
+    }
+    const handle = setInterval(async () => {
+      try {
+        const resp = await authFetch(() => GetHandoffStatus());
+        setHandoff((resp?.data ?? resp) as HandoffStatus);
+      } catch {
+        // transient — the next tick retries
+      }
+    }, HANDOFF_POLL_MS);
+    return () => clearInterval(handle);
+  }, [handoff?.state]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const copyJoinAddress = async () => {
+    if (!handoff?.host || !handoff?.port) return;
+    try {
+      await navigator.clipboard.writeText(`${handoff.host}:${handoff.port}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable — the address stays visible for manual copy.
+    }
   };
 
   const addPartyMember = () => {
@@ -545,6 +611,81 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                       {msg.play.queueAgain}
                     </Button>
                   </Stack>
+
+                  {/* Match handoff (INTEROP-SPEC v1) */}
+                  {handoff && (
+                    <Box sx={{ mt: 3, p: 2, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                        {msg.handoff.title}
+                      </Typography>
+
+                      {handoff.state === 'delivering' && (
+                        <Alert severity="info" sx={{ backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
+                          {msg.handoff.delivering}
+                        </Alert>
+                      )}
+                      {handoff.state === 'waiting_receiver' && (
+                        <Alert severity="info" sx={{ backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
+                          {msg.handoff.waitingReceiver}
+                        </Alert>
+                      )}
+                      {handoff.state === 'delivered' && (
+                        <Alert severity="success" sx={{ backgroundColor: 'rgba(102,187,106,0.1)', color: '#a5d6a7' }}>
+                          {msg.handoff.delivered}
+                        </Alert>
+                      )}
+                      {(handoff.state === 'busy' ||
+                        handoff.state === 'timeout' ||
+                        handoff.state === 'no_receiver' ||
+                        handoff.state === 'version_mismatch' ||
+                        handoff.state === 'error') && (
+                        <Alert
+                          severity="warning"
+                          sx={{ backgroundColor: 'rgba(255,167,38,0.1)', color: '#ffcc80' }}
+                          action={
+                            <Button color="inherit" size="small" onClick={() => startHandoff(settledMatch)}>
+                              {msg.handoff.retry}
+                            </Button>
+                          }
+                        >
+                          {handoff.state === 'busy' && msg.handoff.busy}
+                          {handoff.state === 'timeout' && msg.handoff.timeout}
+                          {handoff.state === 'no_receiver' && msg.handoff.noReceiver}
+                          {handoff.state === 'version_mismatch' && msg.handoff.versionMismatch}
+                          {handoff.state === 'error' && (handoff.detail || msg.handoff.error)}
+                        </Alert>
+                      )}
+                      {handoff.state === 'missing_config' && (
+                        <Alert severity="info" sx={{ backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
+                          {msg.handoff.missingConfig}
+                        </Alert>
+                      )}
+
+                      {handoff.host && handoff.port && handoff.state !== 'delivered' && (
+                        <Box sx={{ mt: 2 }}>
+                          {!handoff.game_reachable && (
+                            <Typography variant="caption" sx={{ color: '#ffcc80', display: 'block', mb: 1 }}>
+                              {msg.handoff.gameUnreachable}
+                            </Typography>
+                          )}
+                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+                            {msg.handoff.manualJoinHint}
+                          </Typography>
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontFamily: 'monospace', color: 'white', backgroundColor: '#0f3460', px: 1.5, py: 0.5, borderRadius: 1 }}
+                            >
+                              {handoff.host}:{handoff.port}
+                            </Typography>
+                            <Button size="small" onClick={copyJoinAddress} sx={{ color: '#e94560' }}>
+                              {copied ? msg.handoff.copied : msg.handoff.copy}
+                            </Button>
+                          </Stack>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
                 </Box>
               )}
             </CardContent>

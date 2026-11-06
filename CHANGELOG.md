@@ -35,7 +35,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recent matches
 - Rank card (A4): score, absolute rank, "Top X%" positioning when the
   ranked population is known, wins and season; "Unranked" empty state
-- Settings page: account data, language (English source language) and about
+- Settings page: account data, language (English source language), about,
+  and the game server address used by the match handoff
+- Match handoff sender (INTEROP-SPEC v1): settled matches are delivered to
+  SamuelClient over a loopback, per-process-token channel (credential-free
+  payload); when the receiver is not running the client wakes it via the
+  matchcore:// deep link and retries for 30 s; readable degradations
+  (busy / timeout / not installed / version mismatch / missing config) all
+  keep a copyable host:port manual-join fallback. Linux-first; Windows/macOS
+  degrade to manual join (documented gap)
 
 ### Changed
 - Client is now read-only for all business data: it only performs session

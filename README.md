@@ -7,7 +7,7 @@ The client is the player-facing companion for MatchCoreArena: it queues matches 
 ## Features
 
 - **User Authentication** — Login with email/password, TOTP verification, token management
-- **Play** — Matchmaking queue (solo or party via UUID roster), queue state cycle with wait timer and cancel, rank card, recent matches
+- **Play** — Matchmaking queue (solo or party via UUID roster), queue state cycle with wait timer and cancel, rank card, recent matches; settled matches are handed off to SamuelClient over a loopback channel (INTEROP-SPEC v1) with a manual-join fallback
 - **Career** — Browse your recorded match history with per-match detail (participants, kills/deaths/survival, server-computed score deltas)
 - **Rankings** — View top rankings by type and season, see your current ranking
 - **Friend List** — View your friends (read-only)
@@ -95,9 +95,13 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 ```json
 {
   "server_url": "https://arena.mcnb.dev/",
-  "debug": false
+  "debug": false,
+  "game_server_host": "",
+  "game_server_port": 0
 }
 ```
+
+`game_server_host` / `game_server_port` (editable in Settings) tell the match handoff where games are played; they are not provided by the arena server.
 
 ## API Integration
 

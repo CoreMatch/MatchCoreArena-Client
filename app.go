@@ -23,6 +23,12 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.handler.SetContext(ctx)
+	a.handler.StartInterop()
+}
+
+// shutdown is called when the app exits.
+func (a *App) shutdown(ctx context.Context) {
+	a.handler.StopInterop()
 }
 
 // Auth methods
@@ -85,4 +91,24 @@ func (a *App) LeaveMatchmaking() error {
 
 func (a *App) GetMatchmakingStatus() (interface{}, error) {
 	return a.handler.GetMatchmakingStatus()
+}
+
+// Match handoff methods (INTEROP-SPEC v1 sender side; loopback-only,
+// credential-free delivery of the settled match to SamuelClient)
+func (a *App) PrepareHandoff(matchID int64, matchType, mapName string) (interface{}, error) {
+	return a.handler.PrepareHandoff(matchID, matchType, mapName)
+}
+
+func (a *App) GetHandoffStatus() (interface{}, error) {
+	return a.handler.GetHandoffStatus()
+}
+
+// Local settings (game server address used by the match handoff and the
+// manual-join display)
+func (a *App) GetGameServerConfig() (interface{}, error) {
+	return a.handler.GetGameServerConfig()
+}
+
+func (a *App) SetGameServerConfig(host string, port int) error {
+	return a.handler.SetGameServerConfig(host, port)
 }

@@ -142,6 +142,33 @@ const en = {
     about: 'About',
     aboutText:
       'MatchCoreArena Client — companion app for the MatchCoreArena arena server: career, rankings, friends and matchmaking queue.',
+    gameServer: 'Game Server',
+    gameServerHint:
+      'Where matches are played. Used by the automatic handoff to SamuelClient and for the manual-join address.',
+    gameServerHost: 'Host',
+    gameServerPort: 'Port',
+    save: 'Save',
+    saving: 'Saving…',
+    saved: 'Saved.',
+    saveFailed: "Couldn't save the game server settings.",
+  },
+  handoff: {
+    title: 'Match Handoff',
+    delivering: 'Handing the match off to SamuelClient…',
+    delivered: 'Handed off to SamuelClient — it launches the game into your match.',
+    waitingReceiver: 'Starting SamuelClient and handing off…',
+    busy: 'SamuelClient is busy with another handoff.',
+    timeout: 'SamuelClient did not come up in time.',
+    noReceiver: 'SamuelClient is not installed or not registered for matchcore:// links.',
+    versionMismatch: 'Version mismatch between the two apps — update the out-of-date one.',
+    missingConfig: 'Set the game server address in Settings to enable the automatic handoff.',
+    error: 'Handoff failed.',
+    retry: 'Retry Handoff',
+    manualJoin: 'Join manually',
+    manualJoinHint: 'Copy the server address and join it from your game client.',
+    copy: 'Copy',
+    copied: 'Copied',
+    gameUnreachable: 'The game server did not answer — double-check the address.',
   },
 } as const;
 

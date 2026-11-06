@@ -38,6 +38,7 @@
 - Queue solo or as a party (member UUID roster; the party queues and settles together)
 - Queue cycle: In Queue (wait timer, cancel) → Match Found → In Match → Results In
 - When the result is reported, the recorded match id links straight into Career detail
+- The settled match is handed off to SamuelClient automatically (loopback channel, no credentials); when that is unavailable you get a copyable server address to join manually (set the address under Settings → Game Server)
 
 ### Career
 - Paginated list of your recorded matches (time, mode, map, winner, duration)
@@ -73,6 +74,8 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 |--------|------|---------|-------------|
 | `server_url` | string | `https://arena.mcnb.dev/` | MatchCoreArena server URL |
 | `debug` | boolean | `false` | Enable debug logging |
+| `game_server_host` | string | `""` | Game server host for the match handoff / manual join |
+| `game_server_port` | number | `0` | Game server port for the match handoff / manual join |
 
 ## Keyboard Shortcuts
 

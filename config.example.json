@@ -1,4 +1,6 @@
 {
   "server_url": "https://arena.mcnb.dev/",
-  "debug": false
+  "debug": false,
+  "game_server_host": "",
+  "game_server_port": 0
 }

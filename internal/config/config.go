@@ -9,6 +9,11 @@ import (
 type Config struct {
 	ServerURL string `json:"server_url"`
 	Debug     bool   `json:"debug"`
+	// GameServerHost/GameServerPort 是玩家实际进入对战的游戏服务器地址，
+	// 用于匹配成功后的本地交接（INTEROP-SPEC v1）与“手动加入”展示。
+	// 对战服务端本身不下发该地址，故由玩家在此配置。
+	GameServerHost string `json:"game_server_host,omitempty"`
+	GameServerPort int    `json:"game_server_port,omitempty"`
 }
 
 func LoadConfig() (*Config, error) {

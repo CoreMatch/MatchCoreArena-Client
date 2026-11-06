@@ -17,11 +17,13 @@ func TestAppCreation(t *testing.T) {
 }
 
 // TestAppBoundSurfaceIsReadOnly pins the Wails bound surface to exactly the
-// allow-list. Policy (author-directed): session auth, read queries and the
-// player's own matchmaking queue operations are allowed; match reporting and
-// any other match-data write surface are forbidden. Adding, renaming or
-// removing a bound method forces a deliberate update of this list. See
-// knowledge 0011 for the invariant and the re-check procedure.
+// allow-list. Policy (author-directed): session auth, read queries, the
+// player's own matchmaking queue operations, the local match-handoff
+// delivery (loopback-only, credential-free) and local settings are allowed;
+// match reporting and any other match-data write surface are forbidden.
+// Adding, renaming or removing a bound method forces a deliberate update of
+// this list. See knowledge 0011 for the invariant and the re-check
+// procedure.
 func TestAppBoundSurfaceIsReadOnly(t *testing.T) {
 	allowed := map[string]struct{}{
 		// Session auth
@@ -32,6 +34,9 @@ func TestAppBoundSurfaceIsReadOnly(t *testing.T) {
 		"GetMatch": {}, "GetMyMatches": {},
 		// Player's own matchmaking queue operations (no match-data writes)
 		"JoinMatchmaking": {}, "LeaveMatchmaking": {}, "GetMatchmakingStatus": {},
+		// Local match handoff (loopback IPC, credential-free) + local settings
+		"PrepareHandoff": {}, "GetHandoffStatus": {},
+		"GetGameServerConfig": {}, "SetGameServerConfig": {},
 	}
 
 	typ := reflect.TypeOf(&App{})
