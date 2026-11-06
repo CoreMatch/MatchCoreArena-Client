@@ -2,20 +2,21 @@
 
 A cross-platform desktop client for MatchCoreArena built with [Wails](https://wails.io/) (Go + React/TypeScript).
 
+The client is **read-only**: it displays your match history, rankings and friends from the MatchCoreArena server. Match submission (including virtual matches) and matchmaking operations live in the maintenance panel (MatchCoreArena-MaintenanceView).
+
 ## Features
 
 - **User Authentication** — Login with email/password, TOTP verification, token management
-- **Friend System** — View friends, send/accept/reject friend requests, delete friends
-- **Team Management** — Create/disband teams, manage members and roles
-- **Match Reporting** — Record and view match history
+- **My Matches** — Browse your recorded match history with per-match detail (participants, server-computed score deltas)
 - **Rankings** — View top rankings by type and season, see your current ranking
-- **User Profile** — View and manage your profile, level, and experience
+- **Friend List** — View your friends (read-only)
+- **User Profile** — View your level, experience, and rank score
 
 ## Tech Stack
 
 | Layer    | Technology |
 |----------|------------|
-| Backend  | Go 1.25, [Wails v2](https://wails.io/), standard library `net/http` for API calls |
+| Backend  | Go 1.26, [Wails v2](https://wails.io/), standard library `net/http` for API calls |
 | Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), [Material UI v9](https://mui.com/) |
 | Build    | Wails CLI (WebKitGTK 2.41+ on Linux) |
 
@@ -34,7 +35,7 @@ MatchCoreArena-Client/
 │   └── services/           # API service layer
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # React views (Login, Home, Friends, Rankings)
+│   │   ├── components/     # React views (Login, Home, My Matches, Friends, Rankings)
 │   │   ├── App.tsx         # Main app shell with navigation drawer
 │   │   └── main.tsx        # React entry point
 │   ├── index.html
@@ -49,7 +50,7 @@ MatchCoreArena-Client/
 
 ### Prerequisites
 
-- Go 1.25+
+- Go 1.26+
 - Node.js 18+
 - Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 
@@ -99,16 +100,17 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 
 ## API Integration
 
-This client connects to the MatchCoreArena server API. Make sure the server is running and accessible at the configured URL.
+This client connects to the MatchCoreArena server API and only performs read queries (plus the session auth calls). Make sure the server is running and accessible at the configured URL.
 
 ### API Endpoints Used
 
 - **Authentication**: `/api/auth/login-ticket`, `/api/auth/totp-verify`, `/api/auth/refresh`, `/api/auth/logout`
-- **Users**: `/api/users/me`, `/api/users/{uuid}`, `/api/users/me/experience`
-- **Friends**: `/api/friends`, `/api/friends/{id}/accept`, `/api/friends/{id}/reject`, `/api/friends/{id}`
-- **Teams**: `/api/teams`, `/api/teams/{id}`, `/api/teams/{id}/members`, `/api/teams/{id}/members/{uuid}/role`
-- **Matches**: `/api/matches`, `/api/matches/{id}`, `/api/matches/me`
-- **Rankings**: `/api/rankings/{type}`, `/api/rankings/me`
+- **Users**: `/api/users/me`, `/api/users/{uuid}`
+- **Friends**: `GET /api/friends`
+- **Matches**: `GET /api/matches/{id}`, `GET /api/matches/me`
+- **Rankings**: `GET /api/rankings/{type}`, `GET /api/rankings/me`
+
+Match submission and matchmaking are not part of this client; they are operated through the maintenance panel (MatchCoreArena-MaintenanceView).
 
 ## License
 

@@ -61,18 +61,3 @@ func (s *UserService) GetUserByUUID(uuid string) (*models.User, error) {
 
 	return &user, nil
 }
-
-func (s *UserService) AddExperience(amount int) error {
-	reqBody := struct {
-		Amount int `json:"amount"`
-	}{
-		Amount: amount,
-	}
-
-	_, err := s.api.Post("/api/users/me/experience", reqBody)
-	if err != nil {
-		return fmt.Errorf("failed to add experience: %w", err)
-	}
-
-	return nil
-}

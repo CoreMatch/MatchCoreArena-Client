@@ -1,9 +1,10 @@
-import { Box, Typography, Card, CardContent, Grid, Avatar, Chip } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid, Avatar, Chip, Alert } from '@mui/material';
 import { 
   EmojiEvents as TrophyIcon, 
   People as PeopleIcon, 
   TrendingUp as TrendingUpIcon 
 } from '@mui/icons-material';
+import { t } from '../i18n';
 
 export interface UserProfile {
   username?: string;
@@ -18,11 +19,16 @@ interface HomeViewProps {
 }
 
 export default function HomeView({ user }: HomeViewProps) {
+  const msg = t();
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ color: 'white', mb: 4 }}>
+      <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>
         Welcome back, {user?.username || 'Player'}!
       </Typography>
+
+      <Alert severity="info" sx={{ mb: 3, backgroundColor: 'rgba(2, 136, 209, 0.12)', color: '#8ecdf5' }}>
+        {msg.readOnly.homeNotice}
+      </Alert>
 
       <Grid container spacing={3}>
         {/* User Stats Card */}
@@ -138,10 +144,10 @@ export default function HomeView({ user }: HomeViewProps) {
                 textAlign: 'center'
               }}>
                 <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  No recent activity to display
+                  {msg.home.recentActivityTitle}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mt: 1 }}>
-                  Start playing to see your match history here!
+                  {msg.home.recentActivityHint}
                 </Typography>
               </Box>
             </CardContent>

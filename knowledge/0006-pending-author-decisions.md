@@ -6,7 +6,8 @@ Accepted
 ## Context
 Several open questions in this repository have no single correct answer:
 each needs a semantic or design choice by the author. This entry lists them
-so they stay visible until decided.
+so they stay visible until decided. The root-level `PENDING-DECISIONS.md`
+mirrors this list for task workflows.
 
 ## Decision
 Record the following items as pending author decisions:
@@ -24,17 +25,20 @@ Record the following items as pending author decisions:
 3. **"Automatic token refresh" claim in USAGE.md**: the `RefreshToken` binding
    exists end-to-end but the frontend never calls it. Decide whether to wire
    the refresh up or remove the binding; both options change behavior or API
-   surface.
-4. **Go bindings without UI consumers**: `ReportMatchResult`, `GetMatch`,
-   `GetMyMatches`, `CreateTeam`, `AddExperience`, `RefreshToken` have no
-   callers in `frontend/src`. Keep (planned features) or remove — needs intent.
-5. **README feature list drift**: "Match Reporting" and "Team Management" are
-   listed as features but have no UI surface (consequence of item 4).
-6. **Release artifacts**: `.github/workflows/release.yml` publishes `.exe`
+   surface. USAGE.md now states the current behavior (binding present, not
+   auto-invoked) instead of the old claim.
+4. **Release artifacts**: `.github/workflows/release.yml` publishes `.exe`
    artifacts but only builds on `ubuntu-latest` with no Windows job or
    cross-compilation step; the source of the Windows binaries is unknown.
-7. **Docker image purpose**: the Dockerfile packages a GUI desktop binary into
+5. **Docker image purpose**: the Dockerfile packages a GUI desktop binary into
    a headless alpine image; the intended use is not documented.
+
+Resolved by the read-only refactor (see 0010): the former "UI-less
+bindings" item is closed — write bindings (`ReportMatchResult`,
+`ReportVirtualMatch`, matchmaking, team management, `AddExperience`,
+friend mutations) were removed, and `GetMatch`/`GetMyMatches` received a
+UI consumer (`frontend/src/components/MyMatchesView.tsx`); the README
+feature list was aligned to the read-only surface.
 
 ## Consequences
 - The repository compiles and passes `go build ./...`, `go vet ./...`,
@@ -44,10 +48,9 @@ Record the following items as pending author decisions:
 ## Evidence
 - internal/config/config.go::LoadConfig (config only from JSON file, no env reads)
 - internal/services/user.go::GetUserByUUID (client side of the UUID vs UID drift)
-- USAGE.md::Automatic ("Automatic token refresh" feature claim)
-- app.go::ReportMatchResult (representative binding without a UI consumer)
-- README.md::Match Reporting (feature listed without a UI surface)
+- USAGE.md::Authentication (token refresh described as available but not auto-invoked)
+- app.go::RefreshToken (refresh binding retained without UI consumer)
+- frontend/src/components/MyMatchesView.tsx::MyMatchesView (GetMatch/GetMyMatches now consumed by UI)
 - .github/workflows/release.yml::exe (uploads `MatchCoreArenaClient.exe`)
 - Dockerfile::MatchCoreArenaClient (GUI binary in a headless alpine image)
-- main_test.go::TestAppCreation (the only Go test; suite compiles and passes)
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID (`:uid` parsed via `strconv.ParseInt`)

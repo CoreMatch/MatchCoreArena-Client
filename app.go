@@ -2,7 +2,6 @@ package main
 
 import (
 	"MatchCoreArena-Client/internal/handlers"
-	"MatchCoreArena-Client/internal/models"
 	"context"
 )
 
@@ -56,29 +55,9 @@ func (a *App) GetUserByUUID(uuid string) (interface{}, error) {
 	return a.handler.GetUserByUUID(uuid)
 }
 
-func (a *App) AddExperience(amount int) error {
-	return a.handler.AddExperience(amount)
-}
-
 // Friend methods
 func (a *App) GetFriends() (interface{}, error) {
 	return a.handler.GetFriends()
-}
-
-func (a *App) SendFriendRequest(targetUUID string) (interface{}, error) {
-	return a.handler.SendFriendRequest(targetUUID)
-}
-
-func (a *App) AcceptFriendRequest(friendID int64) error {
-	return a.handler.AcceptFriendRequest(friendID)
-}
-
-func (a *App) RejectFriendRequest(friendID int64) error {
-	return a.handler.RejectFriendRequest(friendID)
-}
-
-func (a *App) DeleteFriend(friendID int64) error {
-	return a.handler.DeleteFriend(friendID)
 }
 
 // Ranking methods
@@ -90,61 +69,11 @@ func (a *App) GetMyRanking(rankType string, season int) (interface{}, error) {
 	return a.handler.GetMyRanking(rankType, season)
 }
 
-// Team methods
-func (a *App) CreateTeam(name, description string) (interface{}, error) {
-	return a.handler.CreateTeam(name, description)
-}
-
-func (a *App) GetTeam(id int64) (interface{}, error) {
-	return a.handler.GetTeam(id)
-}
-
-func (a *App) DisbandTeam(id int64) error {
-	return a.handler.DisbandTeam(id)
-}
-
-func (a *App) GetTeamMembers(teamID int64) (interface{}, error) {
-	return a.handler.GetTeamMembers(teamID)
-}
-
-func (a *App) AddTeamMember(teamID int64, userUUID string, role int) (interface{}, error) {
-	return a.handler.AddTeamMember(teamID, userUUID, role)
-}
-
-func (a *App) UpdateMemberRole(teamID int64, userUUID string, role int) error {
-	return a.handler.UpdateMemberRole(teamID, userUUID, role)
-}
-
-func (a *App) RemoveTeamMember(teamID int64, userUUID string) error {
-	return a.handler.RemoveTeamMember(teamID, userUUID)
-}
-
-// Match methods
-func (a *App) ReportMatchResult(report models.TeamReportInput) (interface{}, error) {
-	return a.handler.ReportMatchResult(report)
-}
-
-func (a *App) ReportVirtualMatch(report models.VirtualReportInput, reporterToken string) (interface{}, error) {
-	return a.handler.ReportVirtualMatch(report, reporterToken)
-}
-
+// Match methods (read-only)
 func (a *App) GetMatch(id int64) (interface{}, error) {
 	return a.handler.GetMatch(id)
 }
 
 func (a *App) GetMyMatches(pageNum, pageSize int) (interface{}, error) {
 	return a.handler.GetMyMatches(pageNum, pageSize)
-}
-
-// Matchmaking methods
-func (a *App) JoinMatchmaking(matchType string) (interface{}, error) {
-	return a.handler.JoinMatchmaking(matchType)
-}
-
-func (a *App) LeaveMatchmaking() error {
-	return a.handler.LeaveMatchmaking()
-}
-
-func (a *App) GetMatchmakingStatus() (interface{}, error) {
-	return a.handler.GetMatchmakingStatus()
 }

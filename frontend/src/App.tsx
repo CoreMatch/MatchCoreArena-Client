@@ -24,14 +24,15 @@ import {
   Person, 
   Menu as MenuIcon,
   ChevronLeft,
-  SportsEsports
+  History
 } from '@mui/icons-material';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
+import { t } from './i18n';
 import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
 import HomeView, { type UserProfile } from './components/HomeView';
-import VirtualMatchView from './components/VirtualMatchView';
+import MyMatchesView from './components/MyMatchesView';
 
 const drawerWidth = 240;
 
@@ -42,10 +43,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'friends', label: 'Friends', icon: Group },
-  { id: 'rankings', label: 'Rankings', icon: Leaderboard },
-  { id: 'virtual', label: 'Virtual Match', icon: SportsEsports },
+  { id: 'home', label: t().nav.home, icon: Home },
+  { id: 'matches', label: t().nav.myMatches, icon: History },
+  { id: 'friends', label: t().nav.friends, icon: Group },
+  { id: 'rankings', label: t().nav.rankings, icon: Leaderboard },
 ];
 
 export default function App() {
@@ -132,12 +133,12 @@ export default function App() {
     }
 
     switch (selectedView) {
+      case 'matches':
+        return <MyMatchesView />;
       case 'friends':
         return <FriendList />;
       case 'rankings':
         return <RankingView />;
-      case 'virtual':
-        return <VirtualMatchView />;
       default:
         return <HomeView user={user} />;
     }
