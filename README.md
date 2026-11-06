@@ -105,10 +105,12 @@ This client connects to the MatchCoreArena server API and only performs read que
 ### API Endpoints Used
 
 - **Authentication**: `/api/auth/login-ticket`, `/api/auth/totp-verify`, `/api/auth/refresh`, `/api/auth/logout`
-- **Users**: `/api/users/me`, `/api/users/{uuid}`
+- **Users**: `/api/users/me`
 - **Friends**: `GET /api/friends`
 - **Matches**: `GET /api/matches/{id}`, `GET /api/matches/me`
 - **Rankings**: `GET /api/rankings/{type}`, `GET /api/rankings/me`
+
+Expired access tokens are refreshed automatically via `/api/auth/refresh`; when a refresh fails the app returns to the login screen.
 
 Match submission and matchmaking are not part of this client; they are operated through the maintenance panel (MatchCoreArena-MaintenanceView).
 

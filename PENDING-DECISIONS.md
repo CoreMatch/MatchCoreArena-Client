@@ -10,29 +10,40 @@ Each item proceeds with a conservative default until decided. Mirrored by
    `~/.matchcorearena/config.json`; no environment variable is read.
    Decision needed: env-over-file vs file-over-env precedence.
    Conservative default until then: config file only (current behavior).
-2. **UUID vs UID drift** — the client's `GetUserByUUID` calls
-   `GET /api/users/{uuid}`, but the server parses the path parameter as an
-   int64 UID, so real UUIDs are rejected. Decision needed: switch the client
-   to numeric UID, or add a server-side UUID lookup.
-   Conservative default until then: keep the binding as-is (unused by UI).
-3. **Token refresh wiring** — the `RefreshToken` binding exists end-to-end
-   but the frontend never calls it. Decision needed: wire automatic refresh
-   into the UI session flow, or remove the binding.
-   Conservative default until then: keep the binding, no auto-refresh.
-4. **Release Windows artifact** — `release.yml` uploads
-   `MatchCoreArenaClient.exe` but has no Windows build/cross-compile job.
-   Decision needed: add a Windows build path or drop the artifact.
-   Conservative default until then: workflow unchanged.
-5. **Docker image purpose** — the Dockerfile packages a GUI desktop binary
+2. **Docker image purpose** — the Dockerfile packages a GUI desktop binary
    into a headless alpine image; intended use undocumented.
    Decision needed: document the purpose or remove the image.
    Conservative default until then: keep the Dockerfile unchanged.
 
-## Resolved by the read-only refactor (2026-11-06)
+## Resolved (2026-11-06, read-only client follow-up batch)
 
-- **UI-less bindings** — write bindings (`ReportMatchResult`,
-  `ReportVirtualMatch`, matchmaking, team management, `AddExperience`,
-  friend mutations) were removed with the read-only conversion;
-  `GetMatch`/`GetMyMatches` got a UI consumer (My Matches view).
-- **README feature drift** — the feature list now matches the read-only
-  surface.
+- **UUID vs UID drift** — investigated: the client sent a UUID string to
+  `GET /api/users/:uid`, which the server parses as an int64 uid
+  (`strconv.ParseInt`); the server's authoritative identity is the numeric
+  uid resolved from the token. Resolution: the broken `GetUserByUUID`
+  binding/service removed (no UI consumer on the read-only surface), and
+  the client models unified to the uid basis (`User.uid` incl.
+  `wins_count`, `Ranking.user_uid`); RankingView renders `Player #{uid}`.
+  "User not found" cases render as empty states: an unprovisioned profile
+  keeps the session and shows the default profile; a missing personal
+  ranking hides the "Your Ranking" card; an empty match history shows the
+  empty list state.
+- **Token refresh** — the server's `POST /api/auth/refresh` exists and is
+  the designated recovery path (auth middleware answers 401
+  `oauth_token_expired` expecting a client refresh). Resolution: wired via
+  `frontend/src/session.ts` (`authFetch`): any authenticated query hitting
+  a 401 triggers a single-flight refresh with the stored refresh_token and
+  one retry; a failed refresh dispatches session expiry and the app returns
+  to the login screen.
+- **Read-only invariant** — pinned by three tests in `main_test.go`
+  (`TestAppBoundSurfaceIsReadOnly`, `TestFrontendMakesNoDirectNetworkCalls`,
+  `TestWailsBindingsMatchBoundSurface`); re-check criteria documented in
+  knowledge 0011.
+- **Release .exe build path** — filled mechanically: `release.yml` now
+  installs `gcc-mingw-w64-x86-64` and runs
+  `wails build -platform windows/amd64` (documented wails cross-compilation;
+  no signing certificate or external credentials involved — the artifact is
+  unsigned). Note: the release workflow only runs on `v*` tags, so the step
+  is verified only at the next tag-triggered release run (tracked in
+  knowledge 0008; local verification was not possible — mingw installation
+  requires sudo, which this environment does not grant).

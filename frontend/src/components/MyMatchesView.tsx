@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { GetMyMatches, GetMatch } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
+import { authFetch } from '../session';
 
 interface MatchSummary {
   id: number;
@@ -100,7 +101,7 @@ export default function MyMatchesView() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await GetMyMatches(pageNum, pageSize);
+      const resp = await authFetch(() => GetMyMatches(pageNum, pageSize));
       const data = resp?.data ?? resp;
       setMatches(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
@@ -119,7 +120,7 @@ export default function MyMatchesView() {
     setDetailLoading(true);
     setDetailError(null);
     try {
-      const resp = await GetMatch(id);
+      const resp = await authFetch(() => GetMatch(id));
       const data = (resp?.data ?? resp) as MatchDetail;
       setDetail(data);
     } catch (err: unknown) {

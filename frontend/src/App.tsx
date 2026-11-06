@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import { t } from './i18n';
+import { authFetch, SESSION_EXPIRED_EVENT } from './session';
 import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
@@ -71,25 +72,26 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    // Session expiry (refresh failed) returns the user to the login screen.
+    const onSessionExpired = () => {
+      handleLogout();
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, []);
+
   const fetchUserProfile = async () => {
     try {
-      console.log('Fetching user profile...');
-      const resp = await GetCurrentUser();
-      console.log('User profile received:', resp);
+      // authFetch transparently refreshes the access token on 401.
+      const resp = await authFetch(() => GetCurrentUser());
       const userData = resp?.data ?? resp;
       setUser(userData);
     } catch (error) {
+      // Non-auth failures (e.g. the profile row is not provisioned until the
+      // first settled match) keep the session and render the empty profile.
       console.error('Failed to fetch user profile:', error);
-      
-      const errorMsg = String(error).toLowerCase();
-      // Only logout if it's explicitly an authentication error (401 Unauthorized)
-      // We check for "401" or "unauthorized" in the error message
-      if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
-        console.warn('Auth error detected, logging out...');
-        handleLogout();
-      } else {
-        console.error('Non-auth error in fetchUserProfile, staying logged in:', error);
-      }
+      setUser(null);
     }
   };
 

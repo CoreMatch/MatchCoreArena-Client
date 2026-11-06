@@ -13,8 +13,6 @@ export function GetMyRanking(arg1:string,arg2:number):Promise<any>;
 
 export function GetTopRankings(arg1:string,arg2:number,arg3:number):Promise<any>;
 
-export function GetUserByUUID(arg1:string):Promise<any>;
-
 export function Login(arg1:string,arg2:string):Promise<any>;
 
 export function Logout():Promise<void>;

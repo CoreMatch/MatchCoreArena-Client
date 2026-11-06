@@ -30,7 +30,7 @@
 ### Authentication
 - Email/password login
 - Two-factor authentication (TOTP)
-- Token refresh available via the Go binding (not auto-invoked by the UI; see PENDING-DECISIONS.md)
+- Automatic token refresh on expiry; the app returns to the login screen when a refresh fails
 - Secure logout
 
 ### My Matches

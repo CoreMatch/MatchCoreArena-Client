@@ -14,8 +14,10 @@ was relocated to the maintenance panel (MatchCoreArena-MaintenanceView).
 - The desktop client is read-only for all MatchCoreArena business data.
   The bound surface is limited to session auth plus queries:
   `Login`, `VerifyTOTP`, `RefreshToken`, `Logout`, `SetToken`,
-  `GetCurrentUser`, `GetUserByUUID`, `GetFriends`, `GetTopRankings`,
-  `GetMyRanking`, `GetMatch`, `GetMyMatches`.
+  `GetCurrentUser`, `GetFriends`, `GetTopRankings`,
+  `GetMyRanking`, `GetMatch`, `GetMyMatches`. Identity follows the
+  server's authoritative numeric uid (`models.User.UID`,
+  `models.Ranking.UserUID`); the former UUID-string lookup was removed.
 - The read-only query pages are:
   - My Matches (`frontend/src/components/MyMatchesView.tsx`): paginated
     `GET /api/matches/me` list plus per-match detail via `GET /api/matches/{id}`
@@ -35,6 +37,11 @@ was relocated to the maintenance panel (MatchCoreArena-MaintenanceView).
   in the i18n catalog `frontend/src/i18n/index.ts` (English-first; the
   `Locale`/`catalogs` shape reserves additional languages). Components read
   strings through `t()` instead of hard-coding them.
+- Sessions self-heal on token expiry: authenticated queries go through
+  `frontend/src/session.ts::authFetch`, which refreshes via
+  `POST /api/auth/refresh` on a 401 and retries once; a failed refresh
+  returns the user to the login screen. The read-only surface itself is
+  pinned by tests (see 0011).
 
 ## Consequences
 - Rating-affecting operations require the maintenance panel's credentials;

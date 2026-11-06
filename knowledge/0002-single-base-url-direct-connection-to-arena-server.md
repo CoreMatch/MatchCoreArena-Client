@@ -21,7 +21,7 @@ configurable base URL:
 - The endpoint set used by the client is read-only for business data (see
   0010): `/api/auth/login-ticket`, `/api/auth/totp-verify`,
   `/api/auth/refresh`, `/api/auth/logout` (session auth, POST), plus the
-  queries `/api/users/me`, `/api/users/{uuid}`, `/api/friends`,
+  queries `/api/users/me`, `/api/friends`,
   `/api/matches/{id}`, `/api/matches/me`, `/api/rankings/{type}`,
   `/api/rankings/me`.
 - The React frontend makes no direct HTTP calls of its own: a search of
@@ -55,7 +55,7 @@ every client endpoint above matches a route registered in the server's
 - internal/config/config.go::LoadConfig (LoadConfig with default `https://arena.mcnb.dev/`), internal/config/config.go::getConfigPath (config path `~/.matchcorearena/config.json`)
 - config.example.json (field: server_url)
 - internal/services/api.go::APIService (APIService, 10s timeout in internal/services/api.go::NewAPIService, Bearer header in internal/services/api.go::makeRequest)
-- Endpoint call sites: internal/services/auth.go::Login, internal/services/auth.go::VerifyTOTP, internal/services/auth.go::RefreshToken, internal/services/auth.go::Logout; internal/services/user.go::GetCurrentUser, internal/services/user.go::GetUserByUUID; internal/services/friend.go::GetFriends; internal/services/match.go::GetMatch, internal/services/match.go::GetMyMatches; internal/services/ranking.go::GetTopRankings, internal/services/ranking.go::GetMyRanking
+- Endpoint call sites: internal/services/auth.go::Login, internal/services/auth.go::VerifyTOTP, internal/services/auth.go::RefreshToken, internal/services/auth.go::Logout; internal/services/user.go::GetCurrentUser; internal/services/friend.go::GetFriends; internal/services/match.go::GetMatch, internal/services/match.go::GetMyMatches; internal/services/ranking.go::GetTopRankings, internal/services/ranking.go::GetMyRanking
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Register (matching route registrations)
 - docker-compose.yml (field: volumes) (volume mount for `~/.matchcorearena`)
 - start.sh::matchcorearena (seeds default config on first run)
