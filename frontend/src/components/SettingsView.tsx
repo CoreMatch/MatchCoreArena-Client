@@ -13,13 +13,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
 import { GetGameServerConfig, SetGameServerConfig } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
-import type { UserProfile } from '../types';
 import type { ThemeMode } from '../theme';
+import type { UserProfile } from '../types';
 
 interface SettingsViewProps {
   user: UserProfile | null;
@@ -59,41 +57,37 @@ export default function SettingsView({ user, themeMode, onThemeModeChange }: Set
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ color: 'text.primary', mb: 3 }}>
+    <Box>
+      <Typography variant="h4" sx={{ mb: 3 }}>
         {msg.settings.title}
       </Typography>
 
       <Stack spacing={3}>
-        {/* Appearance */}
-        <Card variant="outlined">
+        <Card>
           <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
               {msg.settings.appearance}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {msg.settings.themeHint}
             </Typography>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-              <ToggleButtonGroup
-                value={themeMode}
-                exclusive
-                onChange={(_, v) => v && onThemeModeChange(v)}
-                aria-label={msg.settings.theme}
-              >
-                <ToggleButton value="dark" aria-label={msg.settings.themeDark}>
-                  {msg.settings.themeDark}
-                </ToggleButton>
-                <ToggleButton value="light" aria-label={msg.settings.themeLight}>
-                  {msg.settings.themeLight}
-                </ToggleButton>
-              </ToggleButtonGroup>
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+              <FormControl sx={{ minWidth: 200 }} size="small">
+                <InputLabel>{msg.settings.theme}</InputLabel>
+                <Select
+                  value={themeMode}
+                  label={msg.settings.theme}
+                  onChange={(e) => onThemeModeChange(e.target.value as ThemeMode)}
+                >
+                  <MenuItem value="dark">{msg.settings.themeDark}</MenuItem>
+                  <MenuItem value="light">{msg.settings.themeLight}</MenuItem>
+                </Select>
+              </FormControl>
             </Stack>
           </CardContent>
         </Card>
 
-        {/* Account */}
-        <Card variant="outlined">
+        <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>
               {msg.settings.account}
@@ -101,51 +95,50 @@ export default function SettingsView({ user, themeMode, onThemeModeChange }: Set
             {user ? (
               <Stack spacing={1}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.settings.accountUid}
                   </Typography>
                   <Typography variant="body2">{user.uid ?? '—'}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.settings.accountLevel}
                   </Typography>
                   <Typography variant="body2">{user.level ?? '—'}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.settings.accountExp}
                   </Typography>
                   <Typography variant="body2">{(user.experience ?? 0).toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.settings.accountRankScore}
                   </Typography>
                   <Typography variant="body2">{user.rank_score ?? '—'}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.settings.accountWins}
                   </Typography>
                   <Typography variant="body2">{user.wins_count ?? '—'}</Typography>
                 </Box>
               </Stack>
             ) : (
-              <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+              <Typography variant="body2" color="text.disabled">
                 {msg.settings.accountMissing}
               </Typography>
             )}
           </CardContent>
         </Card>
 
-        {/* Game Server */}
-        <Card variant="outlined">
+        <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 1 }}>
               {msg.settings.gameServer}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {msg.settings.gameServerHint}
             </Typography>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
@@ -181,35 +174,29 @@ export default function SettingsView({ user, themeMode, onThemeModeChange }: Set
           </CardContent>
         </Card>
 
-        {/* Language */}
-        <Card variant="outlined">
+        <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>
               {msg.settings.language}
             </Typography>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-              <FormControl sx={{ minWidth: 200 }}>
+              <FormControl sx={{ minWidth: 200 }} size="small">
                 <InputLabel>{msg.settings.language}</InputLabel>
-                <Select
-                  value="en"
-                  label={msg.settings.language}
-                  disabled
-                >
+                <Select value="en" label={msg.settings.language} disabled>
                   <MenuItem value="en">{msg.settings.languageEnglish}</MenuItem>
                 </Select>
               </FormControl>
-              <Chip label={msg.settings.languageNote} size="small" variant="outlined" />
+              <Chip label={msg.settings.languageNote} size="small" />
             </Stack>
           </CardContent>
         </Card>
 
-        {/* About */}
-        <Card variant="outlined">
+        <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 1 }}>
               {msg.settings.about}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            <Typography variant="body2" color="text.secondary">
               {msg.settings.aboutText}
             </Typography>
           </CardContent>

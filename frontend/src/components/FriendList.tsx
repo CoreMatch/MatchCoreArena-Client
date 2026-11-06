@@ -12,16 +12,16 @@ import {
   Chip,
   IconButton,
   Alert,
-  Skeleton,
-  Button,
-  Divider
+  Divider,
 } from '@mui/material';
 import {
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Group as GroupIcon,
 } from '@mui/icons-material';
 import { GetFriends } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
+import { EmptyState, ErrorState, LoadingList } from './StateViews';
 
 interface Friend {
   id: number;
@@ -77,116 +77,88 @@ export default function FriendList() {
     }
   };
 
+  const friendName = (friend: Friend) =>
+    friend.username || msg.friends.userTemplate.replace('{uuid}', friend.friend_uuid);
+
   if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Skeleton width={200} height={48} sx={{ mb: 3, backgroundColor: 'rgba(255,255,255,0.08)' }} />
-        <Card sx={{ backgroundColor: '#16213e', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-          <Box sx={{ p: 2 }}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} height={56} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-            ))}
-          </Box>
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4">{msg.friends.title}</Typography>
+        </Box>
+        <Card>
+          <LoadingList rows={4} rowHeight={56} />
         </Card>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ color: 'white' }}>
-          {msg.friends.title}
-        </Typography>
-        <IconButton
-          onClick={fetchFriends}
-          sx={{ color: 'white' }}
-          title={msg.common.refresh}
-        >
+        <Typography variant="h4">{msg.friends.title}</Typography>
+        <IconButton onClick={fetchFriends} title={msg.common.refresh}>
           <RefreshIcon />
         </IconButton>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 2, backgroundColor: 'rgba(2, 136, 209, 0.12)', color: '#8ecdf5' }}>
+      <Alert severity="info" sx={{ mb: 2 }}>
         {msg.readOnly.notice}
       </Alert>
 
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}
-          action={
-            <Button color="inherit" size="small" onClick={fetchFriends}>
-              {msg.common.retry}
-            </Button>
-          }
-        >
-          {error}
-        </Alert>
-      )}
-
-      <Card sx={{
-        backgroundColor: '#16213e',
-        color: 'white',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-      }}>
-        <CardContent sx={{ p: 0 }}>
-          {friends.length === 0 ? (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
-                {msg.friends.emptyTitle}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                {msg.friends.emptyHint}
-              </Typography>
-            </Box>
-          ) : (
-            <List sx={{ width: '100%' }}>
-              {friends.map((friend, index) => (
-                <Box key={friend.id}>
-                  <ListItem
-                    sx={{
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.05)',
-                      },
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: '#e94560' }}>
-                        {friend.username?.charAt(0)?.toUpperCase() || 'U'}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                            {friend.username || `User ${friend.friend_uuid}`}
+      {error ? (
+        <Card>
+          <ErrorState message={error} onRetry={fetchFriends} />
+        </Card>
+      ) : (
+        <Card>
+          <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+            {friends.length === 0 ? (
+              <EmptyState
+                icon={<GroupIcon />}
+                title={msg.friends.emptyTitle}
+                hint={msg.friends.emptyHint}
+              />
+            ) : (
+              <List sx={{ width: '100%' }}>
+                {friends.map((friend, index) => (
+                  <Box key={friend.id}>
+                    <ListItem>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          {friend.username?.charAt(0)?.toUpperCase() || 'U'}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                              {friendName(friend)}
+                            </Typography>
+                            <Chip
+                              label={getStatusLabel(friend.status)}
+                              size="small"
+                              color={getStatusColor(friend.status)}
+                              variant="outlined"
+                            />
+                          </Box>
+                        }
+                        secondary={
+                          <Typography variant="body2" color="text.disabled">
+                            {msg.friends.level} {friend.level || '?'} • {msg.friends.added}{' '}
+                            {new Date(friend.created_at).toLocaleDateString()}
                           </Typography>
-                          <Chip
-                            label={getStatusLabel(friend.status)}
-                            size="small"
-                            color={getStatusColor(friend.status)}
-                            variant="outlined"
-                          />
-                        </Box>
-                      }
-                      secondary={
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                          {msg.friends.level} {friend.level || '?'} • {msg.friends.added}{' '}
-                          {new Date(friend.created_at).toLocaleDateString()}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                  {index < friends.length - 1 && (
-                    <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                  )}
-                </Box>
-              ))}
-            </List>
-          )}
-        </CardContent>
-      </Card>
+                        }
+                      />
+                    </ListItem>
+                    {index < friends.length - 1 && <Divider />}
+                  </Box>
+                ))}
+              </List>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 }
