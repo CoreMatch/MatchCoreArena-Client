@@ -50,6 +50,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   formed group (server contract v1.6.0); the local Settings address is the
   fallback and is documented as optional
 
+### Changed (visual system)
+- Shared visual token system (`frontend/src/theme.ts`, knowledge 0013):
+  spacing ladder 4/8/12/16/24, corner radius 8/12, type scale
+  12/14/16/20/28, dark baseline theme with a light variant selectable in
+  Settings → Appearance (persisted). Palette aligns with SamuelClient's
+  chrome; no new hues introduced
+- One semantic hue per intent (success/warning/danger/info), shared with
+  SamuelClient; the former one-off greens/reds/ambers are consolidated
+- Unified empty/error/loading components (`StateViews.tsx`) now used by all
+  views: skeleton loading, "nothing here yet + next action" empty states
+  (Career's empty state links to the Play queue), one-sentence errors with
+  Retry
+- Play queue card shows a phase stepper (In Queue → Match Found → In Match
+  → Results In); Match Found gains explicit exits: copy the server address
+  when the arena server attached one, and a client-side Dismiss that stops
+  tracking the match (the formed group stays on the server — the copy says
+  so). Handoff delivery timing is unchanged (settled only)
+- All remaining hard-coded UI strings moved to the i18n catalog (login
+  form, rankings filters/columns, app menu); all hard-coded colors moved
+  into the theme
+
 ### Changed
 - Client is now read-only for all business data: it only performs session
   auth calls and read queries against the MatchCoreArena server

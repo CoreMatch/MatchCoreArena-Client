@@ -47,6 +47,7 @@ interface RankingViewProps {
 export default function RankingView({ winsCount }: RankingViewProps) {
   const msg = t();
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rankType, setRankType] = useState('1v1');
@@ -64,8 +65,16 @@ export default function RankingView({ winsCount }: RankingViewProps) {
     try {
       // Fetch top rankings using Go bindings (authFetch refreshes expired tokens)
       const rankingsResp = await authFetch(() => GetTopRankings(rankType, limit, season));
-      const rankingsData = rankingsResp?.data ?? rankingsResp;
-      setRankings(rankingsData || []);
+      const response = rankingsResp?.data ?? rankingsResp;
+      // New server format: {rankings: [...], total_count: N}
+      // Legacy fallback: plain array
+      if (Array.isArray(response)) {
+        setRankings(response);
+        setTotalCount(response.length);
+      } else {
+        setRankings(response?.rankings ?? []);
+        setTotalCount(response?.total_count ?? 0);
+      }
     } catch {
       setError(loadErrorMessage(t().common.dataRankings));
     } finally {
@@ -111,7 +120,10 @@ export default function RankingView({ winsCount }: RankingViewProps) {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">{msg.nav.rankings}</Typography>
+        <Typography variant="h4">
+          {msg.nav.rankings}
+          {totalCount > 0 && ` (${totalCount})`}
+        </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <FormControl sx={{ minWidth: 120 }} size="small">
             <InputLabel>{msg.rankings.type}</InputLabel>
