@@ -48,6 +48,16 @@ interface MatchSummary {
   started_at: string;
   finished_at: string;
   created_at: string;
+  // Own-view summary (contract v1.7.0); omitted by servers without it.
+  self_summary?: SelfSummaryView;
+}
+
+interface SelfSummaryView {
+  team_id: string;
+  is_winner: boolean;
+  is_draw: boolean;
+  rank_score_delta: number;
+  rank_score_after: number;
 }
 
 interface ParticipantDetail {
@@ -102,6 +112,16 @@ function resultChip(p: ParticipantDetail): { text: string; color: 'success' | 'e
   return { text: msg.resultLose, color: 'error' };
 }
 
+// Own-view result badge for a list row (contract v1.7.0 self_summary);
+// null when the server did not provide it.
+function selfResultChip(ss: SelfSummaryView | undefined): { text: string; color: 'success' | 'error' | 'default' } | null {
+  if (!ss) return null;
+  const msg = t().career;
+  if (ss.is_draw) return { text: msg.drawResult, color: 'default' };
+  if (ss.is_winner) return { text: msg.victory, color: 'success' };
+  return { text: msg.defeat, color: 'error' };
+}
+
 export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, onFindMatch }: MyMatchesViewProps) {
   const msg = t();
 
@@ -114,6 +134,10 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
   const [detail, setDetail] = useState<MatchDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  // The opened row's own-view summary (list-level, contract v1.7.0); the
+  // detail dialog uses it to reconcile against the participant rows and as
+  // a fallback when participants are unavailable.
+  const [detailSelfSummary, setDetailSelfSummary] = useState<SelfSummaryView | null>(null);
 
   const fetchMatches = useCallback(async () => {
     setLoading(true);
@@ -136,14 +160,15 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
   // Deep navigation from Play: open the requested match detail once.
   useEffect(() => {
     if (focusMatchId != null) {
-      openDetail(focusMatchId);
+      openDetail(focusMatchId, null);
       onConsumeFocus?.();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusMatchId]);
 
-  const openDetail = async (id: number) => {
+  const openDetail = async (id: number, selfSummary: SelfSummaryView | null) => {
     setDetail({ id } as MatchDetail);
+    setDetailSelfSummary(selfSummary);
     setDetailLoading(true);
     setDetailError(null);
     try {
@@ -160,6 +185,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
   const closeDetail = () => {
     setDetail(null);
     setDetailError(null);
+    setDetailSelfSummary(null);
   };
 
   const handlePageSizeChange = (size: number) => {
@@ -182,7 +208,23 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
       : myParticipant.is_winner
         ? { text: msg.career.victory, color: 'success' as const }
         : { text: msg.career.defeat, color: 'error' as const }
-    : undefined;
+    : detailSelfSummary
+      ? detailSelfSummary.is_draw
+        ? { text: msg.career.drawResult, color: 'default' as const }
+        : detailSelfSummary.is_winner
+          ? { text: msg.career.victory, color: 'success' as const }
+          : { text: msg.career.defeat, color: 'error' as const }
+      : undefined;
+
+  // Own delta/after for the detail header: participant rows are primary,
+  // the list-level self_summary reconciles/fills the "after" score.
+  const myDelta =
+    myParticipant !== undefined
+      ? myParticipant.rank_score_delta
+      : detailSelfSummary?.rank_score_delta;
+  const myAfter =
+    detailSelfSummary?.rank_score_after ??
+    (myParticipant ? myParticipant.rank_score_before + myParticipant.rank_score_delta : undefined);
 
   return (
     <Box>
@@ -250,36 +292,60 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {matches.map((m) => (
-                      <TableRow
-                        key={m.id}
-                        hover
-                        onClick={() => openDetail(m.id)}
-                        sx={{
-                          cursor: 'pointer',
-                          '&:last-child td': { borderBottom: 0 },
-                        }}
-                      >
-                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                          {formatTime(m.finished_at)}
-                        </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                          <Chip label={m.match_type} size="small" sx={accentTint} />
-                        </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                          {m.map_name || '—'}
-                        </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                          {winnerLabel(m.winner_team_id)}
-                        </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                          {formatDuration(m.duration_seconds)}
-                        </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                          {m.source || '—'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {matches.map((m) => {
+                      const self = selfResultChip(m.self_summary);
+                      return (
+                        <TableRow
+                          key={m.id}
+                          hover
+                          onClick={() => openDetail(m.id, m.self_summary ?? null)}
+                          sx={{
+                            cursor: 'pointer',
+                            '&:last-child td': { borderBottom: 0 },
+                          }}
+                        >
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            {formatTime(m.finished_at)}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            <Chip label={m.match_type} size="small" sx={accentTint} />
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            {self ? (
+                              <Chip label={self.text} size="small" color={self.color} sx={{ fontWeight: 'bold' }} />
+                            ) : (
+                              '—'
+                            )}
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                              color: m.self_summary
+                                ? m.self_summary.rank_score_delta >= 0
+                                  ? 'success.main'
+                                  : 'error.main'
+                                : 'text.primary',
+                              fontWeight: m.self_summary ? 'bold' : 'normal',
+                            }}
+                          >
+                            {m.self_summary ? formatPts(m.self_summary.rank_score_delta) : '—'}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            {m.map_name || '—'}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            {winnerLabel(m.winner_team_id)}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            {formatDuration(m.duration_seconds)}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                            {m.source || '—'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -318,7 +384,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
           {detailError && (
             <ErrorState
               message={detailError}
-              onRetry={detail ? () => openDetail(detail.id) : undefined}
+              onRetry={detail ? () => openDetail(detail.id, detailSelfSummary) : undefined}
             />
           )}
           {!detailLoading && !detailError && detail && (
@@ -327,8 +393,8 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                 {myResultChip && (
                   <Chip
                     label={
-                      myParticipant && !myParticipant.is_draw
-                        ? `${myResultChip.text} · ${formatPts(myParticipant.rank_score_delta)}`
+                      myDelta !== undefined && !(myParticipant?.is_draw ?? detailSelfSummary?.is_draw)
+                        ? `${myResultChip.text} · ${formatPts(myDelta)}`
                         : myResultChip.text
                     }
                     color={myResultChip.color}
@@ -352,6 +418,9 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                 {msg.career.detailStarted} {formatTime(detail.started_at)} · {msg.career.detailFinished}{' '}
                 {formatTime(detail.finished_at)} · {msg.career.detailDuration}{' '}
                 {formatDuration(detail.duration_seconds)}
+                {myAfter !== undefined && (
+                  <> · {msg.career.scoreAfter}: {myAfter.toLocaleString()}</>
+                )}
               </Typography>
 
               {detail.participants && detail.participants.length > 0 ? (

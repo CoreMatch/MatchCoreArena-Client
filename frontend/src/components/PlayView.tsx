@@ -72,6 +72,14 @@ interface MatchmakingStatusView {
   in_queue: boolean;
   queue_entry?: QueueEntryView;
   recent_groups: FormedGroupView[];
+  // Global queue busyness (contract v1.7.0, display-only).
+  queue_stats?: QueueStatsView;
+}
+
+interface QueueStatsView {
+  players: number;
+  parties: number;
+  average_wait_seconds: number;
 }
 
 interface MatchSummary {
@@ -137,6 +145,13 @@ function formatWait(enqueuedAt: string, now: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function formatSeconds(total: number): string {
+  const secs = Math.max(0, Math.floor(total));
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 // Expectation management for unusually long waits (research 04 §A2).
 const LONG_WAIT_SECS = 60;
 
@@ -158,6 +173,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   const [partyError, setPartyError] = useState<string | null>(null);
 
   const [queueEntry, setQueueEntry] = useState<QueueEntryView | null>(null);
+  const [queueStats, setQueueStats] = useState<QueueStatsView | null>(null);
   const [activeGroup, setActiveGroup] = useState<FormedGroupView | null>(null);
   const [settledMatch, setSettledMatch] = useState<MatchSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -234,6 +250,10 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
 
     const current = phaseRef.current;
 
+    // Display-only queue busyness (contract v1.7.0); never feeds the
+    // state machine.
+    setQueueStats(status.queue_stats ?? null);
+
     if (current === 'queued') {
       setQueueEntry(status.queue_entry ?? null);
       const freshGroup = (status.recent_groups ?? []).find(
@@ -278,6 +298,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
         const resp = await authFetch(() => GetMatchmakingStatus());
         const status = (resp?.data ?? resp) as MatchmakingStatusView;
         baselineGroupIds.current = new Set((status.recent_groups ?? []).map((g) => g.group_id));
+        setQueueStats(status.queue_stats ?? null);
         if (status.in_queue) {
           await snapshotMatches();
           setQueueEntry(status.queue_entry ?? null);
@@ -656,6 +677,15 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                   {waitSeconds(queueEntry?.enqueued_at ?? '', now) >= LONG_WAIT_SECS && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                       {msg.play.queueLongWait}
+                    </Typography>
+                  )}
+                  {queueStats && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                      {msg.play.queueStatsTemplate
+                        .replace('{players}', String(queueStats.players))
+                        .replace('{parties}', String(queueStats.parties))}
+                      {queueStats.average_wait_seconds > 0 &&
+                        ` · ${msg.play.avgWaitTemplate.replace('{time}', formatSeconds(queueStats.average_wait_seconds))}`}
                     </Typography>
                   )}
                   <Button startIcon={<CancelIcon />} onClick={cancelQueue} variant="outlined">

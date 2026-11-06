@@ -33,9 +33,18 @@ type FormedGroup struct {
 	JoinTarget *GroupJoinTarget `json:"join_target,omitempty"`
 }
 
-// MatchmakingStatus 用户当前匹配状态（服务端契约 v1.6.0 MatchmakingStatus）。
+// QueueStats 全局队列繁忙度（契约 v1.7.0，纯展示；跨模式全局口径，
+// 不影响状态机）。
+type QueueStats struct {
+	Players            int64 `json:"players"`
+	Parties            int64 `json:"parties"`
+	AverageWaitSeconds int64 `json:"average_wait_seconds"`
+}
+
+// MatchmakingStatus 用户当前匹配状态（服务端契约 v1.7.0 MatchmakingStatus）。
 type MatchmakingStatus struct {
 	InQueue      bool          `json:"in_queue"`
 	QueueEntry   *QueueEntry   `json:"queue_entry,omitempty"`
 	RecentGroups []FormedGroup `json:"recent_groups"`
+	QueueStats   QueueStats    `json:"queue_stats"`
 }

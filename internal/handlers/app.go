@@ -109,6 +109,12 @@ func (h *AppHandler) GetMyRanking(rankType string, season int) (interface{}, err
 	return h.ranking.GetMyRanking(rankType, season)
 }
 
+// GetRankingTiers returns the display-only tier ladder (contract v1.7.0);
+// empty array = no tiers configured, no progress bar.
+func (h *AppHandler) GetRankingTiers() (interface{}, error) {
+	return h.ranking.GetRankingTiers()
+}
+
 // Match methods (read-only)
 func (h *AppHandler) GetMatch(id int64) (interface{}, error) {
 	return h.match.GetMatch(id)

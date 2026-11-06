@@ -34,6 +34,10 @@ export function GetMyRanking(arg1, arg2) {
   return window['go']['main']['App']['GetMyRanking'](arg1, arg2);
 }
 
+export function GetRankingTiers() {
+  return window['go']['main']['App']['GetRankingTiers']();
+}
+
 export function GetTopRankings(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetTopRankings'](arg1, arg2, arg3);
 }
