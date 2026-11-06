@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Card, CardContent, Chip, Skeleton, LinearProgress } from '@mui/material';
-import { EmojiEvents as TrophyIcon } from '@mui/icons-material';
+import { Trophy } from 'lucide-react';
+import { Badge, EmptyState, ErrorState, Icon, Panel, Progress, Skeleton } from '@ha/ui';
 import { GetMyRanking, GetTopRankings, GetRankingTiers } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
-import { accentTint } from '../theme';
-import { EmptyState, ErrorState } from './StateViews';
 
 interface RankCardProps {
   rankType: string;
@@ -115,34 +113,30 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
 
   if (state === 'loading') {
     return (
-      <Card sx={{ height: '100%' }}>
-        <CardContent>
-          <Skeleton height={28} width={160} />
-          <Skeleton height={44} />
-        </CardContent>
-      </Card>
+      <Panel className="p-6">
+        <Skeleton className="mb-3 h-6 w-40" />
+        <Skeleton className="h-12 w-full" />
+      </Panel>
     );
   }
 
   if (state === 'error') {
     return (
-      <Card sx={{ height: '100%' }}>
+      <Panel>
         <ErrorState message={loadErrorMessage(msg.rankCard.loadErrorData)} onRetry={load} />
-      </Card>
+      </Panel>
     );
   }
 
   if (state === 'unranked' || !myRank) {
     return (
-      <Card sx={{ height: '100%' }}>
-        <CardContent>
-          <EmptyState
-            icon={<TrophyIcon />}
-            title={msg.rankCard.unrankedTitle}
-            hint={msg.rankCard.unrankedHint}
-          />
-        </CardContent>
-      </Card>
+      <Panel>
+        <EmptyState
+          icon={<Icon as={Trophy} size={34} />}
+          title={msg.rankCard.unrankedTitle}
+          hint={msg.rankCard.unrankedHint}
+        />
+      </Panel>
     );
   }
 
@@ -164,76 +158,63 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
     : 0;
 
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrophyIcon sx={{ color: 'secondary.main' }} />
-            <Typography variant="h6">{msg.rankCard.title}</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {tier?.current && (
-              <Chip label={tier.current.name} size="small" color="secondary" sx={{ fontWeight: 700 }} />
-            )}
-            <Chip label={`${msg.career.detailType}: ${rankType}`} size="small" sx={accentTint} />
-            <Chip label={`${msg.rankCard.season} ${season}`} size="small" />
-          </Box>
-        </Box>
+    <Panel className="p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Icon as={Trophy} className="text-gold" size={20} />
+          <h2 className="text-lg font-bold text-ink">{msg.rankCard.title}</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {tier?.current && <Badge tone="gold" strong>{tier.current.name}</Badge>}
+          <Badge tone="accent" className="font-mono">{rankType}</Badge>
+          <Badge>{msg.rankCard.season} {season}</Badge>
+        </div>
+      </div>
 
-        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'baseline' }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              {msg.rankCard.score}
-            </Typography>
-            <Typography variant="h4" sx={{ color: 'secondary.main' }}>
-              {myRank.score.toLocaleString()}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              {msg.rankCard.rank}
-            </Typography>
-            <Typography variant="h4">
-              #{myRank.rank_position}
-              {topLabel && (
-                <Typography component="span" variant="body2" sx={{ ml: 1, color: 'success.main' }}>
-                  {topLabel}
-                </Typography>
-              )}
-            </Typography>
-          </Box>
-          {winsCount !== undefined && (
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                {msg.rankCard.wins}
-              </Typography>
-              <Typography variant="h4">{winsCount}</Typography>
-            </Box>
-          )}
-        </Box>
+      <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+            {msg.rankCard.score}
+          </div>
+          <div className="font-mono text-hero font-bold tabular-nums text-gold">
+            {myRank.score.toLocaleString()}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+            {msg.rankCard.rank}
+          </div>
+          <div className="font-mono text-hero font-bold tabular-nums text-ink">
+            #{myRank.rank_position}
+            {topLabel && <span className="ml-2 align-middle text-base font-semibold text-ok">{topLabel}</span>}
+          </div>
+        </div>
+        {winsCount !== undefined && (
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+              {msg.rankCard.wins}
+            </div>
+            <div className="font-mono text-hero font-bold tabular-nums text-ink">{winsCount}</div>
+          </div>
+        )}
+      </div>
 
-        {/* Tier progress — only when the server provides a ladder */}
-        {tier?.next && (
-          <Box sx={{ mt: 2 }}>
-            <LinearProgress
-              variant="determinate"
-              value={tierProgress}
-              color="secondary"
-              sx={{ height: 8, borderRadius: 1, mb: 0.5 }}
-            />
-            <Typography variant="caption" color="text.secondary">
-              {msg.rankCard.toNextTemplate
-                .replace('{pts}', String(toNextPts))
-                .replace('{tier}', tier.next.name)}
-            </Typography>
-          </Box>
-        )}
-        {tier && tier.current && !tier.next && (
-          <Typography variant="caption" sx={{ color: 'secondary.main', fontWeight: 600, display: 'block', mt: 2 }}>
-            {msg.rankCard.topTier}
-          </Typography>
-        )}
-      </CardContent>
-    </Card>
+      {/* Tier progress — only when the server provides a ladder */}
+      {tier?.next && (
+        <div className="mt-5">
+          <Progress value={tierProgress} tone="gold" />
+          <div className="mt-1.5 font-mono text-xs tabular-nums text-ink-faint">
+            {msg.rankCard.toNextTemplate
+              .replace('{pts}', String(toNextPts))
+              .replace('{tier}', tier.next.name)}
+          </div>
+        </div>
+      )}
+      {tier && tier.current && !tier.next && (
+        <div className="mt-4 text-xs font-bold uppercase tracking-wider text-gold">
+          {msg.rankCard.topTier}
+        </div>
+      )}
+    </Panel>
   );
 }

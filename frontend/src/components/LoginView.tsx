@@ -1,16 +1,6 @@
 import { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  Link,
-} from '@mui/material';
-import { Login as LoginIcon } from '@mui/icons-material';
+import { ShieldCheck } from 'lucide-react';
+import { Banner, Button, Field, Icon, Input, Panel, Spinner } from '@ha/ui';
 import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
 
@@ -92,109 +82,76 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '80vh',
-      }}
-    >
-      <Card sx={{ maxWidth: 400, width: '100%' }}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <LoginIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-            <Typography variant="h4" component="h1" gutterBottom>
-              MatchCoreArena
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {msg.login.subtitle}
-            </Typography>
-          </Box>
+    <div className="flex min-h-[85vh] items-center justify-center">
+      <Panel className="w-full max-w-md p-8">
+        <div className="mb-6 text-center">
+          <div className="mb-3 flex justify-center text-accent">
+            <Icon as={ShieldCheck} size={40} />
+          </div>
+          <h1 className="text-display font-bold tracking-tight text-ink">
+            MatchCore<span className="text-accent">Arena</span>
+          </h1>
+          <p className="mt-1 text-sm text-ink-muted">{msg.login.subtitle}</p>
+        </div>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+        {error && (
+          <div className="mb-4">
+            <Banner tone="danger">
               {error}
-              {errorDetail && (
-                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.8 }}>
-                  {errorDetail}
-                </Typography>
-              )}
-            </Alert>
-          )}
+              {errorDetail && <div className="mt-1 break-all text-xs opacity-80">{errorDetail}</div>}
+            </Banner>
+          </div>
+        )}
 
-          {!showTotp ? (
-            <form onSubmit={handleLogin}>
-              <TextField
-                fullWidth
-                label={msg.login.email}
+        {!showTotp ? (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Field label={msg.login.email}>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                sx={{ mb: 2 }}
+                autoComplete="email"
               />
-              <TextField
-                fullWidth
-                label={msg.login.password}
+            </Field>
+            <Field label={msg.login.password}>
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                sx={{ mb: 3 }}
+                autoComplete="current-password"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{ py: 1.5, fontSize: '1rem' }}
-              >
-                {loading ? <CircularProgress size={24} /> : msg.login.signIn}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleTotpVerify}>
-              <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
-                {msg.login.totpPrompt}
-              </Typography>
-              <TextField
-                fullWidth
-                label={msg.login.totpCode}
+            </Field>
+            <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+              {loading ? <Spinner /> : msg.login.signIn}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleTotpVerify} className="space-y-4">
+            <p className="text-center text-sm text-ink-muted">{msg.login.totpPrompt}</p>
+            <Field label={msg.login.totpCode}>
+              <Input
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
                 required
-                slotProps={{
-                  htmlInput: { maxLength: 6 },
-                }}
-                sx={{ mb: 3 }}
+                maxLength={6}
+                className="text-center font-mono tracking-[0.4em]"
+                autoComplete="one-time-code"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{ py: 1.5, fontSize: '1rem' }}
-              >
-                {loading ? <CircularProgress size={24} /> : msg.login.verify}
-              </Button>
-            </form>
-          )}
+            </Field>
+            <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+              {loading ? <Spinner /> : msg.login.verify}
+            </Button>
+          </form>
+        )}
 
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Link
-              href="#"
-              sx={{
-                color: 'text.secondary',
-                textDecoration: 'none',
-                '&:hover': { color: 'primary.main' },
-              }}
-            >
-              {msg.login.forgotPassword}
-            </Link>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
+        <div className="mt-6 text-center">
+          <a href="#" className="text-xs text-ink-faint transition-colors duration-150 hover:text-accent">
+            {msg.login.forgotPassword}
+          </a>
+        </div>
+      </Panel>
+    </div>
   );
 }

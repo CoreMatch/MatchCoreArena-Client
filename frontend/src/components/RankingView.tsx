@@ -1,34 +1,10 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Skeleton,
-  Avatar,
-  IconButton,
-} from '@mui/material';
-import {
-  EmojiEvents as TrophyIcon,
-  Refresh as RefreshIcon,
-  Leaderboard as LeaderboardIcon,
-} from '@mui/icons-material';
+import { BarChart3, RefreshCw, Trophy } from 'lucide-react';
+import { EmptyState, ErrorState, Field, Icon, Panel, Select, Skeleton, Table, Td, Th } from '@ha/ui';
 import { GetTopRankings } from '../../wailsjs/go/main/App';
 import { authFetch } from '../session';
 import { t, loadErrorMessage } from '../i18n';
-import { tokens } from '../theme';
 import RankCard from './RankCard';
-import { EmptyState, ErrorState, LoadingList } from './StateViews';
 
 interface RankingEntry {
   id: number;
@@ -84,18 +60,11 @@ export default function RankingView({ winsCount }: RankingViewProps) {
 
   const getRankColor = (position: number) => {
     switch (position) {
-      case 1: return tokens.color.gold;
-      case 2: return tokens.color.silver;
-      case 3: return tokens.color.bronze;
-      default: return 'text.secondary';
+      case 1: return 'text-gold';
+      case 2: return 'text-silver';
+      case 3: return 'text-bronze';
+      default: return 'text-ink-muted';
     }
-  };
-
-  const getRankIcon = (position: number) => {
-    if (position <= 3) {
-      return <TrophyIcon sx={{ color: getRankColor(position), mr: 1 }} />;
-    }
-    return null;
   };
 
   const topLabel = (count: number) => msg.rankings.topTemplate.replace('{count}', String(count));
@@ -103,177 +72,133 @@ export default function RankingView({ winsCount }: RankingViewProps) {
 
   if (loading) {
     return (
-      <Box>
-        <Skeleton width={220} height={48} sx={{ mb: 3 }} />
-        <Box sx={{ mb: 3 }}>
-          <Card>
-            <LoadingList rows={2} />
-          </Card>
-        </Box>
-        <Card>
-          <LoadingList rows={8} rowHeight={48} />
-        </Card>
-      </Box>
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-56" />
+        <Panel className="p-6">
+          <Skeleton className="mb-3 h-6 w-40" />
+          <Skeleton className="h-12 w-full" />
+        </Panel>
+        <Panel className="p-4">
+          <div className="space-y-2">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </Panel>
+      </div>
     );
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
+    <div className="space-y-6">
+      {/* Header + filters */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="text-display font-bold tracking-tight text-ink">
           {msg.nav.rankings}
-          {totalCount > 0 && ` (${totalCount})`}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel>{msg.rankings.type}</InputLabel>
+          {totalCount > 0 && (
+            <span className="ml-2 font-mono text-lg font-medium tabular-nums text-ink-faint">
+              ({totalCount.toLocaleString()})
+            </span>
+          )}
+        </h1>
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label={msg.rankings.type}>
             <Select
               value={rankType}
-              label={msg.rankings.type}
-              onChange={(e) => setRankType(e.target.value)}
-            >
-              <MenuItem value="1v1">1v1</MenuItem>
-              <MenuItem value="2v2">2v2</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl sx={{ minWidth: 100 }} size="small">
-            <InputLabel>{msg.rankings.season}</InputLabel>
+              onValueChange={setRankType}
+              ariaLabel={msg.rankings.type}
+              options={[
+                { value: '1v1', label: '1v1' },
+                { value: '2v2', label: '2v2' },
+              ]}
+              className="w-24"
+            />
+          </Field>
+          <Field label={msg.rankings.season}>
             <Select
-              value={season}
-              label={msg.rankings.season}
-              onChange={(e) => setSeason(e.target.value as number)}
-            >
-              <MenuItem value={1}>{msg.rankCard.season} 1</MenuItem>
-              <MenuItem value={2}>{msg.rankCard.season} 2</MenuItem>
-              <MenuItem value={3}>{msg.rankCard.season} 3</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl sx={{ minWidth: 100 }} size="small">
-            <InputLabel>{msg.rankings.limit}</InputLabel>
+              value={String(season)}
+              onValueChange={(v) => setSeason(Number(v))}
+              ariaLabel={msg.rankings.season}
+              options={[1, 2, 3].map((n) => ({ value: String(n), label: `${msg.rankCard.season} ${n}` }))}
+              className="w-28"
+            />
+          </Field>
+          <Field label={msg.rankings.limit}>
             <Select
-              value={limit}
-              label={msg.rankings.limit}
-              onChange={(e) => setLimit(e.target.value as number)}
-            >
-              <MenuItem value={50}>{topLabel(50)}</MenuItem>
-              <MenuItem value={100}>{topLabel(100)}</MenuItem>
-              <MenuItem value={200}>{topLabel(200)}</MenuItem>
-              <MenuItem value={500}>{topLabel(500)}</MenuItem>
-            </Select>
-          </FormControl>
-
-          <IconButton onClick={fetchRankings} title={msg.common.refresh}>
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Box>
+              value={String(limit)}
+              onValueChange={(v) => setLimit(Number(v))}
+              ariaLabel={msg.rankings.limit}
+              options={[50, 100, 200, 500].map((n) => ({ value: String(n), label: topLabel(n) }))}
+              className="w-28"
+            />
+          </Field>
+          <button
+            type="button"
+            onClick={fetchRankings}
+            title={msg.common.refresh}
+            className="mb-0.5 rounded-md border border-edge-strong p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
+          >
+            <Icon as={RefreshCw} size={16} />
+          </button>
+        </div>
+      </div>
 
       {/* My Rank Card (A4) */}
-      <Box sx={{ mb: 3 }}>
-        <RankCard rankType={rankType} season={season} winsCount={winsCount} />
-      </Box>
+      <RankCard rankType={rankType} season={season} winsCount={winsCount} />
 
-      {/* Rankings Table */}
+      {/* Rankings table */}
       {error ? (
-        <Card>
+        <Panel>
           <ErrorState message={error} onRetry={fetchRankings} />
-        </Card>
+        </Panel>
       ) : (
-        <Card>
-          <TableContainer component={Paper} sx={{ backgroundColor: 'transparent' }}>
+        <Panel>
+          {rankings.length === 0 ? (
+            <EmptyState
+              icon={<Icon as={BarChart3} size={34} />}
+              title={msg.rankings.emptyTitle}
+              hint={msg.rankings.emptyHint}
+            />
+          ) : (
             <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{
-                      color: 'text.secondary',
-                      fontWeight: 'bold',
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    {msg.rankings.colRank}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      color: 'text.secondary',
-                      fontWeight: 'bold',
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    {msg.rankings.colPlayer}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      color: 'text.secondary',
-                      fontWeight: 'bold',
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                      textAlign: 'right',
-                    }}
-                  >
-                    {msg.rankings.colScore}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rankings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} sx={{ borderBottom: 'none' }}>
-                      <EmptyState
-                        icon={<LeaderboardIcon />}
-                        title={msg.rankings.emptyTitle}
-                        hint={msg.rankings.emptyHint}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rankings.map((entry) => (
-                    <TableRow
-                      key={entry.id}
-                      sx={{
-                        '&:last-child td': {
-                          borderBottom: 0,
-                        },
-                      }}
-                    >
-                      <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {getRankIcon(entry.rank_position)}
-                          <Typography sx={{ color: getRankColor(entry.rank_position), fontWeight: 'bold' }}>
-                            {entry.rank_position}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32, mr: 1, fontSize: '0.875rem' }}>
-                            P
-                          </Avatar>
-                          <Typography>{playerLabel(entry.user_uid)}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          borderBottom: '1px solid',
-                          borderColor: 'divider',
-                          textAlign: 'right',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {entry.score.toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
+              <thead>
+                <tr>
+                  <Th className="w-28">{msg.rankings.colRank}</Th>
+                  <Th>{msg.rankings.colPlayer}</Th>
+                  <Th className="text-right">{msg.rankings.colScore}</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {rankings.map((entry) => (
+                  <tr key={entry.id} className="transition-colors duration-150 hover:bg-raised">
+                    <Td>
+                      <span className="flex items-center gap-2">
+                        {entry.rank_position <= 3 && (
+                          <Icon as={Trophy} size={16} className={getRankColor(entry.rank_position)} />
+                        )}
+                        <span className={`font-mono text-base font-bold tabular-nums ${getRankColor(entry.rank_position)}`}>
+                          {entry.rank_position}
+                        </span>
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-xs font-bold text-on-accent">
+                          P
+                        </span>
+                        <span className="text-sm text-ink">{playerLabel(entry.user_uid)}</span>
+                      </span>
+                    </Td>
+                    <Td className="text-right font-mono text-base font-bold tabular-nums text-ink">
+                      {entry.score.toLocaleString()}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
             </Table>
-          </TableContainer>
-        </Card>
+          )}
+        </Panel>
       )}
-    </Box>
+    </div>
   );
 }

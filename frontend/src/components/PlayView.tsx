@@ -1,33 +1,31 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Avatar,
-  Chip,
-  TextField,
-  Button,
-  Alert,
-  IconButton,
-  Stack,
-  Collapse,
-  Stepper,
-  Step,
-  StepLabel,
-} from '@mui/material';
+  CheckCircle2,
+  ChevronRight,
+  Circle,
+  Copy,
+  History,
+  ListChecks,
+  Play,
+  Plus,
+  RefreshCw,
+  Users,
+  XCircle,
+} from 'lucide-react';
 import {
-  PlayArrow as PlayIcon,
-  Cancel as CancelIcon,
-  Refresh as RefreshIcon,
-  Add as AddIcon,
-  Groups as GroupsIcon,
-  CheckCircle as CheckCircleIcon,
-  ContentCopy as ContentCopyIcon,
-  History as HistoryIcon,
-  RadioButtonUnchecked as RadioButtonUncheckedIcon,
-} from '@mui/icons-material';
+  Badge,
+  Banner,
+  Button,
+  EmptyState,
+  Field,
+  Icon,
+  Input,
+  Inset,
+  Panel,
+  Skeleton,
+  Stat,
+  Stepper,
+} from '@ha/ui';
 import {
   GetMatchmakingStatus,
   JoinMatchmaking,
@@ -38,9 +36,7 @@ import {
 } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
 import { authFetch } from '../session';
-import { accentTint } from '../theme';
 import RankCard from './RankCard';
-import { EmptyState, LoadingList } from './StateViews';
 import type { UserProfile } from '../types';
 
 interface QueueEntryView {
@@ -110,8 +106,8 @@ type QueuePhase = 'idle' | 'joining' | 'queued' | 'found' | 'in_match' | 'settle
 const POLL_MS = 3000;
 const HANDOFF_POLL_MS = 2000;
 
-// Step order of the phase indicator shown while a cycle is active.
-const PHASE_STEPS = ['stateQueued', 'stateFound', 'stateInMatch', 'stateSettled'] as const;
+// Expectation management for unusually long waits (research 04 §A2).
+const LONG_WAIT_SECS = 60;
 
 function phaseStepIndex(phase: QueuePhase): number {
   switch (phase) {
@@ -151,9 +147,6 @@ function formatSeconds(total: number): string {
   const s = secs % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
-
-// Expectation management for unusually long waits (research 04 §A2).
-const LONG_WAIT_SECS = 60;
 
 interface PlayViewProps {
   user: UserProfile | null;
@@ -444,477 +437,398 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
     return Array.from(teams.entries()).sort(([a], [b]) => a.localeCompare(b));
   };
 
-  const stateChip = () => {
+  const phaseBadge = () => {
     switch (phase) {
       case 'queued':
-        return <Chip label={msg.play.stateQueued} color="warning" size="small" />;
+        return <Badge tone="warn" strong>{msg.play.stateQueued}</Badge>;
       case 'found':
-        return <Chip label={msg.play.stateFound} color="success" size="small" />;
+        return <Badge tone="ok" strong>{msg.play.stateFound}</Badge>;
       case 'in_match':
-        return <Chip label={msg.play.stateInMatch} color="info" size="small" />;
+        return <Badge tone="info" strong>{msg.play.stateInMatch}</Badge>;
       case 'settled':
-        return <Chip label={msg.play.stateSettled} color="default" size="small" />;
+        return <Badge tone="neutral" strong>{msg.play.stateSettled}</Badge>;
       default:
         return null;
     }
   };
 
   const stepIndex = phaseStepIndex(phase);
+  const stepLabels = [msg.play.stateQueued, msg.play.stateFound, msg.play.stateInMatch, msg.play.stateSettled];
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-        <Typography variant="h4">{msg.play.title}</Typography>
-        {stateChip()}
-      </Box>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-display font-bold tracking-tight text-ink">{msg.play.title}</h1>
+        {phaseBadge()}
+      </div>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        {msg.readOnly.notice}
-      </Alert>
+      <Banner tone="info">{msg.readOnly.notice}</Banner>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Banner tone="danger">
           {error}
-          {errorDetail && (
-            <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.8 }}>
-              {errorDetail}
-            </Typography>
-          )}
-        </Alert>
+          {errorDetail && <div className="mt-1 break-all text-xs opacity-80">{errorDetail}</div>}
+        </Banner>
       )}
 
-      <Grid container spacing={3}>
-        {/* Player summary (merged from the former Home page) */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48, mr: 2, fontSize: '1.25rem' }}>
-                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                </Avatar>
-                <Box>
-                  <Typography variant="h6">{user?.username || 'Player'}</Typography>
-                  <Chip
-                    label={`${msg.play.level} ${user?.level || 1}`}
-                    size="small"
-                    sx={{ ...accentTint, fontWeight: 'bold' }}
-                  />
-                </Box>
-              </Box>
-              <Stack spacing={1}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.play.experience}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'success.main' }}>
-                    {(user?.experience ?? 0).toLocaleString()}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.play.rankScore}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'secondary.main' }}>
-                    {user?.rank_score ?? '—'}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Player stat strip */}
+      <Panel className="px-6 py-5">
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-accent text-lg font-bold text-on-accent">
+              {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+            </span>
+            <div>
+              <div className="text-base font-bold text-ink">{user?.username || 'Player'}</div>
+              <Badge tone="accent" strong>{msg.play.level} {user?.level || 1}</Badge>
+            </div>
+          </div>
+          <Stat label={msg.play.experience} value={(user?.experience ?? 0).toLocaleString()} size="display" tone="ok" />
+          <Stat label={msg.play.rankScore} value={user?.rank_score ?? '—'} size="display" tone="gold" />
+        </div>
+      </Panel>
 
-        {/* Rank card (A4) */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <RankCard rankType={mode.trim() || '1v1'} season={1} winsCount={user?.wins_count} />
-        </Grid>
+      {/* Rank card (A4) */}
+      <RankCard rankType={mode.trim() || '1v1'} season={1} winsCount={user?.wins_count} />
 
-        {/* Get-started checklist (guidance state, research 04 §A6 first-run
-            checklist) until the first settled match lands */}
-        {(phase === 'idle' || phase === 'joining') && (user?.wins_count ?? 0) === 0 && (
-          <Grid size={{ xs: 12 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  {msg.play.getStartedTitle}
-                </Typography>
-                <Stack spacing={1.5}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                      {msg.play.getStartedSignIn}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
-                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                      {msg.play.getStartedQueue}
-                    </Typography>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<PlayIcon />}
-                      onClick={findMatch}
-                      disabled={phase === 'joining' || mode.trim() === ''}
-                    >
-                      {msg.play.findMatch}
-                    </Button>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
-                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                      {msg.play.getStartedRankings}
-                    </Typography>
-                    {onOpenRankings && (
-                      <Button size="small" variant="outlined" onClick={onOpenRankings}>
-                        {msg.play.viewRankings}
-                      </Button>
-                    )}
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
+      {/* Get-started checklist (guidance state, research 04 §A6 first-run
+          checklist) until the first settled match lands */}
+      {(phase === 'idle' || phase === 'joining') && (user?.wins_count ?? 0) === 0 && (
+        <Panel className="px-6 py-5">
+          <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-faint">
+            <Icon as={ListChecks} size={16} />
+            {msg.play.getStartedTitle}
+          </h2>
+          <ul className="space-y-3">
+            <li className="flex items-center gap-3">
+              <Icon as={CheckCircle2} className="text-ok" />
+              <span className="flex-1 text-sm text-ink-muted">{msg.play.getStartedSignIn}</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <Icon as={Circle} className="text-ink-faint" />
+              <span className="flex-1 text-sm text-ink">{msg.play.getStartedQueue}</span>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={findMatch}
+                disabled={phase === 'joining' || mode.trim() === ''}
+              >
+                {msg.play.findMatch}
+              </Button>
+            </li>
+            <li className="flex items-center gap-3">
+              <Icon as={Circle} className="text-ink-faint" />
+              <span className="flex-1 text-sm text-ink">{msg.play.getStartedRankings}</span>
+              {onOpenRankings && (
+                <Button variant="outline" size="sm" onClick={onOpenRankings}>
+                  {msg.play.viewRankings}
+                </Button>
+              )}
+            </li>
+          </ul>
+        </Panel>
+      )}
+
+      {/* Queue card */}
+      <Panel className="px-6 py-5">
+        <h2 className="mb-4 text-lg font-bold text-ink">{msg.play.queueCardTitle}</h2>
+
+        {/* Phase indicator: one glance tells where the cycle stands */}
+        {stepIndex >= 0 && (
+          <div className="mb-6">
+            <Stepper steps={stepLabels} active={stepIndex} />
+          </div>
         )}
 
-        {/* Queue card */}
-        <Grid size={{ xs: 12 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                {msg.play.queueCardTitle}
-              </Typography>
+        {(phase === 'idle' || phase === 'joining') && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label={msg.play.mode} className="w-40">
+                <Input value={mode} onChange={(e) => setMode(e.target.value)} className="font-mono" />
+              </Field>
+              <Button
+                variant={partyOpen ? 'primary' : 'outline'}
+                onClick={() => setPartyOpen((v) => !v)}
+                aria-expanded={partyOpen}
+              >
+                <Icon as={Users} size={16} />
+                {msg.play.partyToggle}
+              </Button>
+            </div>
 
-              {/* Phase indicator: one glance tells where the cycle stands */}
-              {stepIndex >= 0 && (
-                <Stepper activeStep={stepIndex} sx={{ mb: 3 }}>
-                  {PHASE_STEPS.map((key) => (
-                    <Step key={key}>
-                      <StepLabel>{msg.play[key]}</StepLabel>
-                    </Step>
-                  ))}
-                </Stepper>
-              )}
-
-              {(phase === 'idle' || phase === 'joining') && (
-                <Box>
-                  <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-                    <TextField
-                      label={msg.play.mode}
-                      size="small"
-                      value={mode}
-                      onChange={(e) => setMode(e.target.value)}
-                      sx={{ width: 160 }}
-                    />
-                    <Button
-                      startIcon={<GroupsIcon />}
-                      onClick={() => setPartyOpen((v) => !v)}
-                      variant={partyOpen ? 'contained' : 'outlined'}
-                    >
-                      {msg.play.partyToggle}
-                    </Button>
-                  </Stack>
-
-                  <Collapse in={partyOpen}>
-                    <Alert severity="info" sx={{ mb: 1 }}>
-                      {msg.play.partyHint}
-                    </Alert>
-                    <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        placeholder={msg.play.partyInputPlaceholder}
-                        value={partyInput}
-                        onChange={(e) => setPartyInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') addPartyMember();
-                        }}
-                      />
-                      <Button onClick={addPartyMember} startIcon={<AddIcon />} variant="outlined">
-                        {msg.play.partyAdd}
-                      </Button>
-                    </Stack>
-                    {partyError && (
-                      <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mb: 1 }}>
-                        {partyError}
-                      </Typography>
-                    )}
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                      {partyMembers.map((uuid) => (
-                        <Chip
-                          key={uuid}
-                          label={uuid}
-                          size="small"
-                          onDelete={() => setPartyMembers((prev) => prev.filter((u) => u !== uuid))}
-                          sx={{ fontFamily: 'monospace' }}
-                        />
-                      ))}
-                    </Box>
-                  </Collapse>
-
-                  <Button
-                    startIcon={<PlayIcon />}
-                    onClick={findMatch}
-                    disabled={phase === 'joining' || mode.trim() === ''}
-                    variant="contained"
-                    size="large"
-                  >
-                    {phase === 'joining' ? msg.play.joining : msg.play.findMatch}
-                  </Button>
-                </Box>
-              )}
-
-              {phase === 'queued' && (
-                <Box>
-                  <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h5" sx={{ color: 'warning.main' }}>
-                      {formatWait(queueEntry?.enqueued_at ?? '', now)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {msg.play.waiting} · {queueEntry?.match_type ?? mode}
-                      {queueEntry?.party_id ? ` · ${msg.play.partyToggle}` : ''}
-                    </Typography>
-                  </Stack>
-                  {waitSeconds(queueEntry?.enqueued_at ?? '', now) >= LONG_WAIT_SECS && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                      {msg.play.queueLongWait}
-                    </Typography>
-                  )}
-                  {queueStats && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                      {msg.play.queueStatsTemplate
-                        .replace('{players}', String(queueStats.players))
-                        .replace('{parties}', String(queueStats.parties))}
-                      {queueStats.average_wait_seconds > 0 &&
-                        ` · ${msg.play.avgWaitTemplate.replace('{time}', formatSeconds(queueStats.average_wait_seconds))}`}
-                    </Typography>
-                  )}
-                  <Button startIcon={<CancelIcon />} onClick={cancelQueue} variant="outlined">
-                    {msg.play.cancelQueue}
-                  </Button>
-                </Box>
-              )}
-
-              {(phase === 'found' || phase === 'in_match') && activeGroup && (
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography
-                      variant="h5"
-                      sx={{ color: phase === 'found' ? 'success.main' : 'info.main' }}
-                    >
-                      {phase === 'found' ? msg.play.stateFound : msg.play.stateInMatch} ·{' '}
-                      {msg.play.groupLabel} #{activeGroup.group_id}
-                    </Typography>
-                  </Box>
-
-                  <Stack spacing={1} sx={{ mb: 2 }}>
-                    {teamsOfGroup(activeGroup).map(([teamId, members]) => (
-                      <Box key={teamId} sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Chip label={`${msg.common.team} ${teamId}`} size="small" sx={accentTint} />
-                        {members.map((m) => (
-                          <Chip key={m.uid} label={`#${m.uid} · ${m.rank_score}`} size="small" />
-                        ))}
-                      </Box>
-                    ))}
-                  </Stack>
-
-                  {phase === 'found' && (
-                    <Box sx={{ p: 2, borderRadius: 1, backgroundColor: 'action.hover', mb: 2 }}>
-                      {activeGroup.join_target ? (
-                        <>
-                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: 'monospace',
-                                backgroundColor: 'background.default',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 1,
-                              }}
-                            >
-                              {activeGroup.join_target.host}:{activeGroup.join_target.port}
-                            </Typography>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              startIcon={<ContentCopyIcon />}
-                              onClick={copyGroupAddress}
-                            >
-                              {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
-                            </Button>
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary">
-                            {msg.play.joinServerHint}
-                          </Typography>
-                        </>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          {msg.play.joinServerMissing}
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-
-                  {phase === 'in_match' && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {msg.play.waitingResults}
-                    </Typography>
-                  )}
-
-                  {/* Client-side exit: the formed group itself stays on the
-                      server; dismiss only stops tracking it here. */}
-                  <Button size="small" color="inherit" onClick={resetCycle} sx={{ color: 'text.secondary' }}>
-                    {msg.play.dismissMatch}
-                  </Button>
-                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-                    {msg.play.dismissHint}
-                  </Typography>
-                </Box>
-              )}
-
-              {phase === 'settled' && settledMatch && (
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <CheckCircleIcon color="success" />
-                    <Typography variant="h6">
-                      {msg.play.matchRecorded} · #{settledMatch.id}
-                    </Typography>
-                  </Box>
-                  <Stack direction="row" spacing={2}>
-                    <Button variant="contained" onClick={() => onViewMatch(settledMatch.id)}>
-                      {msg.play.viewDetails}
-                    </Button>
-                    <Button variant="outlined" onClick={resetCycle}>
-                      {msg.play.queueAgain}
-                    </Button>
-                  </Stack>
-
-                  {/* Match handoff (INTEROP-SPEC v1) */}
-                  {handoff && (
-                    <Box sx={{ mt: 3, p: 2, borderRadius: 1, backgroundColor: 'action.hover' }}>
-                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        {msg.handoff.title}
-                      </Typography>
-
-                      {handoff.state === 'delivering' && (
-                        <Alert severity="info">{msg.handoff.delivering}</Alert>
-                      )}
-                      {handoff.state === 'waiting_receiver' && (
-                        <Alert severity="info">{msg.handoff.waitingReceiver}</Alert>
-                      )}
-                      {handoff.state === 'delivered' && (
-                        <Alert severity="success">{msg.handoff.delivered}</Alert>
-                      )}
-                      {(handoff.state === 'busy' ||
-                        handoff.state === 'timeout' ||
-                        handoff.state === 'no_receiver' ||
-                        handoff.state === 'version_mismatch' ||
-                        handoff.state === 'error') && (
-                        <Alert
-                          severity="warning"
-                          action={
-                            <Button color="inherit" size="small" onClick={() => startHandoff(settledMatch, activeGroup?.join_target)}>
-                              {msg.handoff.retry}
-                            </Button>
-                          }
-                        >
-                          {handoff.state === 'busy' && msg.handoff.busy}
-                          {handoff.state === 'timeout' && msg.handoff.timeout}
-                          {handoff.state === 'no_receiver' && msg.handoff.noReceiver}
-                          {handoff.state === 'version_mismatch' && msg.handoff.versionMismatch}
-                          {handoff.state === 'error' && (handoff.detail || msg.handoff.error)}
-                        </Alert>
-                      )}
-                      {handoff.state === 'missing_config' && (
-                        <Alert severity="info">{msg.handoff.missingConfig}</Alert>
-                      )}
-
-                      {handoff.host && handoff.port && handoff.state !== 'delivered' && (
-                        <Box sx={{ mt: 2 }}>
-                          {!handoff.game_reachable && (
-                            <Typography variant="caption" sx={{ color: 'warning.main', display: 'block', mb: 1 }}>
-                              {msg.handoff.gameUnreachable}
-                            </Typography>
-                          )}
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            {msg.handoff.manualJoinHint}
-                          </Typography>
-                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: 'monospace',
-                                backgroundColor: 'background.default',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 1,
-                              }}
-                            >
-                              {handoff.host}:{handoff.port}
-                            </Typography>
-                            <Button size="small" onClick={copyJoinAddress} startIcon={<ContentCopyIcon />}>
-                              {copied ? msg.handoff.copied : msg.handoff.copy}
-                            </Button>
-                          </Stack>
-                        </Box>
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Recent matches */}
-        <Grid size={{ xs: 12 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="h6">{msg.play.recentMatches}</Typography>
-                <IconButton onClick={refreshRecent} title={msg.common.refresh}>
-                  <RefreshIcon />
-                </IconButton>
-              </Box>
-              {recentLoading ? (
-                <LoadingList rows={3} rowHeight={40} />
-              ) : recentMatches.length === 0 ? (
-                <EmptyState
-                  icon={<HistoryIcon />}
-                  title={msg.play.noRecentMatches}
-                />
-              ) : (
-                <Stack spacing={1}>
-                  {recentMatches.map((m) => (
-                    <Box
-                      key={m.id}
-                      onClick={() => onViewMatch(m.id)}
-                      sx={{
-                        display: 'flex',
-                        gap: 2,
-                        alignItems: 'center',
-                        p: 1.5,
-                        borderRadius: 1,
-                        backgroundColor: 'action.hover',
-                        cursor: 'pointer',
-                        '&:hover': { backgroundColor: 'action.selected' },
+            {partyOpen && (
+              <div className="space-y-3 rounded-md border border-edge bg-base/40 p-4">
+                  <Banner tone="info">{msg.play.partyHint}</Banner>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={msg.play.partyInputPlaceholder}
+                      value={partyInput}
+                      onChange={(e) => setPartyInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addPartyMember();
+                        }
                       }}
+                      className="font-mono"
+                    />
+                    <Button variant="outline" onClick={addPartyMember}>
+                      <Icon as={Plus} size={16} />
+                      {msg.play.partyAdd}
+                    </Button>
+                  </div>
+                  {partyError && <div className="text-xs font-medium text-danger">{partyError}</div>}
+                  {partyMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {partyMembers.map((uuid) => (
+                        <span
+                          key={uuid}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-raised px-2 py-1 font-mono text-xs text-ink-muted"
+                        >
+                          {uuid}
+                          <button
+                            type="button"
+                            onClick={() => setPartyMembers((prev) => prev.filter((u) => u !== uuid))}
+                            className="text-ink-faint transition-colors duration-150 hover:text-danger"
+                            aria-label={`Remove ${uuid}`}
+                          >
+                            <XCircle size={13} aria-hidden />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+            )}
+
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={findMatch}
+              disabled={phase === 'joining' || mode.trim() === ''}
+              className="w-full text-base uppercase tracking-widest"
+            >
+              <Icon as={Play} size={20} />
+              {phase === 'joining' ? msg.play.joining : msg.play.findMatch}
+            </Button>
+          </div>
+        )}
+
+        {phase === 'queued' && (
+          <div className="space-y-3">
+            <div className="flex items-baseline gap-4">
+              <span className="font-mono text-hero font-bold tabular-nums text-warn">
+                {formatWait(queueEntry?.enqueued_at ?? '', now)}
+              </span>
+              <span className="text-sm text-ink-muted">
+                {msg.play.waiting} · {queueEntry?.match_type ?? mode}
+                {queueEntry?.party_id ? ` · ${msg.play.partyToggle}` : ''}
+              </span>
+            </div>
+            {waitSeconds(queueEntry?.enqueued_at ?? '', now) >= LONG_WAIT_SECS && (
+              <div className="text-xs text-ink-faint">{msg.play.queueLongWait}</div>
+            )}
+            {queueStats && (
+              <div className="font-mono text-xs tabular-nums text-ink-faint">
+                {msg.play.queueStatsTemplate
+                  .replace('{players}', String(queueStats.players))
+                  .replace('{parties}', String(queueStats.parties))}
+                {queueStats.average_wait_seconds > 0 &&
+                  ` · ${msg.play.avgWaitTemplate.replace('{time}', formatSeconds(queueStats.average_wait_seconds))}`}
+              </div>
+            )}
+            <Button variant="outline" onClick={cancelQueue}>
+              <Icon as={XCircle} size={16} />
+              {msg.play.cancelQueue}
+            </Button>
+          </div>
+        )}
+
+        {(phase === 'found' || phase === 'in_match') && activeGroup && (
+          <div className="space-y-4">
+            <div
+              className={`text-display font-bold tracking-tight ${
+                phase === 'found' ? 'text-ok' : 'text-info'
+              }`}
+            >
+              {phase === 'found' ? msg.play.stateFound : msg.play.stateInMatch}
+              <span className="ml-3 text-base font-semibold text-ink-muted">
+                {msg.play.groupLabel} #{activeGroup.group_id}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {teamsOfGroup(activeGroup).map(([teamId, members]) => (
+                <div key={teamId} className="flex flex-wrap items-center gap-2">
+                  <Badge tone="accent" strong>{msg.common.team} {teamId}</Badge>
+                  {members.map((m) => (
+                    <span
+                      key={m.uid}
+                      className="rounded-md border border-edge bg-raised px-2 py-1 font-mono text-xs text-ink-muted"
                     >
-                      <Chip label={m.match_type} size="small" sx={accentTint} />
-                      <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                        {m.map_name || '—'}
-                      </Typography>
-                      <Typography variant="caption" color="text.disabled">
-                        {new Date(m.finished_at).toLocaleString()}
-                      </Typography>
-                    </Box>
+                      #{m.uid} · {m.rank_score}
+                    </span>
                   ))}
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+                </div>
+              ))}
+            </div>
+
+            {phase === 'found' && (
+              <Inset className="space-y-3 p-4">
+                {activeGroup.join_target ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="rounded-md border border-edge bg-base px-3 py-1.5 font-mono text-sm font-medium text-ink">
+                        {activeGroup.join_target.host}:{activeGroup.join_target.port}
+                      </span>
+                      <Button variant="primary" size="sm" onClick={copyGroupAddress}>
+                        <Icon as={Copy} size={14} />
+                        {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
+                      </Button>
+                    </div>
+                    <p className="text-xs leading-relaxed text-ink-faint">{msg.play.joinServerHint}</p>
+                  </>
+                ) : (
+                  <p className="text-sm leading-relaxed text-ink-muted">{msg.play.joinServerMissing}</p>
+                )}
+              </Inset>
+            )}
+
+            {phase === 'in_match' && (
+              <p className="text-sm text-ink-muted">{msg.play.waitingResults}</p>
+            )}
+
+            {/* Client-side exit: the formed group itself stays on the
+                server; dismiss only stops tracking it here. */}
+            <div>
+              <Button variant="ghost" size="sm" onClick={resetCycle}>
+                {msg.play.dismissMatch}
+              </Button>
+              <p className="mt-1 text-xs text-ink-faint">{msg.play.dismissHint}</p>
+            </div>
+          </div>
+        )}
+
+        {phase === 'settled' && settledMatch && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Icon as={CheckCircle2} className="text-ok" size={24} />
+              <span className="text-display font-bold tracking-tight text-ink">
+                {msg.play.matchRecorded}
+              </span>
+              <span className="font-mono text-lg text-ink-muted">#{settledMatch.id}</span>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="primary" onClick={() => onViewMatch(settledMatch.id)}>
+                {msg.play.viewDetails}
+              </Button>
+              <Button variant="outline" onClick={resetCycle}>
+                {msg.play.queueAgain}
+              </Button>
+            </div>
+
+            {/* Match handoff (INTEROP-SPEC v1) */}
+            {handoff && (
+              <Inset className="space-y-3 p-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-ink-muted">
+                  {msg.handoff.title}
+                </h3>
+
+                {handoff.state === 'delivering' && <Banner tone="info">{msg.handoff.delivering}</Banner>}
+                {handoff.state === 'waiting_receiver' && <Banner tone="info">{msg.handoff.waitingReceiver}</Banner>}
+                {handoff.state === 'delivered' && <Banner tone="ok">{msg.handoff.delivered}</Banner>}
+                {(handoff.state === 'busy' ||
+                  handoff.state === 'timeout' ||
+                  handoff.state === 'no_receiver' ||
+                  handoff.state === 'version_mismatch' ||
+                  handoff.state === 'error') && (
+                  <Banner
+                    tone="warn"
+                    action={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startHandoff(settledMatch, activeGroup?.join_target)}
+                      >
+                        {msg.handoff.retry}
+                      </Button>
+                    }
+                  >
+                    {handoff.state === 'busy' && msg.handoff.busy}
+                    {handoff.state === 'timeout' && msg.handoff.timeout}
+                    {handoff.state === 'no_receiver' && msg.handoff.noReceiver}
+                    {handoff.state === 'version_mismatch' && msg.handoff.versionMismatch}
+                    {handoff.state === 'error' && (handoff.detail || msg.handoff.error)}
+                  </Banner>
+                )}
+                {handoff.state === 'missing_config' && <Banner tone="info">{msg.handoff.missingConfig}</Banner>}
+
+                {handoff.host && handoff.port && handoff.state !== 'delivered' && (
+                  <div className="space-y-2">
+                    {!handoff.game_reachable && (
+                      <div className="text-xs font-medium text-warn">{msg.handoff.gameUnreachable}</div>
+                    )}
+                    <p className="text-xs text-ink-faint">{msg.handoff.manualJoinHint}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md border border-edge bg-base px-3 py-1.5 font-mono text-sm text-ink">
+                        {handoff.host}:{handoff.port}
+                      </span>
+                      <Button variant="outline" size="sm" onClick={copyJoinAddress}>
+                        <Icon as={Copy} size={14} />
+                        {copied ? msg.handoff.copied : msg.handoff.copy}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Inset>
+            )}
+          </div>
+        )}
+      </Panel>
+
+      {/* Recent matches */}
+      <Panel className="px-6 py-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-ink">{msg.play.recentMatches}</h2>
+          <button
+            type="button"
+            onClick={refreshRecent}
+            title={msg.common.refresh}
+            className="rounded-md p-2 text-ink-faint transition-colors duration-150 hover:bg-raised hover:text-ink"
+          >
+            <Icon as={RefreshCw} size={16} />
+          </button>
+        </div>
+        {recentLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : recentMatches.length === 0 ? (
+          <EmptyState icon={<Icon as={History} size={34} />} title={msg.play.noRecentMatches} />
+        ) : (
+          <ul className="divide-y divide-edge/70">
+            {recentMatches.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => onViewMatch(m.id)}
+                  className="flex w-full items-center gap-3 rounded-md px-2 py-3 text-left transition-colors duration-150 hover:bg-raised"
+                >
+                  <Badge tone="accent" className="font-mono">{m.match_type}</Badge>
+                  <span className="flex-1 truncate text-sm text-ink">{m.map_name || '—'}</span>
+                  <span className="font-mono text-xs tabular-nums text-ink-faint">
+                    {new Date(m.finished_at).toLocaleString()}
+                  </span>
+                  <Icon as={ChevronRight} size={16} className="text-ink-faint" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </div>
   );
 }

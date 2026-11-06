@@ -1,27 +1,10 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
-  Chip,
-  IconButton,
-  Alert,
-  Divider,
-} from '@mui/material';
-import {
-  Refresh as RefreshIcon,
-  Group as GroupIcon,
-} from '@mui/icons-material';
+import { Users } from 'lucide-react';
+import { Badge, Banner, EmptyState, ErrorState, Icon, Panel, Skeleton } from '@ha/ui';
+import type { BadgeTone } from '@ha/ui';
 import { GetFriends } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
-import { EmptyState, ErrorState, LoadingList } from './StateViews';
 
 interface Friend {
   id: number;
@@ -33,11 +16,20 @@ interface Friend {
   level?: number;
 }
 
+// The server's friend feature is explicitly unimplemented: it answers a
+// typed 501 mca_not_implemented (knowledge 0008). Surface that honestly
+// instead of a generic network error.
+function isNotImplemented(err: unknown): boolean {
+  const text = err instanceof Error ? err.message : String(err);
+  return text.includes('501') || text.includes('mca_not_implemented');
+}
+
 export default function FriendList() {
   const msg = t();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notImplemented, setNotImplemented] = useState(false);
 
   useEffect(() => {
     fetchFriends();
@@ -46,14 +38,19 @@ export default function FriendList() {
   const fetchFriends = async () => {
     setLoading(true);
     setError(null);
+    setNotImplemented(false);
 
     try {
       const resp = await authFetch(() => GetFriends());
       // Go returns models.SuccessEnvelope { success, message, data, meta }
       const data = resp?.data ?? resp;
       setFriends(data || []);
-    } catch {
-      setError(loadErrorMessage(t().common.dataFriends));
+    } catch (err: unknown) {
+      if (isNotImplemented(err)) {
+        setNotImplemented(true);
+      } else {
+        setError(loadErrorMessage(t().common.dataFriends));
+      }
     } finally {
       setLoading(false);
     }
@@ -68,12 +65,12 @@ export default function FriendList() {
     }
   };
 
-  const getStatusColor = (status: number): 'warning' | 'success' | 'error' | 'default' => {
+  const getStatusTone = (status: number): BadgeTone => {
     switch (status) {
-      case 0: return 'warning';
-      case 1: return 'success';
-      case 2: return 'error';
-      default: return 'default';
+      case 0: return 'warn';
+      case 1: return 'ok';
+      case 2: return 'danger';
+      default: return 'neutral';
     }
   };
 
@@ -82,83 +79,76 @@ export default function FriendList() {
 
   if (loading) {
     return (
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4">{msg.friends.title}</Typography>
-        </Box>
-        <Card>
-          <LoadingList rows={4} rowHeight={56} />
-        </Card>
-      </Box>
+      <div className="space-y-6">
+        <h1 className="text-display font-bold tracking-tight text-ink">{msg.friends.title}</h1>
+        <Panel className="space-y-2 p-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </Panel>
+      </div>
     );
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">{msg.friends.title}</Typography>
-        <IconButton onClick={fetchFriends} title={msg.common.refresh}>
-          <RefreshIcon />
-        </IconButton>
-      </Box>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-display font-bold tracking-tight text-ink">{msg.friends.title}</h1>
+        <button
+          type="button"
+          onClick={fetchFriends}
+          title={msg.common.refresh}
+          className="rounded-md border border-edge-strong p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
+        >
+          <Icon as={Users} size={16} />
+        </button>
+      </div>
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        {msg.readOnly.notice}
-      </Alert>
+      <Banner tone="info">{msg.readOnly.notice}</Banner>
 
-      {error ? (
-        <Card>
+      {notImplemented ? (
+        <Panel>
+          <EmptyState
+            icon={<Icon as={Users} size={34} />}
+            title={msg.friends.notImplementedTitle}
+            hint={msg.friends.notImplementedHint}
+          />
+        </Panel>
+      ) : error ? (
+        <Panel>
           <ErrorState message={error} onRetry={fetchFriends} />
-        </Card>
+        </Panel>
       ) : (
-        <Card>
-          <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-            {friends.length === 0 ? (
-              <EmptyState
-                icon={<GroupIcon />}
-                title={msg.friends.emptyTitle}
-                hint={msg.friends.emptyHint}
-              />
-            ) : (
-              <List sx={{ width: '100%' }}>
-                {friends.map((friend, index) => (
-                  <Box key={friend.id}>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: 'primary.main' }}>
-                          {friend.username?.charAt(0)?.toUpperCase() || 'U'}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                              {friendName(friend)}
-                            </Typography>
-                            <Chip
-                              label={getStatusLabel(friend.status)}
-                              size="small"
-                              color={getStatusColor(friend.status)}
-                              variant="outlined"
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Typography variant="body2" color="text.disabled">
-                            {msg.friends.level} {friend.level || '?'} • {msg.friends.added}{' '}
-                            {new Date(friend.created_at).toLocaleDateString()}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                    {index < friends.length - 1 && <Divider />}
-                  </Box>
-                ))}
-              </List>
-            )}
-          </CardContent>
-        </Card>
+        <Panel>
+          {friends.length === 0 ? (
+            <EmptyState
+              icon={<Icon as={Users} size={34} />}
+              title={msg.friends.emptyTitle}
+              hint={msg.friends.emptyHint}
+            />
+          ) : (
+            <ul className="divide-y divide-edge/70">
+              {friends.map((friend) => (
+                <li key={friend.id} className="flex items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-raised">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-bold text-on-accent">
+                    {friend.username?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-semibold text-ink">{friendName(friend)}</span>
+                      <Badge tone={getStatusTone(friend.status)}>{getStatusLabel(friend.status)}</Badge>
+                    </div>
+                    <div className="mt-0.5 font-mono text-xs text-ink-faint">
+                      {msg.friends.level} {friend.level || '?'} · {msg.friends.added}{' '}
+                      {new Date(friend.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
       )}
-    </Box>
+    </div>
   );
 }
