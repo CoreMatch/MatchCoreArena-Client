@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, History, Play, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, History, Info as InfoIcon, Play, RefreshCw } from 'lucide-react';
 import {
   Badge,
-  Banner,
   Button,
   Dialog,
   EmptyState,
@@ -211,11 +210,16 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
     (myParticipant ? myParticipant.rank_score_before + myParticipant.rank_score_delta : undefined);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header + controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-display font-bold tracking-tight text-ink">{msg.career.title}</h1>
-        <div className="flex items-end gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <h1 className="text-display font-bold tracking-tight text-ink">{msg.career.title}</h1>
+          <span title={msg.readOnly.notice} className="cursor-help text-ink-faint">
+            <Icon as={InfoIcon} size={18} />
+          </span>
+        </div>
+        <div className="flex items-end gap-4">
           <Field label={msg.career.pageSize}>
             <Select
               value={String(pageSize)}
@@ -226,16 +230,16 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                 { value: '20', label: '20' },
                 { value: '50', label: '50' },
               ]}
-              className="w-24"
+              className="w-28"
             />
           </Field>
           <button
             type="button"
             onClick={fetchMatches}
             title={msg.common.refresh}
-            className="mb-0.5 rounded-md border border-edge-strong p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
+            className="mb-0.5 rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <Icon as={RefreshCw} size={16} />
+            <Icon as={RefreshCw} size={18} />
           </button>
         </div>
       </div>
@@ -247,9 +251,9 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
       ) : (
         <Panel>
           {loading ? (
-            <div className="space-y-2 p-4">
+            <div className="space-y-3 p-6">
               {[0, 1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : matches.length === 0 ? (
@@ -285,7 +289,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                         onClick={() => openDetail(m.id, m.self_summary ?? null)}
                         className="cursor-pointer transition-colors duration-150 hover:bg-raised"
                       >
-                        <Td className="whitespace-nowrap font-mono text-xs text-ink-muted">
+                        <Td className="whitespace-nowrap font-mono text-sm text-ink-muted">
                           {formatTime(m.finished_at)}
                         </Td>
                         <Td>
@@ -311,7 +315,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                         </Td>
                         <Td className="text-ink">{m.map_name || '—'}</Td>
                         <Td className="text-ink-muted">{winnerLabel(m.winner_team_id)}</Td>
-                        <Td className="font-mono text-xs tabular-nums text-ink-muted">
+                        <Td className="font-mono text-sm tabular-nums text-ink-muted">
                           {formatDuration(m.duration_seconds)}
                         </Td>
                         <Td className="text-ink-faint">{m.source || '—'}</Td>
@@ -322,17 +326,17 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
               </Table>
 
               {/* Pagination */}
-              <div className="flex items-center justify-end gap-2 px-4 py-3">
+              <div className="flex items-center justify-end gap-3 px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setPageNum((p) => Math.max(1, p - 1))}
                   disabled={pageNum <= 1}
                   title={msg.career.previousPage}
-                  className="rounded-md p-2 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
+                  className="rounded-md p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
                 >
-                  <Icon as={ChevronLeft} size={16} />
+                  <Icon as={ChevronLeft} size={18} />
                 </button>
-                <span className="font-mono text-xs tabular-nums text-ink-muted">
+                <span className="font-mono text-sm tabular-nums text-ink-muted">
                   {msg.career.page} {pageNum}
                 </span>
                 <button
@@ -340,9 +344,9 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                   onClick={() => setPageNum((p) => p + 1)}
                   disabled={matches.length < pageSize}
                   title={msg.career.nextPage}
-                  className="rounded-md p-2 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
+                  className="rounded-md p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
                 >
-                  <Icon as={ChevronRight} size={16} />
+                  <Icon as={ChevronRight} size={18} />
                 </button>
               </div>
             </>
@@ -399,7 +403,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
               </Badge>
             </div>
 
-            <p className="font-mono text-xs leading-relaxed text-ink-faint">
+            <p className="font-mono text-sm leading-relaxed text-ink-faint">
               {msg.career.detailStarted} {formatTime(detail.started_at)} · {msg.career.detailFinished}{' '}
               {formatTime(detail.finished_at)} · {msg.career.detailDuration}{' '}
               {formatDuration(detail.duration_seconds)}
@@ -450,7 +454,9 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
                 </Table>
               </div>
             ) : (
-              <Banner tone="info">{msg.career.noParticipants}</Banner>
+              <div title={msg.career.noParticipants} className="cursor-help py-4 text-center text-base text-ink-faint">
+                {msg.career.noParticipantsShort}
+              </div>
             )}
           </div>
         )}

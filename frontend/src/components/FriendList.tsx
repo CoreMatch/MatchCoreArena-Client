@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users } from 'lucide-react';
-import { Badge, Banner, EmptyState, ErrorState, Icon, Panel, Skeleton } from '@ha/ui';
+import { Info, Users } from 'lucide-react';
+import { Badge, EmptyState, ErrorState, Icon, Panel, Skeleton } from '@ha/ui';
 import type { BadgeTone } from '@ha/ui';
 import { GetFriends } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
@@ -79,11 +79,11 @@ export default function FriendList() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <h1 className="text-display font-bold tracking-tight text-ink">{msg.friends.title}</h1>
-        <Panel className="space-y-2 p-4">
+        <Panel className="space-y-3 p-6">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-14 w-full" />
+            <Skeleton key={i} className="h-16 w-full" />
           ))}
         </Panel>
       </div>
@@ -91,20 +91,23 @@ export default function FriendList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-display font-bold tracking-tight text-ink">{msg.friends.title}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-display font-bold tracking-tight text-ink">{msg.friends.title}</h1>
+          <span title={msg.readOnly.notice} className="cursor-help text-ink-faint">
+            <Icon as={Info} size={18} />
+          </span>
+        </div>
         <button
           type="button"
           onClick={fetchFriends}
           title={msg.common.refresh}
-          className="rounded-md border border-edge-strong p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
+          className="rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
         >
-          <Icon as={Users} size={16} />
+          <Icon as={Users} size={18} />
         </button>
       </div>
-
-      <Banner tone="info">{msg.readOnly.notice}</Banner>
 
       {notImplemented ? (
         <Panel>
@@ -127,18 +130,18 @@ export default function FriendList() {
               hint={msg.friends.emptyHint}
             />
           ) : (
-            <ul className="divide-y divide-edge/70">
+            <ul className="divide-y divide-edge/50">
               {friends.map((friend) => (
-                <li key={friend.id} className="flex items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-raised">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-bold text-on-accent">
+                <li key={friend.id} className="flex items-center gap-4 px-6 py-5 transition-colors duration-150 hover:bg-raised">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-accent text-base font-bold text-on-accent">
                     {friend.username?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold text-ink">{friendName(friend)}</span>
+                    <div className="flex items-center gap-2.5">
+                      <span className="truncate text-base font-semibold text-ink">{friendName(friend)}</span>
                       <Badge tone={getStatusTone(friend.status)}>{getStatusLabel(friend.status)}</Badge>
                     </div>
-                    <div className="mt-0.5 font-mono text-xs text-ink-faint">
+                    <div className="mt-1 font-mono text-sm text-ink-faint">
                       {msg.friends.level} {friend.level || '?'} · {msg.friends.added}{' '}
                       {new Date(friend.created_at).toLocaleDateString()}
                     </div>

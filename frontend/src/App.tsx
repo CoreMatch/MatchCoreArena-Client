@@ -135,17 +135,14 @@ export default function App() {
     <div className="flex h-screen bg-base text-ink">
       {/* Persistent sidebar */}
       {isLoggedIn && (
-        <aside className="fixed inset-y-0 left-0 z-10 flex w-56 flex-col border-r border-edge bg-panel">
-          <div className="border-b border-edge px-5 py-5">
-            <div className="text-sm font-bold uppercase tracking-[0.2em] text-ink">
+        <aside className="fixed inset-y-0 left-0 z-10 flex w-64 flex-col border-r border-edge bg-panel">
+          <div className="border-b border-edge px-6 py-6">
+            <div className="text-base font-bold uppercase tracking-[0.18em] text-ink">
               MatchCore<span className="text-accent">Arena</span>
-            </div>
-            <div className="mt-0.5 text-[11px] uppercase tracking-wider text-ink-faint">
-              Competitive Client
             </div>
           </div>
 
-          <nav className="flex-1 overflow-y-auto py-3">
+          <nav className="flex-1 overflow-y-auto py-4">
             {navItems.map((item) => {
               const selected = selectedView === item.id;
               return (
@@ -153,13 +150,13 @@ export default function App() {
                   key={item.id}
                   type="button"
                   onClick={() => setSelectedView(item.id)}
-                  className={`flex w-full items-center gap-3 border-l-2 px-5 py-2.5 text-sm font-semibold
+                  className={`flex w-full items-center gap-3.5 border-l-2 px-6 py-3 text-base font-semibold
                     transition-colors duration-150 ease-standard
                     ${selected
                       ? 'border-accent bg-raised text-ink'
                       : 'border-transparent text-ink-muted hover:bg-raised/60 hover:text-ink'}`}
                 >
-                  <Icon as={item.icon} className={selected ? 'text-accent' : ''} />
+                  <Icon as={item.icon} size={20} className={selected ? 'text-accent' : ''} />
                   {item.label}
                 </button>
               );
@@ -167,21 +164,21 @@ export default function App() {
           </nav>
 
           {/* User block */}
-          <div className="border-t border-edge p-3">
+          <div className="border-t border-edge p-4">
             <Menu
               trigger={
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors duration-150 hover:bg-raised"
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-colors duration-150 hover:bg-raised"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent font-bold text-on-accent">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-accent text-base font-bold text-on-accent">
                     {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-ink">
+                    <span className="block truncate text-base font-semibold text-ink">
                       {user?.username || 'Player'}
                     </span>
-                    <span className="block truncate font-mono text-xs text-ink-faint">
+                    <span className="block truncate font-mono text-sm text-ink-faint">
                       #{user?.uid ?? '—'}
                     </span>
                   </span>
@@ -189,12 +186,12 @@ export default function App() {
               }
             >
               <MenuItem onSelect={() => setSelectedView('settings')}>
-                <Icon as={User} size={16} />
+                <Icon as={User} size={18} />
                 {t().common.profile}
               </MenuItem>
               <MenuSeparator />
               <MenuItem onSelect={handleLogout}>
-                <Icon as={LogOut} size={16} />
+                <Icon as={LogOut} size={18} />
                 {t().common.logout}
               </MenuItem>
             </Menu>
@@ -202,9 +199,9 @@ export default function App() {
         </aside>
       )}
 
-      {/* Main content — single column */}
-      <main className={`flex-1 overflow-y-auto ${isLoggedIn ? 'ml-56' : ''}`}>
-        <div className="mx-auto max-w-5xl px-8 py-8">{renderContent()}</div>
+      {/* Main content — single column, generous margins */}
+      <main className={`flex-1 overflow-y-auto ${isLoggedIn ? 'ml-64' : ''}`}>
+        <div className="mx-auto max-w-6xl px-12 py-10">{renderContent()}</div>
       </main>
     </div>
   );

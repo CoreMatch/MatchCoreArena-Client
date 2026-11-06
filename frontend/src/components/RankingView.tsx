@@ -72,16 +72,16 @@ export default function RankingView({ winsCount }: RankingViewProps) {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-56" />
-        <Panel className="p-6">
-          <Skeleton className="mb-3 h-6 w-40" />
-          <Skeleton className="h-12 w-full" />
+      <div className="space-y-8">
+        <Skeleton className="h-12 w-64" />
+        <Panel className="p-8">
+          <Skeleton className="mb-4 h-7 w-48" />
+          <Skeleton className="h-14 w-full" />
         </Panel>
-        <Panel className="p-4">
-          <div className="space-y-2">
+        <Panel className="p-6">
+          <div className="space-y-3">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+              <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
         </Panel>
@@ -90,18 +90,18 @@ export default function RankingView({ winsCount }: RankingViewProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header + filters */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-6">
         <h1 className="text-display font-bold tracking-tight text-ink">
           {msg.nav.rankings}
           {totalCount > 0 && (
-            <span className="ml-2 font-mono text-lg font-medium tabular-nums text-ink-faint">
+            <span className="ml-3 font-mono text-xl font-medium tabular-nums text-ink-faint">
               ({totalCount.toLocaleString()})
             </span>
           )}
         </h1>
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-end gap-4">
           <Field label={msg.rankings.type}>
             <Select
               value={rankType}
@@ -111,7 +111,7 @@ export default function RankingView({ winsCount }: RankingViewProps) {
                 { value: '1v1', label: '1v1' },
                 { value: '2v2', label: '2v2' },
               ]}
-              className="w-24"
+              className="w-28"
             />
           </Field>
           <Field label={msg.rankings.season}>
@@ -120,7 +120,7 @@ export default function RankingView({ winsCount }: RankingViewProps) {
               onValueChange={(v) => setSeason(Number(v))}
               ariaLabel={msg.rankings.season}
               options={[1, 2, 3].map((n) => ({ value: String(n), label: `${msg.rankCard.season} ${n}` }))}
-              className="w-28"
+              className="w-32"
             />
           </Field>
           <Field label={msg.rankings.limit}>
@@ -129,16 +129,16 @@ export default function RankingView({ winsCount }: RankingViewProps) {
               onValueChange={(v) => setLimit(Number(v))}
               ariaLabel={msg.rankings.limit}
               options={[50, 100, 200, 500].map((n) => ({ value: String(n), label: topLabel(n) }))}
-              className="w-28"
+              className="w-32"
             />
           </Field>
           <button
             type="button"
             onClick={fetchRankings}
             title={msg.common.refresh}
-            className="mb-0.5 rounded-md border border-edge-strong p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
+            className="mb-0.5 rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <Icon as={RefreshCw} size={16} />
+            <Icon as={RefreshCw} size={18} />
           </button>
         </div>
       </div>
@@ -172,24 +172,24 @@ export default function RankingView({ winsCount }: RankingViewProps) {
                 {rankings.map((entry) => (
                   <tr key={entry.id} className="transition-colors duration-150 hover:bg-raised">
                     <Td>
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2.5">
                         {entry.rank_position <= 3 && (
-                          <Icon as={Trophy} size={16} className={getRankColor(entry.rank_position)} />
+                          <Icon as={Trophy} size={18} className={getRankColor(entry.rank_position)} />
                         )}
-                        <span className={`font-mono text-base font-bold tabular-nums ${getRankColor(entry.rank_position)}`}>
+                        <span className={`font-mono text-lg font-bold tabular-nums ${getRankColor(entry.rank_position)}`}>
                           {entry.rank_position}
                         </span>
                       </span>
                     </Td>
                     <Td>
-                      <span className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-xs font-bold text-on-accent">
+                      <span className="flex items-center gap-3.5">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-accent text-sm font-bold text-on-accent">
                           P
                         </span>
-                        <span className="text-sm text-ink">{playerLabel(entry.user_uid)}</span>
+                        <span className="text-base text-ink">{playerLabel(entry.user_uid)}</span>
                       </span>
                     </Td>
-                    <Td className="text-right font-mono text-base font-bold tabular-nums text-ink">
+                    <Td className="text-right font-mono text-lg font-bold tabular-nums text-ink">
                       {entry.score.toLocaleString()}
                     </Td>
                   </tr>

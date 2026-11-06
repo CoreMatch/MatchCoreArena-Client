@@ -83,28 +83,28 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
   return (
     <div className="flex min-h-[85vh] items-center justify-center">
-      <Panel className="w-full max-w-md p-8">
-        <div className="mb-6 text-center">
-          <div className="mb-3 flex justify-center text-accent">
-            <Icon as={ShieldCheck} size={40} />
+      <Panel className="w-full max-w-lg p-10">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center text-accent">
+            <Icon as={ShieldCheck} size={44} />
           </div>
           <h1 className="text-display font-bold tracking-tight text-ink">
             MatchCore<span className="text-accent">Arena</span>
           </h1>
-          <p className="mt-1 text-sm text-ink-muted">{msg.login.subtitle}</p>
+          <p className="mt-2 text-base text-ink-muted">{msg.login.subtitle}</p>
         </div>
 
         {error && (
-          <div className="mb-4">
+          <div className="mb-6">
             <Banner tone="danger">
               {error}
-              {errorDetail && <div className="mt-1 break-all text-xs opacity-80">{errorDetail}</div>}
+              {errorDetail && <div className="mt-1 break-all text-sm opacity-80">{errorDetail}</div>}
             </Banner>
           </div>
         )}
 
         {!showTotp ? (
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <Field label={msg.login.email}>
               <Input
                 type="email"
@@ -128,8 +128,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             </Button>
           </form>
         ) : (
-          <form onSubmit={handleTotpVerify} className="space-y-4">
-            <p className="text-center text-sm text-ink-muted">{msg.login.totpPrompt}</p>
+          <form onSubmit={handleTotpVerify} className="space-y-5">
+            <p className="text-center text-base text-ink-muted">{msg.login.totpPrompt}</p>
             <Field label={msg.login.totpCode}>
               <Input
                 value={totpCode}
@@ -146,8 +146,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
           </form>
         )}
 
-        <div className="mt-6 text-center">
-          <a href="#" className="text-xs text-ink-faint transition-colors duration-150 hover:text-accent">
+        <div className="mt-8 text-center">
+          <a href="#" className="text-sm text-ink-faint transition-colors duration-150 hover:text-accent">
             {msg.login.forgotPassword}
           </a>
         </div>
