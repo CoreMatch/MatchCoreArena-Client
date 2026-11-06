@@ -15,16 +15,19 @@ jobs:
     - uses: actions/checkout@v7
 
     # Shared design system consumed by the frontend via
-    # file:/home/lnb/Desktop/HA/ha-ui (public repo, same org). The path is
-    # absolute (matching the local development layout), so create it first.
-    - name: Prepare @ha/ui path
-      run: sudo mkdir -p /home/lnb/Desktop/HA && sudo chown -R "$USER" /home/lnb
-
+    # file:/home/lnb/Desktop/HA/ha-ui (public repo, same org). checkout must
+    # stay inside the workspace, so it is copied to the absolute path after.
     - name: Check out @ha/ui
       uses: actions/checkout@v7
       with:
         repository: CoreMatch/ha-ui
-        path: /home/lnb/Desktop/HA/ha-ui
+        path: ha-ui
+
+    - name: Place @ha/ui at its file: dependency path
+      run: |
+        sudo mkdir -p /home/lnb/Desktop/HA
+        sudo cp -r ha-ui /home/lnb/Desktop/HA/ha-ui
+        sudo chown -R "$USER" /home/lnb/Desktop/HA/ha-ui
 
     - name: Set up Go
       uses: actions/setup-go@v7
