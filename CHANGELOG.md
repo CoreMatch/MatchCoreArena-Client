@@ -41,6 +41,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   screen
 - Release workflow cross-compiles the Windows binary
   (`wails build -platform windows/amd64` with mingw), unsigned
+- Navigation: "My Matches" renamed to **Career**; the match list is
+  time-first and drops the low-value ID column (rows open the detail)
+- Career match detail aligns with the report fields: Player / Team / Result
+  / Kills / Deaths / Survived / Score, with the signed-in player's row
+  highlighted and their Victory/Defeat result plus points change shown in
+  the header
+- Unified empty/error/loading states across Career, Rankings and Friends:
+  skeleton loading, "nothing here yet + next action" empty states, and a
+  one-sentence load error with a Retry action; login/TOTP failures show
+  standardized English messages with the raw server detail as a caption
 
 ### Deprecated
 - None

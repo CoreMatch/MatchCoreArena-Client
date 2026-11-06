@@ -15,10 +15,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  CircularProgress,
+  Skeleton,
   Alert,
   Avatar,
   IconButton,
+  Button,
 } from '@mui/material';
 import {
   EmojiEvents as TrophyIcon,
@@ -27,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { GetTopRankings, GetMyRanking } from '../../wailsjs/go/main/App';
 import { authFetch } from '../session';
+import { t, loadErrorMessage } from '../i18n';
 
 interface RankingEntry {
   id: number;
@@ -39,6 +41,7 @@ interface RankingEntry {
 }
 
 export default function RankingView() {
+  const msg = t();
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [myRanking, setMyRanking] = useState<RankingEntry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,8 +74,8 @@ export default function RankingView() {
         console.error('Failed to fetch my ranking:', e);
         setMyRanking(null);
       }
-    } catch (err: unknown) {
-      setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to load rankings');
+    } catch {
+      setError(loadErrorMessage(t().common.dataRankings));
     } finally {
       setLoading(false);
     }
@@ -96,8 +99,15 @@ export default function RankingView() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress sx={{ color: '#e94560' }} />
+      <Box sx={{ p: 3 }}>
+        <Skeleton width={220} height={48} sx={{ mb: 3, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+        <Card sx={{ backgroundColor: '#16213e', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <Box sx={{ p: 2 }}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} height={48} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
+            ))}
+          </Box>
+        </Card>
       </Box>
     );
   }
@@ -106,7 +116,7 @@ export default function RankingView() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ color: 'white' }}>
-          Rankings
+          {msg.nav.rankings}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <FormControl sx={{ minWidth: 120 }}>
@@ -234,7 +244,15 @@ export default function RankingView() {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}
+          action={
+            <Button color="inherit" size="small" onClick={fetchRankings}>
+              {msg.common.retry}
+            </Button>
+          }
+        >
           {error}
         </Alert>
       )}
@@ -313,7 +331,21 @@ export default function RankingView() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rankings.map((entry) => (
+              {rankings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} sx={{ borderBottom: 'none' }}>
+                    <Box sx={{ p: 4, textAlign: 'center' }}>
+                      <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+                        {msg.rankings.emptyTitle}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                        {msg.rankings.emptyHint}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rankings.map((entry) => (
                 <TableRow 
                   key={entry.id}
                   sx={{ 
@@ -360,7 +392,7 @@ export default function RankingView() {
                     {entry.score.toLocaleString()}
                   </TableCell>
                 </TableRow>
-              ))}
+              )))}
             </TableBody>
           </Table>
         </TableContainer>

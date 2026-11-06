@@ -7,6 +7,7 @@ import {
 import { t } from '../i18n';
 
 export interface UserProfile {
+  uid?: number;
   username?: string;
   level?: number;
   experience?: number;

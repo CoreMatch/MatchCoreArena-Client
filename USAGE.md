@@ -17,7 +17,7 @@
 
 3. **Navigate the app**:
    - **Home**: View your profile, stats, and recent activity
-   - **My Matches**: Browse your recorded match history (read-only)
+   - **Career**: Browse your recorded match history (read-only)
    - **Friends**: View your friend list (read-only)
    - **Rankings**: View leaderboards and your ranking
 
@@ -33,9 +33,9 @@
 - Automatic token refresh on expiry; the app returns to the login screen when a refresh fails
 - Secure logout
 
-### My Matches
-- Paginated list of your recorded matches (type, source, map, winner, duration)
-- Per-match detail with participants and server-computed score deltas
+### Career
+- Paginated list of your recorded matches (time, mode, map, winner, duration)
+- Per-match detail with participants (kills/deaths/survival) and server-computed score deltas
 
 ### Friend List
 - View your friends list (read-only; sending or handling requests is not available in this client)

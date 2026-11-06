@@ -45,7 +45,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'home', label: t().nav.home, icon: Home },
-  { id: 'matches', label: t().nav.myMatches, icon: History },
+  { id: 'matches', label: t().nav.career, icon: History },
   { id: 'friends', label: t().nav.friends, icon: Group },
   { id: 'rankings', label: t().nav.rankings, icon: Leaderboard },
 ];
@@ -136,7 +136,7 @@ export default function App() {
 
     switch (selectedView) {
       case 'matches':
-        return <MyMatchesView />;
+        return <MyMatchesView userUid={user?.uid} />;
       case 'friends':
         return <FriendList />;
       case 'rankings':
