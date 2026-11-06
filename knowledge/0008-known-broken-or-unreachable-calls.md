@@ -19,30 +19,30 @@ Record the following verified inventory:
 2. **Token refresh is unreachable from the UI.** The `RefreshToken` chain
    exists end-to-end (frontend binding → Go handler → service → server
    `/api/auth/refresh`), but `frontend/src` contains zero calls to it.
-   USAGE.md still lists "Automatic token refresh" as a feature; the doc line
-   is left in place pending the author's decision (see 0006).
-3. **Six Go bindings have no UI consumer** (searched `frontend/src`):
-   `ReportMatchResult`, `GetMatch`, `GetMyMatches`, `CreateTeam`,
-   `AddExperience`, `RefreshToken`. They are reachable only programmatically.
+   USAGE.md now describes the current behavior (binding present, not
+   auto-invoked); the wire-or-remove choice is still pending (see 0006).
+3. **Two Go bindings have no UI consumer** (searched `frontend/src`):
+   `RefreshToken` and `GetUserByUUID`. They are reachable only
+   programmatically. (The read-only refactor removed the former UI-less
+   write bindings and gave `GetMatch`/`GetMyMatches` a UI consumer; see 0010.)
 4. **Release artifacts include a Windows binary with no Windows build path**:
    the release workflow runs a single `ubuntu-latest` job with no cross-
    compilation, yet uploads `build/bin/MatchCoreArenaClient.exe`. Where the
    `.exe` comes from is not verifiable in the repo (not verified).
-5. **Friend and team endpoints answer `501 mca_not_implemented`.** The
-   server's friend/team features are explicitly unimplemented (author
-   decision; MatchCoreArena-Server knowledge 0010), so the FriendList UI
-   and the team bindings (`CreateTeam` and friends) receive a typed 501
-   error envelope instead of data. The UI surfaces the error; no fake
-   friend/team data is returned anymore.
+5. **Friend endpoints answer `501 mca_not_implemented`.** The server's
+   friend feature is explicitly unimplemented (author decision;
+   MatchCoreArena-Server knowledge 0010), so the read-only FriendList UI
+   receives a typed 501 error envelope instead of data. The UI surfaces the
+   error; no fake friend data is returned. (Team endpoints were also 501;
+   the client no longer calls them at all after the read-only refactor.)
 
 ## Consequences
 - Items 1–3 are dead or broken surface area: they mislead readers of the
-  binding list and (for item 2) the usage docs, but they do not break any
-  working UI path today.
+  binding list, but they do not break any working UI path today.
 - Item 4 means the release pipeline cannot be confirmed working from inside
   the repository.
-- Item 5 means the friend/team UI surfaces show an error until the server
-  implements the features; this is intentional (no fake successes).
+- Item 5 means the friend list shows an error until the server implements
+  the feature; this is intentional (no fake successes).
 - Costs/limitations: fixing any item requires a direction choice (e.g. for
   item 1, switch the client to numeric UIDs or add a server-side UUID
   lookup), which is explicitly deferred (0006). This entry only records
@@ -51,9 +51,10 @@ Record the following verified inventory:
 ## Evidence
 - internal/services/user.go::GetUserByUUID (`GetUserByUUID` → `GET /api/users/%s` with a UUID string)
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID (`GetByUID` parses `:uid` via `strconv.ParseInt`)
-- Search of `frontend/src`: 0 hits for `GetUserByUUID`, `RefreshToken`, `ReportMatchResult`, `GetMatch`, `GetMyMatches`, `CreateTeam`, `AddExperience`
-- app.go::RefreshToken, app.go::GetUserByUUID, app.go::AddExperience, app.go::CreateTeam, app.go::ReportMatchResult, app.go::GetMatch, app.go::GetMyMatches (the bindings exist on the Go side)
-- USAGE.md::Automatic ("Automatic token refresh" feature claim)
+- Search of `frontend/src`: 0 hits for `GetUserByUUID`, `RefreshToken`
+- app.go::RefreshToken, app.go::GetUserByUUID (the bindings exist on the Go side)
+- USAGE.md::Authentication (token refresh described as available but not auto-invoked)
 - .github/workflows/release.yml::ubuntu (single job, `runs-on: ubuntu-latest`), .github/workflows/release.yml::exe (uploads `MatchCoreArenaClient.exe`)
-- Cross-reference: 0006 (all items listed there as pending author decisions)
+- frontend/src/components/FriendList.tsx::GetFriends (friend UI is view-only)
+- Cross-reference: 0006 (all items listed there as pending author decisions), 0010 (read-only refactor)
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0010-friend-and-team-endpoints-are-explicitly-unimplemented.md (friend/team endpoints answer 501 mca_not_implemented)

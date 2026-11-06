@@ -17,22 +17,28 @@
 
 3. **Navigate the app**:
    - **Home**: View your profile, stats, and recent activity
-   - **Friends**: Manage your friend list
+   - **My Matches**: Browse your recorded match history (read-only)
+   - **Friends**: View your friend list (read-only)
    - **Rankings**: View leaderboards and your ranking
+
+> The client is read-only. Match submission (including virtual matches) and
+> matchmaking are operated through the maintenance panel
+> (MatchCoreArena-MaintenanceView).
 
 ## Features
 
 ### Authentication
 - Email/password login
 - Two-factor authentication (TOTP)
-- Automatic token refresh
+- Token refresh available via the Go binding (not auto-invoked by the UI; see PENDING-DECISIONS.md)
 - Secure logout
 
-### Friend System
-- View your friends list
-- Send friend requests by user ID
-- Accept/reject incoming friend requests
-- Remove friends
+### My Matches
+- Paginated list of your recorded matches (type, source, map, winner, duration)
+- Per-match detail with participants and server-computed score deltas
+
+### Friend List
+- View your friends list (read-only; sending or handling requests is not available in this client)
 
 ### Rankings
 - View top players by ranking type (1v1, 2v2)
@@ -43,7 +49,6 @@
 ### User Profile
 - View your level and experience points
 - See your current rank score
-- Track your gaming statistics
 
 ## Configuration
 
@@ -72,7 +77,7 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 ## Troubleshooting
 
 ### Application won't start
-1. Ensure Go 1.25+ is installed
+1. Ensure Go 1.26+ is installed
 2. Ensure Node.js 18+ is installed
 3. Run `go mod tidy` to install Go dependencies
 4. Run `cd frontend && npm install` to install frontend dependencies
@@ -116,14 +121,15 @@ make check  # Runs fmt, vet, lint, and typecheck
 
 ## API Integration
 
-This client connects to the MatchCoreArena server API. The following endpoints are used:
+This client connects to the MatchCoreArena server API. It performs read queries only (plus session auth calls):
 
 - **Authentication**: Login, TOTP verification, token refresh, logout
-- **Users**: Get user profile, add experience
-- **Friends**: Friend list management, friend requests
-- **Teams**: Team creation, member management, roles
-- **Matches**: Reporting match results, match history
+- **Users**: Get user profile
+- **Friends**: View friend list
+- **Matches**: Match history and per-match detail
 - **Rankings**: Leaderboards and personal ranking
+
+Match submission and matchmaking operations are handled by the maintenance panel (MatchCoreArena-MaintenanceView), not by this client.
 
 ## Support
 
