@@ -67,6 +67,9 @@ interface MyMatchesViewProps {
   // uid of the signed-in user (when the profile is provisioned); used to
   // highlight the player's own result in the match detail.
   userUid?: number;
+  // When set (deep navigation from Play), open this match's detail once.
+  focusMatchId?: number | null;
+  onConsumeFocus?: () => void;
 }
 
 function formatTime(value: string): string {
@@ -104,7 +107,7 @@ function ListSkeleton() {
   );
 }
 
-export default function MyMatchesView({ userUid }: MyMatchesViewProps) {
+export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }: MyMatchesViewProps) {
   const msg = t();
 
   const [matches, setMatches] = useState<MatchSummary[]>([]);
@@ -134,6 +137,15 @@ export default function MyMatchesView({ userUid }: MyMatchesViewProps) {
   useEffect(() => {
     fetchMatches();
   }, [fetchMatches]);
+
+  // Deep navigation from Play: open the requested match detail once.
+  useEffect(() => {
+    if (focusMatchId != null) {
+      openDetail(focusMatchId);
+      onConsumeFocus?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusMatchId]);
 
   const openDetail = async (id: number) => {
     setDetail({ id } as MatchDetail);
@@ -213,7 +225,7 @@ export default function MyMatchesView({ userUid }: MyMatchesViewProps) {
       </Box>
 
       <Alert severity="info" sx={{ mb: 2, backgroundColor: 'rgba(2, 136, 209, 0.12)', color: '#8ecdf5' }}>
-        {msg.readOnly.matchesNotice}
+        {msg.readOnly.notice}
       </Alert>
 
       {error && (

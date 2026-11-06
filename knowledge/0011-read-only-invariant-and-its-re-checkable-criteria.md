@@ -4,23 +4,27 @@
 Accepted
 
 ## Context
-The client is read-only for all MatchCoreArena business data (see 0010).
-A regression that reintroduces a write path — a new binding, a direct HTTP
-call from the webview, or a stale generated binding referencing a removed
-method — would silently break that guarantee. The invariant therefore needs
-mechanical enforcement plus a documented way to re-check it.
+The client holds no match-data write surface (see 0010). A regression that
+reintroduces a write path — a reporting binding, a direct HTTP call from the
+webview, or a stale generated binding referencing a removed method — would
+silently break that guarantee. The invariant therefore needs mechanical
+enforcement plus a documented way to re-check it.
 
 ## Decision
-The read-only invariant has three parts, each pinned by a test in
+The invariant has three parts, each pinned by a test in
 `main_test.go`:
 
 1. **Bound surface allow-list** — `TestAppBoundSurfaceIsReadOnly` reflects
    over `*App` and asserts the exported bound methods are exactly:
    `Login`, `VerifyTOTP`, `RefreshToken`, `Logout`, `SetToken` (session
-   auth) and `GetCurrentUser`, `GetFriends`, `GetTopRankings`,
-   `GetMyRanking`, `GetMatch`, `GetMyMatches` (read queries). Any added or
-   renamed binding fails the test; a write binding can only land by
-   consciously editing the allow-list.
+   auth), `GetCurrentUser`, `GetFriends`, `GetTopRankings`,
+   `GetMyRanking`, `GetMatch`, `GetMyMatches` (read queries) and
+   `JoinMatchmaking`, `LeaveMatchmaking`, `GetMatchmakingStatus` (the
+   player's own queue operations). Policy (author-directed): session auth,
+   read queries and queue operations are allowed; match reporting and any
+   other match-data write binding are forbidden. Any added or renamed
+   binding fails the test; a forbidden binding can only land by consciously
+   editing the allow-list.
 2. **No direct network calls in the frontend** —
    `TestFrontendMakesNoDirectNetworkCalls` scans every `.ts`/`.tsx` under
    `frontend/src` for `fetch(`, `axios`, `XMLHttpRequest`, `http://`,

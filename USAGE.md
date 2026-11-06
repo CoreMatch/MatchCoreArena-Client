@@ -16,14 +16,15 @@
    - If TOTP is enabled, enter the 6-digit code from your authenticator app
 
 3. **Navigate the app**:
-   - **Home**: View your profile, stats, and recent activity
+   - **Play**: Queue for a match (solo or party), watch the queue cycle, see your rank card and recent matches
    - **Career**: Browse your recorded match history (read-only)
+   - **Rankings**: View leaderboards and your rank card
    - **Friends**: View your friend list (read-only)
-   - **Rankings**: View leaderboards and your ranking
+   - **Settings**: Account data, language, about
 
-> The client is read-only. Match submission (including virtual matches) and
-> matchmaking are operated through the maintenance panel
-> (MatchCoreArena-MaintenanceView).
+> The client never writes match data: match reporting is operated through
+> the maintenance panel (MatchCoreArena-MaintenanceView) and the game-side
+> reporter.
 
 ## Features
 
@@ -32,6 +33,11 @@
 - Two-factor authentication (TOTP)
 - Automatic token refresh on expiry; the app returns to the login screen when a refresh fails
 - Secure logout
+
+### Play (matchmaking)
+- Queue solo or as a party (member UUID roster; the party queues and settles together)
+- Queue cycle: In Queue (wait timer, cancel) → Match Found → In Match → Results In
+- When the result is reported, the recorded match id links straight into Career detail
 
 ### Career
 - Paginated list of your recorded matches (time, mode, map, winner, duration)
@@ -121,15 +127,16 @@ make check  # Runs fmt, vet, lint, and typecheck
 
 ## API Integration
 
-This client connects to the MatchCoreArena server API. It performs read queries only (plus session auth calls):
+This client connects to the MatchCoreArena server API. It performs read queries plus the player's own session and queue operations:
 
 - **Authentication**: Login, TOTP verification, token refresh, logout
 - **Users**: Get user profile
 - **Friends**: View friend list
 - **Matches**: Match history and per-match detail
+- **Matchmaking**: Join queue (solo or party roster), leave queue, poll status
 - **Rankings**: Leaderboards and personal ranking
 
-Match submission and matchmaking operations are handled by the maintenance panel (MatchCoreArena-MaintenanceView), not by this client.
+Match reporting is handled by the game-side reporter and the maintenance panel (MatchCoreArena-MaintenanceView), not by this client.
 
 ## Support
 

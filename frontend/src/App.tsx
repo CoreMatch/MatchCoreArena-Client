@@ -17,14 +17,15 @@ import {
   Divider
 } from '@mui/material';
 import { 
-  Home, 
+  PlayCircle, 
   Group, 
   Leaderboard, 
   Logout, 
   Person, 
   Menu as MenuIcon,
   ChevronLeft,
-  History
+  History,
+  Settings
 } from '@mui/icons-material';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import { t } from './i18n';
@@ -32,30 +33,36 @@ import { authFetch, SESSION_EXPIRED_EVENT } from './session';
 import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
-import HomeView, { type UserProfile } from './components/HomeView';
+import PlayView from './components/PlayView';
+import SettingsView from './components/SettingsView';
 import MyMatchesView from './components/MyMatchesView';
+import type { UserProfile } from './types';
 
 const drawerWidth = 240;
 
 interface NavItem {
   id: string;
   label: string;
-  icon: typeof Home;
+  icon: typeof PlayCircle;
 }
 
 const navItems: NavItem[] = [
-  { id: 'home', label: t().nav.home, icon: Home },
+  { id: 'play', label: t().nav.play, icon: PlayCircle },
   { id: 'matches', label: t().nav.career, icon: History },
-  { id: 'friends', label: t().nav.friends, icon: Group },
   { id: 'rankings', label: t().nav.rankings, icon: Leaderboard },
+  { id: 'friends', label: t().nav.friends, icon: Group },
+  { id: 'settings', label: t().nav.settings, icon: Settings },
 ];
 
 export default function App() {
-  const [selectedView, setSelectedView] = useState<string>('home');
+  const [selectedView, setSelectedView] = useState<string>('play');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
+  // When set, Career opens this match's detail as soon as it renders
+  // (deep navigation from Play's settled match / recent matches).
+  const [careerFocusMatchId, setCareerFocusMatchId] = useState<number | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -100,7 +107,7 @@ export default function App() {
     localStorage.setItem('refresh_token', tokenData.refresh_token);
     setIsLoggedIn(true);
     fetchUserProfile();
-    setSelectedView('home');
+    setSelectedView('play');
   };
 
   const handleLogout = async () => {
@@ -113,8 +120,13 @@ export default function App() {
       localStorage.removeItem('refresh_token');
       setIsLoggedIn(false);
       setUser(null);
-      setSelectedView('home');
+      setSelectedView('play');
     }
+  };
+
+  const handleViewMatch = (id: number) => {
+    setCareerFocusMatchId(id);
+    setSelectedView('matches');
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -136,13 +148,22 @@ export default function App() {
 
     switch (selectedView) {
       case 'matches':
-        return <MyMatchesView userUid={user?.uid} />;
+        return (
+          <MyMatchesView
+            userUid={user?.uid}
+            focusMatchId={careerFocusMatchId}
+            onConsumeFocus={() => setCareerFocusMatchId(null)}
+          />
+        );
+      case 'rankings':
+        return <RankingView winsCount={user?.wins_count} />;
+
       case 'friends':
         return <FriendList />;
-      case 'rankings':
-        return <RankingView />;
+      case 'settings':
+        return <SettingsView user={user} />;
       default:
-        return <HomeView user={user} />;
+        return <PlayView user={user} onViewMatch={handleViewMatch} />;
     }
   };
 
@@ -197,7 +218,7 @@ export default function App() {
                   }
                 }}
               >
-                <MenuItem onClick={() => { setSelectedView('profile'); handleMenuClose(); }}>
+                <MenuItem onClick={() => { setSelectedView('settings'); handleMenuClose(); }}>
                   <ListItemIcon>
                     <Person fontSize="small" sx={{ color: 'white' }} />
                   </ListItemIcon>

@@ -73,3 +73,16 @@ func (a *App) GetMatch(id int64) (interface{}, error) {
 func (a *App) GetMyMatches(pageNum, pageSize int) (interface{}, error) {
 	return a.handler.GetMyMatches(pageNum, pageSize)
 }
+
+// Matchmaking methods (the player's own queue operations)
+func (a *App) JoinMatchmaking(matchType string, partyMembers []string) (interface{}, error) {
+	return a.handler.JoinMatchmaking(matchType, partyMembers)
+}
+
+func (a *App) LeaveMatchmaking() error {
+	return a.handler.LeaveMatchmaking()
+}
+
+func (a *App) GetMatchmakingStatus() (interface{}, error) {
+	return a.handler.GetMatchmakingStatus()
+}

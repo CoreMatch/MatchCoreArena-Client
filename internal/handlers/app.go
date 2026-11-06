@@ -7,14 +7,15 @@ import (
 )
 
 type AppHandler struct {
-	ctx     context.Context
-	config  *config.Config
-	api     *services.APIService
-	auth    *services.AuthService
-	user    *services.UserService
-	friend  *services.FriendService
-	ranking *services.RankingService
-	match   *services.MatchService
+	ctx         context.Context
+	config      *config.Config
+	api         *services.APIService
+	auth        *services.AuthService
+	user        *services.UserService
+	friend      *services.FriendService
+	ranking     *services.RankingService
+	match       *services.MatchService
+	matchmaking *services.MatchmakingService
 }
 
 func NewAppHandler() *AppHandler {
@@ -22,13 +23,14 @@ func NewAppHandler() *AppHandler {
 	api := services.NewAPIService(cfg.ServerURL)
 
 	return &AppHandler{
-		config:  cfg,
-		api:     api,
-		auth:    services.NewAuthService(api),
-		user:    services.NewUserService(api),
-		friend:  services.NewFriendService(api),
-		ranking: services.NewRankingService(api),
-		match:   services.NewMatchService(api),
+		config:      cfg,
+		api:         api,
+		auth:        services.NewAuthService(api),
+		user:        services.NewUserService(api),
+		friend:      services.NewFriendService(api),
+		ranking:     services.NewRankingService(api),
+		match:       services.NewMatchService(api),
+		matchmaking: services.NewMatchmakingService(api),
 	}
 }
 
@@ -83,4 +85,17 @@ func (h *AppHandler) GetMatch(id int64) (interface{}, error) {
 
 func (h *AppHandler) GetMyMatches(pageNum, pageSize int) (interface{}, error) {
 	return h.match.GetMyMatches(pageNum, pageSize)
+}
+
+// Matchmaking methods (the player's own queue operations)
+func (h *AppHandler) JoinMatchmaking(matchType string, partyMembers []string) (interface{}, error) {
+	return h.matchmaking.Join(matchType, partyMembers)
+}
+
+func (h *AppHandler) LeaveMatchmaking() error {
+	return h.matchmaking.Leave()
+}
+
+func (h *AppHandler) GetMatchmakingStatus() (interface{}, error) {
+	return h.matchmaking.Status()
 }

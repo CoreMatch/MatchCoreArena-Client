@@ -17,10 +17,11 @@ func TestAppCreation(t *testing.T) {
 }
 
 // TestAppBoundSurfaceIsReadOnly pins the Wails bound surface to exactly the
-// read-only allow-list (session auth plus queries). Adding, renaming or
-// removing a bound method forces a deliberate update of this list; a write
-// binding fails the test. See knowledge 0011 for the invariant and the
-// re-check procedure.
+// allow-list. Policy (author-directed): session auth, read queries and the
+// player's own matchmaking queue operations are allowed; match reporting and
+// any other match-data write surface are forbidden. Adding, renaming or
+// removing a bound method forces a deliberate update of this list. See
+// knowledge 0011 for the invariant and the re-check procedure.
 func TestAppBoundSurfaceIsReadOnly(t *testing.T) {
 	allowed := map[string]struct{}{
 		// Session auth
@@ -29,6 +30,8 @@ func TestAppBoundSurfaceIsReadOnly(t *testing.T) {
 		"GetCurrentUser": {}, "GetFriends": {},
 		"GetTopRankings": {}, "GetMyRanking": {},
 		"GetMatch": {}, "GetMyMatches": {},
+		// Player's own matchmaking queue operations (no match-data writes)
+		"JoinMatchmaking": {}, "LeaveMatchmaking": {}, "GetMatchmakingStatus": {},
 	}
 
 	typ := reflect.TypeOf(&App{})

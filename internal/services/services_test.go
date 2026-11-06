@@ -239,3 +239,135 @@ func TestAuthServiceRefreshToken(t *testing.T) {
 		t.Fatalf("unexpected token response: %+v", token)
 	}
 }
+
+func TestMatchmakingServiceJoinSolo(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/matchmaking/join" || r.Method != http.MethodPost {
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("failed to decode join body: %v", err)
+		}
+		if body["match_type"] != "1v1" {
+			t.Errorf("unexpected match_type: %v", body["match_type"])
+		}
+		if _, present := body["party_members"]; present {
+			t.Errorf("solo join must not send party_members: %v", body)
+		}
+		w.Write(envelope(t, []models.QueueEntry{{UID: 1, MatchType: "1v1", RankScore: 1000, EnqueuedAt: "2026-11-06T10:00:00Z"}}))
+	}))
+	defer server.Close()
+
+	svc := NewMatchmakingService(NewAPIService(server.URL))
+	entries, err := svc.Join("1v1", nil)
+	if err != nil {
+		t.Fatalf("Join failed: %v", err)
+	}
+	if len(entries) != 1 || entries[0].UID != 1 || entries[0].MatchType != "1v1" {
+		t.Fatalf("unexpected entries: %+v", entries)
+	}
+}
+
+func TestMatchmakingServiceJoinParty(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			MatchType    string   `json:"match_type"`
+			PartyMembers []string `json:"party_members"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("failed to decode join body: %v", err)
+		}
+		if body.MatchType != "2v2" || len(body.PartyMembers) != 2 ||
+			body.PartyMembers[0] != "aaaa" || body.PartyMembers[1] != "bbbb" {
+			t.Errorf("unexpected join body: %+v", body)
+		}
+		w.Write(envelope(t, []models.QueueEntry{
+			{UID: 1, MatchType: "2v2", PartyID: 9, EnqueuedAt: "2026-11-06T10:00:00Z"},
+			{UID: 2, MatchType: "2v2", PartyID: 9, EnqueuedAt: "2026-11-06T10:00:00Z"},
+		}))
+	}))
+	defer server.Close()
+
+	svc := NewMatchmakingService(NewAPIService(server.URL))
+	entries, err := svc.Join("2v2", []string{"aaaa", "bbbb"})
+	if err != nil {
+		t.Fatalf("Join failed: %v", err)
+	}
+	if len(entries) != 2 || entries[0].PartyID != 9 || entries[1].PartyID != 9 {
+		t.Fatalf("unexpected entries: %+v", entries)
+	}
+}
+
+func TestMatchmakingServiceLeave(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/matchmaking/leave" || r.Method != http.MethodDelete {
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		w.Write(envelope(t, nil))
+	}))
+	defer server.Close()
+
+	svc := NewMatchmakingService(NewAPIService(server.URL))
+	if err := svc.Leave(); err != nil {
+		t.Fatalf("Leave failed: %v", err)
+	}
+}
+
+func TestMatchmakingServiceStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/matchmaking/status" {
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+		w.Write(envelope(t, models.MatchmakingStatus{
+			InQueue:    true,
+			QueueEntry: &models.QueueEntry{UID: 1, MatchType: "1v1", RankScore: 1000, EnqueuedAt: "2026-11-06T10:00:00Z"},
+			RecentGroups: []models.FormedGroup{{
+				GroupID:   7,
+				MatchType: "1v1",
+				FormedAt:  "2026-11-06T09:00:00Z",
+				Members:   []models.GroupMember{{UID: 1, TeamID: "A", RankScore: 1000}, {UID: 2, TeamID: "B", RankScore: 1010}},
+			}},
+		}))
+	}))
+	defer server.Close()
+
+	svc := NewMatchmakingService(NewAPIService(server.URL))
+	status, err := svc.Status()
+	if err != nil {
+		t.Fatalf("Status failed: %v", err)
+	}
+	if !status.InQueue || status.QueueEntry == nil || status.QueueEntry.MatchType != "1v1" {
+		t.Fatalf("unexpected status: %+v", status)
+	}
+	if len(status.RecentGroups) != 1 || status.RecentGroups[0].GroupID != 7 || len(status.RecentGroups[0].Members) != 2 {
+		t.Fatalf("unexpected recent groups: %+v", status.RecentGroups)
+	}
+}
+
+func TestRankingServiceGetMyRankingNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"success":false,"message":"查询失败","code":"internal_error","error":"internal_error","meta":{"request_id":"x"}}`))
+	}))
+	defer server.Close()
+
+	svc := NewRankingService(NewAPIService(server.URL))
+	ranking, err := svc.GetMyRanking("1v1", 1)
+	if err != nil {
+		t.Fatalf("expected the missing-row envelope to map to an empty result, got error: %v", err)
+	}
+	if ranking != nil {
+		t.Fatalf("expected nil ranking for a missing row, got %+v", ranking)
+	}
+}
+
+func TestRankingServiceGetMyRankingTransportError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	server.Close()
+
+	svc := NewRankingService(NewAPIService(server.URL))
+	if _, err := svc.GetMyRanking("1v1", 1); err == nil {
+		t.Fatal("expected transport error, got nil")
+	}
+}

@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -23,12 +22,12 @@ import {
 } from '@mui/material';
 import {
   EmojiEvents as TrophyIcon,
-  Refresh as RefreshIcon,
-  Star as StarIcon
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { GetTopRankings, GetMyRanking } from '../../wailsjs/go/main/App';
+import { GetTopRankings } from '../../wailsjs/go/main/App';
 import { authFetch } from '../session';
 import { t, loadErrorMessage } from '../i18n';
+import RankCard from './RankCard';
 
 interface RankingEntry {
   id: number;
@@ -40,10 +39,13 @@ interface RankingEntry {
   updated_at: string;
 }
 
-export default function RankingView() {
+interface RankingViewProps {
+  winsCount?: number;
+}
+
+export default function RankingView({ winsCount }: RankingViewProps) {
   const msg = t();
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
-  const [myRanking, setMyRanking] = useState<RankingEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rankType, setRankType] = useState('1v1');
@@ -63,17 +65,6 @@ export default function RankingView() {
       const rankingsResp = await authFetch(() => GetTopRankings(rankType, limit, season));
       const rankingsData = rankingsResp?.data ?? rankingsResp;
       setRankings(rankingsData || []);
-
-      // Fetch my ranking using Go bindings
-      try {
-        const myRankResp = await authFetch(() => GetMyRanking(rankType, season));
-        const myRankData = myRankResp?.data ?? myRankResp;
-        setMyRanking(myRankData);
-      } catch (e) {
-        // No ranking row yet (or query failed) renders as the empty state.
-        console.error('Failed to fetch my ranking:', e);
-        setMyRanking(null);
-      }
     } catch {
       setError(loadErrorMessage(t().common.dataRankings));
     } finally {
@@ -257,44 +248,10 @@ export default function RankingView() {
         </Alert>
       )}
 
-      {/* My Ranking Card */}
-      {myRanking && (
-        <Card sx={{ 
-          backgroundColor: '#16213e', 
-          color: 'white',
-          mb: 3,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-          border: '2px solid #e94560'
-        }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <StarIcon sx={{ color: '#ffd700', mr: 1, fontSize: 32 }} />
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    Your Ranking
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    {rankType} • Season {season}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="h4" sx={{ 
-                  color: getRankColor(myRanking.rank_position),
-                  fontWeight: 'bold'
-                }}>
-                  #{myRanking.rank_position}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Score: {myRanking.score.toLocaleString()}
-                </Typography>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      )}
+      {/* My Rank Card (A4) */}
+      <Box sx={{ mb: 3 }}>
+        <RankCard rankType={rankType} season={season} winsCount={winsCount} />
+      </Box>
 
       {/* Rankings Table */}
       <Card sx={{ 

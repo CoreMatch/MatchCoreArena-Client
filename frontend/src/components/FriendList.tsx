@@ -108,7 +108,7 @@ export default function FriendList() {
       </Box>
 
       <Alert severity="info" sx={{ mb: 2, backgroundColor: 'rgba(2, 136, 209, 0.12)', color: '#8ecdf5' }}>
-        {msg.readOnly.friendsNotice}
+        {msg.readOnly.notice}
       </Alert>
 
       {error && (
