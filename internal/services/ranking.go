@@ -15,7 +15,14 @@ func NewRankingService(api *APIService) *RankingService {
 	return &RankingService{api: api}
 }
 
-func (s *RankingService) GetTopRankings(rankType string, limit, season int) ([]models.Ranking, error) {
+// TopRankingsResponse mirrors the server's data payload for
+// GET /api/rankings/{type}: {"rankings": [...], "total_count": N}.
+type TopRankingsResponse struct {
+	Rankings   []models.Ranking `json:"rankings"`
+	TotalCount int              `json:"total_count"`
+}
+
+func (s *RankingService) GetTopRankings(rankType string, limit, season int) (*TopRankingsResponse, error) {
 	resp, err := s.api.Get(fmt.Sprintf("/api/rankings/%s?limit=%d&season=%d", rankType, limit, season))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rankings: %w", err)
@@ -31,22 +38,31 @@ func (s *RankingService) GetTopRankings(rankType string, limit, season int) ([]m
 		return nil, fmt.Errorf("failed to marshal rankings data: %w", err)
 	}
 
-	var rankings []models.Ranking
-	if err := json.Unmarshal(dataBytes, &rankings); err != nil {
-		return nil, fmt.Errorf("failed to parse rankings data: %w", err)
+	var top TopRankingsResponse
+	if err := json.Unmarshal(dataBytes, &top); err == nil && top.Rankings != nil {
+		return &top, nil
 	}
 
-	return rankings, nil
+	// Tolerate the legacy flat-array payload for older servers:
+	// {"data": [...]} instead of {"data": {"rankings":[...], "total_count": N}}.
+	var legacy []models.Ranking
+	if legacyErr := json.Unmarshal(dataBytes, &legacy); legacyErr != nil {
+		return nil, fmt.Errorf("failed to parse rankings data: %w", err)
+	}
+	top.Rankings = legacy
+	top.TotalCount = len(legacy)
+	return &top, nil
 }
 
 // GetMyRanking returns the player's ranking row, or (nil, nil) when the
-// player simply has no ranking yet: the server answers an error envelope
-// for a missing row (no typed not-found code exists), and that case is an
-// empty state, not a failure. Transport problems still return an error.
+// player simply has no ranking yet: the server answers a typed 404
+// mca_ranking_not_found for a missing row, and that case is an empty
+// state, not a failure. Any other server error envelope or transport
+// problem still returns an error so the client can surface it.
 func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Ranking, error) {
 	resp, err := s.api.Get(fmt.Sprintf("/api/rankings/me?type=%s&season=%d", rankType, season))
 	if err != nil {
-		if isServerErrorEnvelope(err) {
+		if isRankingNotFound(err) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get my ranking: %w", err)
@@ -70,9 +86,12 @@ func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Rank
 	return &ranking, nil
 }
 
-// isServerErrorEnvelope reports whether an APIService error carries a server
-// error envelope body ({"success":false,...}), i.e. the server did respond
-// and rejected the request, as opposed to a transport-level failure.
-func isServerErrorEnvelope(err error) bool {
-	return err != nil && strings.Contains(err.Error(), `"success":false`)
+// isRankingNotFound reports whether an APIService error is the server's
+// typed 404 mca_ranking_not_found — an unranked empty state, not a fault.
+func isRankingNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "404") && strings.Contains(msg, "mca_ranking_not_found")
 }

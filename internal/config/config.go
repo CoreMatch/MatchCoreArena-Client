@@ -37,6 +37,11 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
+	// Environment variable override (env-over-file precedence).
+	if envURL := os.Getenv("MCA_SERVER_URL"); envURL != "" {
+		config.ServerURL = envURL
+	}
+
 	return config, nil
 }
 
