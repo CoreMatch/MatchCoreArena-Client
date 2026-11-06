@@ -15,6 +15,24 @@ Each item proceeds with a conservative default until decided. Mirrored by
    Decision needed: document the purpose or remove the image.
    Conservative default until then: keep the Dockerfile unchanged.
 
+## Backend enhancement items (no client-side estimation until they exist)
+
+Recorded from the A4 rank-card work — the client renders only what the
+server provides; these fields would unlock the remaining Faceit-style
+presentation:
+
+1. **Tier ladder** — tier names plus score thresholds per rank type. Needed
+   for the progress bar ("current score / score to next tier") and tier
+   badges. Until then the rank card shows score/rank/Top%/wins only.
+2. **Ranked population count** — a total-count field on
+   `GET /api/rankings/{type}`. Until then "Top X%" is shown only when a
+   bounded probe (limit 1000) returns fewer rows than requested; otherwise
+   the absolute rank is shown.
+3. **Typed ranking-not-found** — a `404 mca_ranking_not_found` for
+   `GET /api/rankings/me` instead of `500 internal_error`, so the client
+   can distinguish "unranked" from a real server fault without parsing the
+   envelope body.
+
 ## Resolved (2026-11-06, read-only client follow-up batch)
 
 - **UUID vs UID drift** — investigated: the client sent a UUID string to

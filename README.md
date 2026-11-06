@@ -2,15 +2,16 @@
 
 A cross-platform desktop client for MatchCoreArena built with [Wails](https://wails.io/) (Go + React/TypeScript).
 
-The client is **read-only**: it displays your match history, rankings and friends from the MatchCoreArena server. Match submission (including virtual matches) and matchmaking operations live in the maintenance panel (MatchCoreArena-MaintenanceView).
+The client is the player-facing companion for MatchCoreArena: it queues matches (solo or party), shows your career, rankings and friends, and never writes match data — match reporting stays with the game-side reporter and the maintenance panel (MatchCoreArena-MaintenanceView).
 
 ## Features
 
 - **User Authentication** — Login with email/password, TOTP verification, token management
+- **Play** — Matchmaking queue (solo or party via UUID roster), queue state cycle with wait timer and cancel, rank card, recent matches
 - **Career** — Browse your recorded match history with per-match detail (participants, kills/deaths/survival, server-computed score deltas)
 - **Rankings** — View top rankings by type and season, see your current ranking
 - **Friend List** — View your friends (read-only)
-- **User Profile** — View your level, experience, and rank score
+- **Settings** — Account data, language, about
 
 ## Tech Stack
 
@@ -35,7 +36,7 @@ MatchCoreArena-Client/
 │   └── services/           # API service layer
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # React views (Login, Home, Career, Friends, Rankings)
+│   │   ├── components/     # React views (Login, Play, Career, Rankings, Friends, Settings)
 │   │   ├── App.tsx         # Main app shell with navigation drawer
 │   │   └── main.tsx        # React entry point
 │   ├── index.html
@@ -100,7 +101,7 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 
 ## API Integration
 
-This client connects to the MatchCoreArena server API and only performs read queries (plus the session auth calls). Make sure the server is running and accessible at the configured URL.
+This client connects to the MatchCoreArena server API. It performs read queries plus the player's own session and queue operations; match reporting is not part of the client. Make sure the server is running and accessible at the configured URL.
 
 ### API Endpoints Used
 
@@ -108,11 +109,12 @@ This client connects to the MatchCoreArena server API and only performs read que
 - **Users**: `/api/users/me`
 - **Friends**: `GET /api/friends`
 - **Matches**: `GET /api/matches/{id}`, `GET /api/matches/me`
+- **Matchmaking**: `POST /api/matchmaking/join` (solo or `party_members` roster), `DELETE /api/matchmaking/leave`, `GET /api/matchmaking/status`
 - **Rankings**: `GET /api/rankings/{type}`, `GET /api/rankings/me`
 
 Expired access tokens are refreshed automatically via `/api/auth/refresh`; when a refresh fails the app returns to the login screen.
 
-Match submission and matchmaking are not part of this client; they are operated through the maintenance panel (MatchCoreArena-MaintenanceView).
+Match reporting is operated through the maintenance panel (MatchCoreArena-MaintenanceView) and the game-side reporter, not by this client.
 
 ## License
 

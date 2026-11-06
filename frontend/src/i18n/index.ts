@@ -15,10 +15,11 @@ export type Locale = 'en';
 
 const en = {
   nav: {
-    home: 'Home',
+    play: 'Play',
     career: 'Career',
     friends: 'Friends',
     rankings: 'Rankings',
+    settings: 'Settings',
   },
   common: {
     refresh: 'Refresh',
@@ -35,12 +36,51 @@ const en = {
     dataFriends: 'your friends',
   },
   readOnly: {
-    homeNotice:
-      'This client is read-only: view your match history, rankings and friends here. Match submission and matchmaking have moved to the maintenance panel (MaintenanceView).',
-    matchesNotice:
-      'This client is read-only. Match submission and matchmaking have moved to the maintenance panel (MaintenanceView).',
-    friendsNotice:
-      'This client is read-only: the friend list is shown for viewing only. Sending or handling friend requests is not available here.',
+    notice:
+      'Match reporting stays in the maintenance panel (MaintenanceView). This client shows your career data and queues matches with your own account.',
+  },
+  play: {
+    title: 'Play',
+    queueCardTitle: 'Find a Match',
+    mode: 'Mode',
+    partyToggle: 'Queue as a party',
+    partyHint: 'Add member UUIDs. A party queues, matches and settles together.',
+    partyInputPlaceholder: 'Member UUID (32-hex)',
+    partyAdd: 'Add',
+    partyInvalidUuid: 'Invalid UUID — expected 32 hex characters.',
+    partyDuplicate: 'This member is already in the party.',
+    findMatch: 'Find Match',
+    joining: 'Joining…',
+    joinError: "Couldn't join the queue. Check the details and try again.",
+    leaveError: "Couldn't cancel the queue. Try again.",
+    cancelQueue: 'Cancel Queue',
+    stateQueued: 'In Queue',
+    waiting: 'Waiting',
+    stateFound: 'Match Found',
+    stateInMatch: 'In Match',
+    stateSettled: 'Results In',
+    groupLabel: 'Group',
+    waitingResults: 'Your game is being played. Results appear here once reported.',
+    matchRecorded: 'Match recorded',
+    viewDetails: 'View Details',
+    queueAgain: 'Queue Again',
+    recentMatches: 'Recent Matches',
+    noRecentMatches: 'No matches yet.',
+    level: 'Level',
+    experience: 'Experience',
+    rankScore: 'Rank Score',
+  },
+  rankCard: {
+    title: 'Your Rank',
+    season: 'Season',
+    score: 'Score',
+    rank: 'Your rank',
+    wins: 'Wins',
+    unrankedTitle: 'Unranked',
+    unrankedHint: 'Play ranked matches to get your placement.',
+    loadErrorData: 'your ranking',
+    topPercentTemplate: 'Top {pct}%',
+    topPercentTiny: 'Top <0.1%',
   },
   career: {
     title: 'Career',
@@ -87,9 +127,21 @@ const en = {
     failed: 'Sign-in failed. Check your credentials and try again.',
     totpInvalid: 'Invalid code. Enter the 6-digit code from your authenticator.',
   },
-  home: {
-    recentActivityTitle: 'No recent activity to display',
-    recentActivityHint: 'Open the Career page to browse your recorded match history.',
+  settings: {
+    title: 'Settings',
+    account: 'Account',
+    accountUid: 'Player UID',
+    accountLevel: 'Level',
+    accountExp: 'Experience',
+    accountRankScore: 'Rank Score',
+    accountWins: 'Wins',
+    accountMissing: 'Profile not provisioned yet — it is created with your first settled match.',
+    language: 'Language',
+    languageEnglish: 'English',
+    languageNote: 'English is the source language; additional languages are reserved.',
+    about: 'About',
+    aboutText:
+      'MatchCoreArena Client — companion app for the MatchCoreArena arena server: career, rankings, friends and matchmaking queue.',
   },
 } as const;
 

@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Central i18n message catalog (`frontend/src/i18n`): English-first UI
   strings for the new/rewritten views, with a locale interface reserved
   for additional languages
+- Play page: matchmaking queue cycle (idle → queued → found → in-match →
+  settled) driven by `/api/matchmaking/status` polling, party join via
+  `party_members` UUID roster, wait timer, cancel, settled match id with a
+  deep link into Career detail, plus the player summary, rank card and
+  recent matches
+- Rank card (A4): score, absolute rank, "Top X%" positioning when the
+  ranked population is known, wins and season; "Unranked" empty state
+- Settings page: account data, language (English source language) and about
 
 ### Changed
 - Client is now read-only for all business data: it only performs session
@@ -43,6 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`wails build -platform windows/amd64` with mingw), unsigned
 - Navigation: "My Matches" renamed to **Career**; the match list is
   time-first and drops the low-value ID column (rows open the detail)
+- Sidebar converged to five entries (Play / Career / Rankings / Friends /
+  Settings); the former Home page is merged into Play
+- Matchmaking queue operations (join/leave/status) are client bindings
+  again; the bound-surface allow-list now permits queue operations while
+  still forbidding match reporting and match-data writes
+- `GetMyRanking` maps the server's missing-row envelope to an empty result
+  (Unranked) instead of a hard error
 - Career match detail aligns with the report fields: Player / Team / Result
   / Kills / Deaths / Survived / Score, with the signed-in player's row
   highlighted and their Victory/Defeat result plus points change shown in
