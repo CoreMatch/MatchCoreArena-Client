@@ -181,7 +181,13 @@ export default function App() {
       case 'settings':
         return <SettingsView user={user} themeMode={themeMode} onThemeModeChange={changeThemeMode} />;
       default:
-        return <PlayView user={user} onViewMatch={handleViewMatch} />;
+        return (
+          <PlayView
+            user={user}
+            onViewMatch={handleViewMatch}
+            onOpenRankings={() => setSelectedView('rankings')}
+          />
+        );
     }
   };
 

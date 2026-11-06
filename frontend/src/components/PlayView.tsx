@@ -26,6 +26,7 @@ import {
   CheckCircle as CheckCircleIcon,
   ContentCopy as ContentCopyIcon,
   History as HistoryIcon,
+  RadioButtonUnchecked as RadioButtonUncheckedIcon,
 } from '@mui/icons-material';
 import {
   GetMatchmakingStatus,
@@ -123,21 +124,30 @@ function normalizeUuid(raw: string): string {
   return raw.replace(/-/g, '').toLowerCase();
 }
 
-function formatWait(enqueuedAt: string, now: number): string {
+function waitSeconds(enqueuedAt: string, now: number): number {
   const start = new Date(enqueuedAt).getTime();
-  if (Number.isNaN(start)) return '0:00';
-  const secs = Math.max(0, Math.floor((now - start) / 1000));
+  if (Number.isNaN(start)) return 0;
+  return Math.max(0, Math.floor((now - start) / 1000));
+}
+
+function formatWait(enqueuedAt: string, now: number): string {
+  const secs = waitSeconds(enqueuedAt, now);
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// Expectation management for unusually long waits (research 04 §A2).
+const LONG_WAIT_SECS = 60;
+
 interface PlayViewProps {
   user: UserProfile | null;
   onViewMatch: (id: number) => void;
+  // Get-started checklist entry into the rankings board.
+  onOpenRankings?: () => void;
 }
 
-export default function PlayView({ user, onViewMatch }: PlayViewProps) {
+export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayViewProps) {
   const msg = t();
 
   const [phase, setPhase] = useState<QueuePhase>('idle');
@@ -497,6 +507,54 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
           <RankCard rankType={mode.trim() || '1v1'} season={1} winsCount={user?.wins_count} />
         </Grid>
 
+        {/* Get-started checklist (guidance state, research 04 §A6 first-run
+            checklist) until the first settled match lands */}
+        {(phase === 'idle' || phase === 'joining') && (user?.wins_count ?? 0) === 0 && (
+          <Grid size={{ xs: 12 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  {msg.play.getStartedTitle}
+                </Typography>
+                <Stack spacing={1.5}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CheckCircleIcon color="success" fontSize="small" />
+                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                      {msg.play.getStartedSignIn}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
+                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                      {msg.play.getStartedQueue}
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<PlayIcon />}
+                      onClick={findMatch}
+                      disabled={phase === 'joining' || mode.trim() === ''}
+                    >
+                      {msg.play.findMatch}
+                    </Button>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
+                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                      {msg.play.getStartedRankings}
+                    </Typography>
+                    {onOpenRankings && (
+                      <Button size="small" variant="outlined" onClick={onOpenRankings}>
+                        {msg.play.viewRankings}
+                      </Button>
+                    )}
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
         {/* Queue card */}
         <Grid size={{ xs: 12 }}>
           <Card>
@@ -595,6 +653,11 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                       {queueEntry?.party_id ? ` · ${msg.play.partyToggle}` : ''}
                     </Typography>
                   </Stack>
+                  {waitSeconds(queueEntry?.enqueued_at ?? '', now) >= LONG_WAIT_SECS && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                      {msg.play.queueLongWait}
+                    </Typography>
+                  )}
                   <Button startIcon={<CancelIcon />} onClick={cancelQueue} variant="outlined">
                     {msg.play.cancelQueue}
                   </Button>
@@ -604,7 +667,10 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
               {(phase === 'found' || phase === 'in_match') && activeGroup && (
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="h6">
+                    <Typography
+                      variant="h5"
+                      sx={{ color: phase === 'found' ? 'success.main' : 'info.main' }}
+                    >
                       {phase === 'found' ? msg.play.stateFound : msg.play.stateInMatch} ·{' '}
                       {msg.play.groupLabel} #{activeGroup.group_id}
                     </Typography>
