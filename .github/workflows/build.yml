@@ -22,7 +22,7 @@ jobs:
         repository: CoreMatch/ha-ui
         path: ha-ui
 
-    - name: Place @ha/ui at its file: dependency path
+    - name: "Place @ha/ui at its file: dependency path"
       run: |
         sudo mkdir -p /home/lnb/Desktop/HA
         sudo cp -r ha-ui /home/lnb/Desktop/HA/ha-ui
