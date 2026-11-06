@@ -22,6 +22,10 @@ export function GetMatch(arg1) {
   return window['go']['main']['App']['GetMatch'](arg1);
 }
 
+export function GetMatchmakingStatus() {
+  return window['go']['main']['App']['GetMatchmakingStatus']();
+}
+
 export function GetMyMatches(arg1, arg2) {
   return window['go']['main']['App']['GetMyMatches'](arg1, arg2);
 }
@@ -32,10 +36,6 @@ export function GetMyRanking(arg1, arg2) {
 
 export function GetTopRankings(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetTopRankings'](arg1, arg2, arg3);
-}
-
-export function GetMatchmakingStatus() {
-  return window['go']['main']['App']['GetMatchmakingStatus']();
 }
 
 export function JoinMatchmaking(arg1, arg2) {
