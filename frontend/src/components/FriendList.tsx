@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import { GetFriends } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
+import { authFetch } from '../session';
 
 interface Friend {
   id: number;
@@ -46,7 +47,7 @@ export default function FriendList() {
     setError(null);
 
     try {
-      const resp = await GetFriends();
+      const resp = await authFetch(() => GetFriends());
       // Go returns models.SuccessEnvelope { success, message, data, meta }
       const data = resp?.data ?? resp;
       setFriends(data || []);

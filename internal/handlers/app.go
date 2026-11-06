@@ -62,10 +62,6 @@ func (h *AppHandler) GetCurrentUser() (interface{}, error) {
 	return h.user.GetCurrentUser()
 }
 
-func (h *AppHandler) GetUserByUUID(uuid string) (interface{}, error) {
-	return h.user.GetUserByUUID(uuid)
-}
-
 // Friend methods
 func (h *AppHandler) GetFriends() (interface{}, error) {
 	return h.friend.GetFriends()

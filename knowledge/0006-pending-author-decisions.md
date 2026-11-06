@@ -17,40 +17,40 @@ Record the following items as pending author decisions:
    `~/.matchcorearena/config.json`). If an env var should work, someone
    must choose its precedence relative to `config.json` (env-over-file vs
    file-over-env), which changes effective container behavior.
-2. **UUID vs UID drift**: the client calls `GET /api/users/{uuid}`
-   (`internal/services/user.go`) while the server parses `:uid` as an int64
-   (`/home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID` via
-   `strconv.ParseInt`). The server rejects these calls. Direction to
-   choose: client switches to numeric UID, or server adds a UUID lookup.
-3. **"Automatic token refresh" claim in USAGE.md**: the `RefreshToken` binding
-   exists end-to-end but the frontend never calls it. Decide whether to wire
-   the refresh up or remove the binding; both options change behavior or API
-   surface. USAGE.md now states the current behavior (binding present, not
-   auto-invoked) instead of the old claim.
-4. **Release artifacts**: `.github/workflows/release.yml` publishes `.exe`
-   artifacts but only builds on `ubuntu-latest` with no Windows job or
-   cross-compilation step; the source of the Windows binaries is unknown.
-5. **Docker image purpose**: the Dockerfile packages a GUI desktop binary into
-   a headless alpine image; the intended use is not documented.
+2. **Docker image purpose**: the Dockerfile packages a GUI desktop binary
+   into a headless alpine image; the intended use is not documented.
 
-Resolved by the read-only refactor (see 0010): the former "UI-less
-bindings" item is closed — write bindings (`ReportMatchResult`,
-`ReportVirtualMatch`, matchmaking, team management, `AddExperience`,
-friend mutations) were removed, and `GetMatch`/`GetMyMatches` received a
-UI consumer (`frontend/src/components/MyMatchesView.tsx`); the README
-feature list was aligned to the read-only surface.
+Resolved since the read-only refactor (see 0010/0011):
+
+- **UUID vs UID drift**: investigated — the client sent a UUID string to
+  `GET /api/users/:uid`, which the server parses as an int64 UID; the
+  server's authoritative identity is the numeric uid resolved from the
+  token. Resolution: the broken `GetUserByUUID` binding/service was removed
+  (no UI consumer; read-only surface needs no by-id lookup) and the models
+  were unified to the server's uid basis (`models.User.UID`,
+  `models.Ranking.UserUID`); RankingView renders `Player #{uid}`.
+- **Token refresh**: the server's `/api/auth/refresh` is the designated
+  recovery path (middleware answers 401 `oauth_token_expired` expecting a
+  client refresh). Resolution: wired via `frontend/src/session.ts`
+  (authFetch: 401 → single-flight refresh → retry once; failed refresh →
+  logout to the login screen).
+- **UI-less bindings / README feature drift**: closed by the read-only
+  refactor; the remaining bound surface is fully consumed or session
+  infrastructure, pinned by 0011's tests.
+- **Release Windows artifact**: the missing build path was filled
+  mechanically (mingw cross-compile in `release.yml`); no signing
+  certificate is involved. Verification at the next tag run is tracked in
+  0008, not as an author decision.
 
 ## Consequences
 - The repository compiles and passes `go build ./...`, `go vet ./...`,
   `go test ./...`; frontend `npm run build` (tsc + vite) passes.
-- The items above remain open; each blocks on an author choice.
+- The two open items above remain; each blocks on an author choice.
 
 ## Evidence
 - internal/config/config.go::LoadConfig (config only from JSON file, no env reads)
-- internal/services/user.go::GetUserByUUID (client side of the UUID vs UID drift)
-- USAGE.md::Authentication (token refresh described as available but not auto-invoked)
-- app.go::RefreshToken (refresh binding retained without UI consumer)
-- frontend/src/components/MyMatchesView.tsx::MyMatchesView (GetMatch/GetMyMatches now consumed by UI)
-- .github/workflows/release.yml::exe (uploads `MatchCoreArenaClient.exe`)
 - Dockerfile::MatchCoreArenaClient (GUI binary in a headless alpine image)
-- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/user.go::GetByUID (`:uid` parsed via `strconv.ParseInt`)
+- internal/models/user.go::UID, internal/models/ranking.go::UserUID (uid-based identity models)
+- frontend/src/session.ts::authFetch (token refresh wired)
+- .github/workflows/release.yml::windows (Windows cross-compile step added)
+- Cross-reference: 0008 (verified inventory), 0010 (read-only client), 0011 (read-only invariant)

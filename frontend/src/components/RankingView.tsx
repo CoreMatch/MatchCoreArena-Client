@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Chip,
   Select,
   MenuItem,
   FormControl,
@@ -27,17 +26,16 @@ import {
   Star as StarIcon
 } from '@mui/icons-material';
 import { GetTopRankings, GetMyRanking } from '../../wailsjs/go/main/App';
+import { authFetch } from '../session';
 
 interface RankingEntry {
   id: number;
-  user_uuid: string;
+  user_uid: number;
   rank_type: string;
   score: number;
   rank_position: number;
   season: number;
   updated_at: string;
-  username?: string;
-  level?: number;
 }
 
 export default function RankingView() {
@@ -58,18 +56,20 @@ export default function RankingView() {
     setError(null);
     
     try {
-      // Fetch top rankings using Go bindings
-      const rankingsResp = await GetTopRankings(rankType, limit, season);
+      // Fetch top rankings using Go bindings (authFetch refreshes expired tokens)
+      const rankingsResp = await authFetch(() => GetTopRankings(rankType, limit, season));
       const rankingsData = rankingsResp?.data ?? rankingsResp;
       setRankings(rankingsData || []);
 
       // Fetch my ranking using Go bindings
       try {
-        const myRankResp = await GetMyRanking(rankType, season);
+        const myRankResp = await authFetch(() => GetMyRanking(rankType, season));
         const myRankData = myRankResp?.data ?? myRankResp;
         setMyRanking(myRankData);
       } catch (e) {
+        // No ranking row yet (or query failed) renders as the empty state.
         console.error('Failed to fetch my ranking:', e);
+        setMyRanking(null);
       }
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message || String(err) : String(err)) || 'Failed to load rankings');
@@ -310,14 +310,6 @@ export default function RankingView() {
                 }}>
                   Score
                 </TableCell>
-                <TableCell sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontWeight: 'bold',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  textAlign: 'right'
-                }}>
-                  Level
-                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -353,10 +345,10 @@ export default function RankingView() {
                         mr: 1,
                         fontSize: '0.875rem'
                       }}>
-                        {entry.username?.charAt(0)?.toUpperCase() || 'U'}
+                        P
                       </Avatar>
                       <Typography>
-                        {entry.username || `User ${entry.user_uuid}`}
+                        Player #{entry.user_uid}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -366,19 +358,6 @@ export default function RankingView() {
                     fontWeight: 'bold'
                   }}>
                     {entry.score.toLocaleString()}
-                  </TableCell>
-                  <TableCell sx={{ 
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    textAlign: 'right'
-                  }}>
-                    <Chip 
-                      label={`Lv. ${entry.level || '?'}`} 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: 'rgba(233, 69, 96, 0.2)',
-                        color: '#e94560',
-                      }} 
-                    />
                   </TableCell>
                 </TableRow>
               ))}

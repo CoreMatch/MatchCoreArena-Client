@@ -26,10 +26,6 @@ export function GetTopRankings(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetTopRankings'](arg1, arg2, arg3);
 }
 
-export function GetUserByUUID(arg1) {
-  return window['go']['main']['App']['GetUserByUUID'](arg1);
-}
-
 export function Login(arg1, arg2) {
   return window['go']['main']['App']['Login'](arg1, arg2);
 }

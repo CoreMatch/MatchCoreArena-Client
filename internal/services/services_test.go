@@ -102,7 +102,7 @@ func TestRankingServiceGetTopRankings(t *testing.T) {
 		if r.URL.Query().Get("limit") != "50" || r.URL.Query().Get("season") != "2" {
 			t.Errorf("unexpected query %s", r.URL.RawQuery)
 		}
-		w.Write(envelope(t, []models.Ranking{{ID: 1, UserUUID: "u1", Score: 1500, RankPosition: 1, Season: 2}}))
+		w.Write(envelope(t, []models.Ranking{{ID: 1, UserUID: 9, Score: 1500, RankPosition: 1, Season: 2}}))
 	}))
 	defer server.Close()
 
@@ -121,7 +121,7 @@ func TestRankingServiceGetMyRanking(t *testing.T) {
 		if r.URL.Path != "/api/rankings/me" {
 			t.Errorf("unexpected path %s", r.URL.Path)
 		}
-		w.Write(envelope(t, models.Ranking{UserUUID: "me", RankPosition: 3, Score: 1200}))
+		w.Write(envelope(t, models.Ranking{UserUID: 42, RankPosition: 3, Score: 1200}))
 	}))
 	defer server.Close()
 
@@ -159,7 +159,7 @@ func TestUserServiceGetCurrentUser(t *testing.T) {
 		if r.URL.Path != "/api/users/me" {
 			t.Errorf("unexpected path %s", r.URL.Path)
 		}
-		w.Write(envelope(t, models.User{UUID: "u1", Level: 5, Experience: 320, RankScore: 1100}))
+		w.Write(envelope(t, models.User{UID: 7, Level: 5, Experience: 320, RankScore: 1100, WinsCount: 3}))
 	}))
 	defer server.Close()
 
@@ -168,7 +168,7 @@ func TestUserServiceGetCurrentUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCurrentUser failed: %v", err)
 	}
-	if user.UUID != "u1" || user.Level != 5 || user.RankScore != 1100 {
+	if user.UID != 7 || user.Level != 5 || user.RankScore != 1100 || user.WinsCount != 3 {
 		t.Fatalf("unexpected user: %+v", user)
 	}
 }
@@ -211,5 +211,31 @@ func TestAuthServiceLogout(t *testing.T) {
 	svc := NewAuthService(NewAPIService(server.URL))
 	if err := svc.Logout(); err != nil {
 		t.Fatalf("Logout failed: %v", err)
+	}
+}
+
+func TestAuthServiceRefreshToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/auth/refresh" || r.Method != http.MethodPost {
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var req models.RefreshRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Errorf("failed to decode refresh request: %v", err)
+		}
+		if req.RefreshToken != "rt-1" {
+			t.Errorf("unexpected refresh token: %+v", req)
+		}
+		w.Write(envelope(t, models.TokenResponse{AccessToken: "at-2", RefreshToken: "rt-2", TokenType: "Bearer"}))
+	}))
+	defer server.Close()
+
+	svc := NewAuthService(NewAPIService(server.URL))
+	token, err := svc.RefreshToken("rt-1")
+	if err != nil {
+		t.Fatalf("RefreshToken failed: %v", err)
+	}
+	if token.AccessToken != "at-2" || token.RefreshToken != "rt-2" {
+		t.Fatalf("unexpected token response: %+v", token)
 	}
 }

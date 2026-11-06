@@ -25,9 +25,9 @@ The application is built with Wails v2:
   `//go:embed all:frontend/dist` and serves it through the Wails asset
   server.
 - Frontend↔Go communication happens exclusively through the generated Wails
-  bindings under `frontend/wailsjs/go/main/App.{js,d.ts}` (12 bound
+  bindings under `frontend/wailsjs/go/main/App.{js,d.ts}` (11 bound
   functions: session auth plus read-only queries, e.g. `Login`,
-  `GetTopRankings`, `GetMyMatches`, `SetToken`; see 0010).
+  `GetTopRankings`, `GetMyMatches`, `SetToken`; see 0010/0011).
 - Linux builds target WebKitGTK 2.41 (`"build:tags": "webkit2_41"` in
   wails.json).
 

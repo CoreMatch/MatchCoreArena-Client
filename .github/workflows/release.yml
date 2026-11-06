@@ -44,6 +44,12 @@ jobs:
         go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
         wails build
     
+    - name: Install Windows cross-compile toolchain
+      run: sudo apt-get install -y gcc-mingw-w64-x86-64
+    
+    - name: Build Windows application
+      run: wails build -platform windows/amd64
+    
     - name: Create Release
       uses: softprops/action-gh-release@v3
       with:
