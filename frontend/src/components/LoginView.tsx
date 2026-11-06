@@ -8,7 +8,7 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Link
+  Link,
 } from '@mui/material';
 import { Login as LoginIcon } from '@mui/icons-material';
 import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
@@ -100,28 +100,20 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         minHeight: '80vh',
       }}
     >
-      <Card
-        sx={{
-          maxWidth: 400,
-          width: '100%',
-          backgroundColor: '#16213e',
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-        }}
-      >
+      <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <LoginIcon sx={{ fontSize: 48, color: '#e94560', mb: 1 }} />
+            <LoginIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
             <Typography variant="h4" component="h1" gutterBottom>
               MatchCoreArena
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-              Sign in to your account
+            <Typography variant="body2" color="text.secondary">
+              {msg.login.subtitle}
             </Typography>
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
               {error}
               {errorDetail && (
                 <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.8 }}>
@@ -135,130 +127,56 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             <form onSubmit={handleLogin}>
               <TextField
                 fullWidth
-                label="Email"
+                label={msg.login.email}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255,255,255,0.3)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255,255,255,0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#e94560',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(255,255,255,0.7)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#e94560',
-                  },
-                }}
+                sx={{ mb: 2 }}
               />
               <TextField
                 fullWidth
-                label="Password"
+                label={msg.login.password}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255,255,255,0.3)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255,255,255,0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#e94560',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(255,255,255,0.7)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#e94560',
-                  },
-                }}
+                sx={{ mb: 3 }}
               />
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 disabled={loading}
-                sx={{
-                  backgroundColor: '#e94560',
-                  '&:hover': {
-                    backgroundColor: '#c81e45',
-                  },
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                }}
+                sx={{ py: 1.5, fontSize: '1rem' }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Sign In'}
+                {loading ? <CircularProgress size={24} /> : msg.login.signIn}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleTotpVerify}>
               <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
-                Enter the 6-digit code from your authenticator app
+                {msg.login.totpPrompt}
               </Typography>
               <TextField
                 fullWidth
-                label="TOTP Code"
+                label={msg.login.totpCode}
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
                 required
                 slotProps={{
-                  htmlInput: { maxLength: 6 }
+                  htmlInput: { maxLength: 6 },
                 }}
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255,255,255,0.3)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255,255,255,0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#e94560',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(255,255,255,0.7)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#e94560',
-                  },
-                }}
+                sx={{ mb: 3 }}
               />
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 disabled={loading}
-                sx={{
-                  backgroundColor: '#e94560',
-                  '&:hover': {
-                    backgroundColor: '#c81e45',
-                  },
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                }}
+                sx={{ py: 1.5, fontSize: '1rem' }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Verify'}
+                {loading ? <CircularProgress size={24} /> : msg.login.verify}
               </Button>
             </form>
           )}
@@ -267,14 +185,12 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             <Link
               href="#"
               sx={{
-                color: 'rgba(255,255,255,0.7)',
+                color: 'text.secondary',
                 textDecoration: 'none',
-                '&:hover': {
-                  color: '#e94560',
-                },
+                '&:hover': { color: 'primary.main' },
               }}
             >
-              Forgot password?
+              {msg.login.forgotPassword}
             </Link>
           </Box>
         </CardContent>
