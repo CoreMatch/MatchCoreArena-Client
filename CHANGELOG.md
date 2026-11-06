@@ -87,6 +87,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New read-only binding `GetRankingTiers` (display-only tier ladder);
   the bound-surface allow-list was updated accordingly (knowledge 0014)
 
+### Changed (ha-assets integration)
+- The official SVG asset library (ha-assets v1.0.0) replaces the Lucide
+  placeholders: sidebar/nav icons, app mark (sidebar + login), empty/error
+  state illustrations, queue-phase stepper and badge glyphs (flow group),
+  tier badges (only with a server ladder; unranked = dashed empty slot),
+  mode graphics (1v1/2v2/4v4/ffa), action icons (play/cancel/copy/
+  refresh/check/warning/loader) and one restrained grid texture on the
+  Play identity strip. Assets are consumed through the new @ha/ui asset
+  layer (`Asset` component keyed by stable manifest ids, `patternStyle`
+  for tiling patterns); the manifest ships inside the package
+- Explanatory text removed where graphics now carry the meaning; only
+  short labels remain
+
 ### Changed (rescale — spacious, fewer words)
 - Rescaled the whole UI at the @ha/ui token layer (author feedback: the
   first rebuild felt cramped): body text 16 with 14 secondary, section

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { History, LogOut, Settings, Swords, Trophy, User, Users } from 'lucide-react';
-import { Menu, MenuItem, MenuSeparator, Icon } from '@ha/ui';
+import { LogOut, User } from 'lucide-react';
+import { Asset, Menu, MenuItem, MenuSeparator, Icon, type AssetId } from '@ha/ui';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import { t } from './i18n';
 import { authFetch, SESSION_EXPIRED_EVENT } from './session';
@@ -15,15 +15,15 @@ import type { UserProfile } from './types';
 interface NavItem {
   id: string;
   label: string;
-  icon: typeof Swords;
+  icon: AssetId;
 }
 
 const navItems: NavItem[] = [
-  { id: 'play', label: t().nav.play, icon: Swords },
-  { id: 'matches', label: t().nav.career, icon: History },
-  { id: 'rankings', label: t().nav.rankings, icon: Trophy },
-  { id: 'friends', label: t().nav.friends, icon: Users },
-  { id: 'settings', label: t().nav.settings, icon: Settings },
+  { id: 'play', label: t().nav.play, icon: 'icon-play' },
+  { id: 'matches', label: t().nav.career, icon: 'icon-career-history' },
+  { id: 'rankings', label: t().nav.rankings, icon: 'icon-rankings' },
+  { id: 'friends', label: t().nav.friends, icon: 'icon-friends' },
+  { id: 'settings', label: t().nav.settings, icon: 'icon-settings' },
 ];
 
 export default function App() {
@@ -136,8 +136,9 @@ export default function App() {
       {/* Persistent sidebar */}
       {isLoggedIn && (
         <aside className="fixed inset-y-0 left-0 z-10 flex w-64 flex-col border-r border-edge bg-panel">
-          <div className="border-b border-edge px-6 py-6">
-            <div className="text-base font-bold uppercase tracking-[0.18em] text-ink">
+          <div className="flex items-center gap-3 border-b border-edge px-6 py-6">
+            <Asset id="brand-mca" size={34} className="text-accent" />
+            <div className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
               MatchCore<span className="text-accent">Arena</span>
             </div>
           </div>
@@ -156,7 +157,7 @@ export default function App() {
                       ? 'border-accent bg-raised text-ink'
                       : 'border-transparent text-ink-muted hover:bg-raised/60 hover:text-ink'}`}
                 >
-                  <Icon as={item.icon} size={20} className={selected ? 'text-accent' : ''} />
+                  <Asset id={item.icon} size={20} className={selected ? 'text-accent' : ''} />
                   {item.label}
                 </button>
               );

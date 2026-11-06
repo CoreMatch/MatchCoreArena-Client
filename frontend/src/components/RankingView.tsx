@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, RefreshCw, Trophy } from 'lucide-react';
-import { EmptyState, ErrorState, Field, Icon, Panel, Select, Skeleton, Table, Td, Th } from '@ha/ui';
+import { Trophy } from 'lucide-react';
+import { Asset, EmptyState, ErrorState, Field, Icon, Panel, Select, Skeleton, Table, Td, Th } from '@ha/ui';
 import { GetTopRankings } from '../../wailsjs/go/main/App';
 import { authFetch } from '../session';
 import { t, loadErrorMessage } from '../i18n';
@@ -138,7 +138,7 @@ export default function RankingView({ winsCount }: RankingViewProps) {
             title={msg.common.refresh}
             className="mb-0.5 rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <Icon as={RefreshCw} size={18} />
+            <Asset id="icon-refresh" size={18} />
           </button>
         </div>
       </div>
@@ -149,13 +149,17 @@ export default function RankingView({ winsCount }: RankingViewProps) {
       {/* Rankings table */}
       {error ? (
         <Panel>
-          <ErrorState message={error} onRetry={fetchRankings} />
+          <ErrorState
+            message={error}
+            onRetry={fetchRankings}
+            illustration={<Asset id="state-network-failure" size={240} />}
+          />
         </Panel>
       ) : (
         <Panel>
           {rankings.length === 0 ? (
             <EmptyState
-              icon={<Icon as={BarChart3} size={34} />}
+              illustration={<Asset id="state-nothing-playable" size={240} />}
               title={msg.rankings.emptyTitle}
               hint={msg.rankings.emptyHint}
             />

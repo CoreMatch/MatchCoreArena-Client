@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, History, Info as InfoIcon, Play, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info as InfoIcon } from 'lucide-react';
 import {
+  Asset,
   Badge,
   Button,
   Dialog,
@@ -239,14 +240,18 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
             title={msg.common.refresh}
             className="mb-0.5 rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <Icon as={RefreshCw} size={18} />
+            <Asset id="icon-refresh" size={18} />
           </button>
         </div>
       </div>
 
       {error ? (
         <Panel>
-          <ErrorState message={error} onRetry={fetchMatches} />
+          <ErrorState
+            message={error}
+            onRetry={fetchMatches}
+            illustration={<Asset id="state-network-failure" size={240} />}
+          />
         </Panel>
       ) : (
         <Panel>
@@ -258,13 +263,13 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
             </div>
           ) : matches.length === 0 ? (
             <EmptyState
-              icon={<Icon as={History} size={34} />}
+              illustration={<Asset id="state-no-match-record" size={240} />}
               title={msg.career.emptyTitle}
               hint={msg.career.emptyHint}
               action={
                 onFindMatch && (
                   <Button variant="primary" onClick={onFindMatch}>
-                    <Icon as={Play} size={16} />
+                    <Asset id="icon-play" size={16} />
                     {msg.play.findMatch}
                   </Button>
                 )
@@ -378,6 +383,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
           <ErrorState
             message={detailError}
             onRetry={detail ? () => openDetail(detail.id, detailSelfSummary) : undefined}
+            illustration={<Asset id="state-network-failure" size={240} />}
           />
         )}
         {!detailLoading && !detailError && detail && (

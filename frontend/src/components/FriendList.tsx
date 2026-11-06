@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Info, Users } from 'lucide-react';
-import { Badge, EmptyState, ErrorState, Icon, Panel, Skeleton } from '@ha/ui';
+import { Info } from 'lucide-react';
+import { Asset, Badge, EmptyState, ErrorState, Icon, Panel, Skeleton } from '@ha/ui';
 import type { BadgeTone } from '@ha/ui';
 import { GetFriends } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
@@ -105,27 +105,31 @@ export default function FriendList() {
           title={msg.common.refresh}
           className="rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
         >
-          <Icon as={Users} size={18} />
+          <Asset id="icon-refresh" size={18} />
         </button>
       </div>
 
       {notImplemented ? (
         <Panel>
           <EmptyState
-            icon={<Icon as={Users} size={34} />}
+            illustration={<Asset id="state-not-implemented" size={240} />}
             title={msg.friends.notImplementedTitle}
             hint={msg.friends.notImplementedHint}
           />
         </Panel>
       ) : error ? (
         <Panel>
-          <ErrorState message={error} onRetry={fetchFriends} />
+          <ErrorState
+            message={error}
+            onRetry={fetchFriends}
+            illustration={<Asset id="state-network-failure" size={240} />}
+          />
         </Panel>
       ) : (
         <Panel>
           {friends.length === 0 ? (
             <EmptyState
-              icon={<Icon as={Users} size={34} />}
+              illustration={<Asset id="state-no-friends" size={240} />}
               title={msg.friends.emptyTitle}
               hint={msg.friends.emptyHint}
             />

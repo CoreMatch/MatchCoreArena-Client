@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
-import { Banner, Button, Field, Icon, Input, Panel, Spinner } from '@ha/ui';
+import { Asset, Banner, Button, Field, Input, Panel, Spinner } from '@ha/ui';
 import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
 
@@ -85,8 +84,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     <div className="flex min-h-[85vh] items-center justify-center">
       <Panel className="w-full max-w-lg p-10">
         <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center text-accent">
-            <Icon as={ShieldCheck} size={44} />
+          <div className="mb-4 flex justify-center">
+            <Asset id="brand-mca" size={64} className="text-accent" />
           </div>
           <h1 className="text-display font-bold tracking-tight text-ink">
             MatchCore<span className="text-accent">Arena</span>

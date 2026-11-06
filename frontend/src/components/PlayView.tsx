@@ -1,26 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronRight, Circle, Clock, Hourglass, Info, ListChecks, Plus } from 'lucide-react';
 import {
-  CheckCircle2,
-  ChevronRight,
-  Circle,
-  Clock,
-  Copy,
-  Flag,
-  History,
-  Hourglass,
-  Info,
-  ListChecks,
-  LoaderCircle,
-  Play,
-  Plus,
-  RefreshCw,
-  Swords,
-  TriangleAlert,
-  Users,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-import {
+  Asset,
   Badge,
   Banner,
   Button,
@@ -30,10 +11,12 @@ import {
   Input,
   Inset,
   Panel,
+  patternStyle,
   Skeleton,
   Stat,
   Stepper,
 } from '@ha/ui';
+import type { AssetId } from '@ha/ui';
 import {
   GetMatchmakingStatus,
   JoinMatchmaking,
@@ -116,6 +99,14 @@ const HANDOFF_POLL_MS = 2000;
 
 // Expectation management for unusually long waits (research 04 §A2).
 const LONG_WAIT_SECS = 60;
+
+// Mode graphics from the asset library; unknown modes fall back to a badge.
+const MODE_ASSETS: Record<string, AssetId> = {
+  '1v1': 'mode-1v1',
+  '2v2': 'mode-2v2',
+  '4v4': 'mode-4v4',
+  ffa: 'mode-ffa',
+};
 
 function phaseStepIndex(phase: QueuePhase): number {
   switch (phase) {
@@ -448,13 +439,13 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   const phaseBadge = () => {
     switch (phase) {
       case 'queued':
-        return <Badge tone="warn" strong><Icon as={Hourglass} size={14} />{msg.play.stateQueued}</Badge>;
+        return <Badge tone="warn" strong><Asset id="flow-queued" size={16} />{msg.play.stateQueued}</Badge>;
       case 'found':
-        return <Badge tone="ok" strong><Icon as={Zap} size={14} />{msg.play.stateFound}</Badge>;
+        return <Badge tone="ok" strong><Asset id="flow-match-found" size={16} />{msg.play.stateFound}</Badge>;
       case 'in_match':
-        return <Badge tone="info" strong><Icon as={Swords} size={14} />{msg.play.stateInMatch}</Badge>;
+        return <Badge tone="info" strong><Asset id="flow-in-match" size={16} />{msg.play.stateInMatch}</Badge>;
       case 'settled':
-        return <Badge tone="neutral" strong><Icon as={Flag} size={14} />{msg.play.stateSettled}</Badge>;
+        return <Badge tone="neutral" strong><Asset id="flow-settled" size={16} />{msg.play.stateSettled}</Badge>;
       default:
         return null;
     }
@@ -462,6 +453,12 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
 
   const stepIndex = phaseStepIndex(phase);
   const stepLabels = [msg.play.stateQueued, msg.play.stateFound, msg.play.stateInMatch, msg.play.stateSettled];
+  const stepIcons = [
+    <Asset key="q" id="flow-queued" size={20} />,
+    <Asset key="f" id="flow-match-found" size={20} />,
+    <Asset key="m" id="flow-in-match" size={20} />,
+    <Asset key="s" id="flow-settled" size={20} />,
+  ];
 
   // Compact handoff status: short word + icon on screen, full sentence in
   // the tooltip.
@@ -507,7 +504,10 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
 
       {/* Player + rank — one big block instead of small parallel cards */}
       <Panel className="p-8">
-        <div className="mb-8 flex flex-wrap items-center gap-x-12 gap-y-6 border-b border-edge/60 pb-8">
+        <div
+          className="mb-8 flex flex-wrap items-center gap-x-12 gap-y-6 rounded-md border-b border-edge/60 pb-8"
+          style={patternStyle('pattern-grid-fine')}
+        >
           <div className="flex items-center gap-4">
             <span className="flex h-16 w-16 items-center justify-center rounded-md bg-accent text-2xl font-bold text-on-accent">
               {user?.username?.charAt(0)?.toUpperCase() || 'U'}
@@ -532,7 +532,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
         {/* Phase indicator: one glance tells where the cycle stands */}
         {stepIndex >= 0 && (
           <div className="mb-8">
-            <Stepper steps={stepLabels} active={stepIndex} />
+            <Stepper steps={stepLabels} active={stepIndex} icons={stepIcons} />
           </div>
         )}
 
@@ -542,13 +542,16 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
               <Field label={msg.play.mode} className="w-48">
                 <Input value={mode} onChange={(e) => setMode(e.target.value)} className="font-mono" />
               </Field>
+              {MODE_ASSETS[mode.trim().toLowerCase()] && (
+                <Asset id={MODE_ASSETS[mode.trim().toLowerCase()]} size={40} className="mb-1 text-ink-muted" />
+              )}
               <Button
                 variant={partyOpen ? 'primary' : 'outline'}
                 onClick={() => setPartyOpen((v) => !v)}
                 aria-expanded={partyOpen}
                 title={msg.play.partyHint}
               >
-                <Icon as={Users} size={18} />
+                <Asset id="mode-team" size={18} />
                 {msg.play.partyToggle}
               </Button>
             </div>
@@ -588,7 +591,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                           className="text-ink-faint transition-colors duration-150 hover:text-danger"
                           aria-label={`Remove ${uuid}`}
                         >
-                          <XCircle size={15} aria-hidden />
+                          <Asset id="icon-cancel" size={13} />
                         </button>
                       </span>
                     ))}
@@ -604,7 +607,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
               disabled={phase === 'joining' || mode.trim() === ''}
               className="w-full uppercase tracking-widest"
             >
-              <Icon as={Play} size={22} />
+              <Asset id="icon-play" size={22} />
               {phase === 'joining' ? msg.play.joining : msg.play.findMatch}
             </Button>
 
@@ -618,7 +621,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                 </h3>
                 <ul className="space-y-4">
                   <li className="flex items-center gap-3">
-                    <Icon as={CheckCircle2} size={20} className="text-ok" />
+                    <Asset id="icon-check" size={20} className="text-ok" />
                     <span className="flex-1 text-base text-ink-muted">{msg.play.getStartedSignIn}</span>
                   </li>
                   <li className="flex items-center gap-3">
@@ -658,7 +661,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                 <div className="flex items-end gap-8">
                   <div>
                     <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-ink-faint">
-                      <Icon as={Users} size={15} />
+                      <Asset id="mode-avatar" size={15} />
                       {msg.play.playersLabel}
                     </div>
                     <div className="font-mono text-display font-bold tabular-nums text-ink">
@@ -667,7 +670,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                   </div>
                   <div>
                     <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-ink-faint">
-                      <Icon as={Flag} size={15} />
+                      <Asset id="mode-team" size={15} />
                       {msg.play.partiesLabel}
                     </div>
                     <div className="font-mono text-display font-bold tabular-nums text-ink">
@@ -700,7 +703,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
               )}
             </div>
             <Button variant="outline" onClick={cancelQueue}>
-              <Icon as={XCircle} size={18} />
+              <Asset id="icon-cancel" size={18} />
               {msg.play.cancelQueue}
             </Button>
           </div>
@@ -746,7 +749,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                       {activeGroup.join_target.host}:{activeGroup.join_target.port}
                     </span>
                     <Button variant="primary" onClick={copyGroupAddress}>
-                      <Icon as={Copy} size={16} />
+                      <Asset id="icon-copy" size={16} />
                       {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
                     </Button>
                   </div>
@@ -781,7 +784,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
         {phase === 'settled' && settledMatch && (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Icon as={CheckCircle2} className="text-ok" size={30} />
+              <Asset id="icon-check" size={30} className="text-ok" />
               <span className="text-display font-bold tracking-tight text-ink">
                 {msg.play.matchRecorded}
               </span>
@@ -815,8 +818,8 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                         title={hv.full}
                         className={`flex cursor-help items-center gap-2.5 text-base font-semibold ${toneText}`}
                       >
-                        <Icon
-                          as={hv.tone === 'ok' ? CheckCircle2 : hv.tone === 'warn' ? TriangleAlert : LoaderCircle}
+                        <Asset
+                          id={hv.tone === 'ok' ? 'icon-check' : hv.tone === 'warn' ? 'icon-warning' : 'icon-loader'}
                           size={20}
                         />
                         {hv.short}
@@ -841,7 +844,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                         title={msg.handoff.gameUnreachable}
                         className="flex cursor-help items-center gap-1.5 text-sm font-medium text-warn"
                       >
-                        <Icon as={TriangleAlert} size={15} />
+                        <Asset id="icon-warning" size={15} />
                         {msg.handoff.gameUnreachableShort}
                       </span>
                     )}
@@ -852,7 +855,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                       {handoff.host}:{handoff.port}
                     </span>
                     <Button variant="outline" onClick={copyJoinAddress}>
-                      <Icon as={Copy} size={16} />
+                      <Asset id="icon-copy" size={16} />
                       {copied ? msg.handoff.copied : msg.handoff.copy}
                     </Button>
                   </div>
@@ -873,7 +876,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
             title={msg.common.refresh}
             className="rounded-md p-2.5 text-ink-faint transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <Icon as={RefreshCw} size={18} />
+            <Asset id="icon-refresh" size={18} />
           </button>
         </div>
         {recentLoading ? (
@@ -883,7 +886,10 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
             ))}
           </div>
         ) : recentMatches.length === 0 ? (
-          <EmptyState icon={<Icon as={History} size={40} />} title={msg.play.noRecentMatches} />
+          <EmptyState
+            illustration={<Asset id="state-no-match-record" size={240} />}
+            title={msg.play.noRecentMatches}
+          />
         ) : (
           <ul className="divide-y divide-edge/50">
             {recentMatches.map((m) => (
@@ -893,7 +899,14 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                   onClick={() => onViewMatch(m.id)}
                   className="flex w-full items-center gap-4 rounded-md px-3 py-4 text-left transition-colors duration-150 hover:bg-raised"
                 >
-                  <Badge tone="accent" className="font-mono">{m.match_type}</Badge>
+                  {MODE_ASSETS[m.match_type.toLowerCase()] ? (
+                    <span className="flex items-center gap-2.5 text-ink-muted">
+                      <Asset id={MODE_ASSETS[m.match_type.toLowerCase()]} size={22} />
+                      <span className="font-mono text-sm">{m.match_type}</span>
+                    </span>
+                  ) : (
+                    <Badge tone="accent" className="font-mono">{m.match_type}</Badge>
+                  )}
                   <span className="flex-1 truncate text-base text-ink">{m.map_name || '—'}</span>
                   <span className="font-mono text-sm tabular-nums text-ink-faint">
                     {new Date(m.finished_at).toLocaleString()}
