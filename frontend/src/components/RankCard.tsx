@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Trophy } from 'lucide-react';
-import { Badge, EmptyState, ErrorState, Icon, Panel, Progress, Skeleton } from '@ha/ui';
+import { Asset, Badge, EmptyState, ErrorState, Icon, Panel, Progress, Skeleton } from '@ha/ui';
+import type { AssetId } from '@ha/ui';
 import { GetMyRanking, GetTopRankings, GetRankingTiers } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
@@ -30,20 +31,24 @@ interface RankTierView {
 
 // tierOf locates the player on the server-provided ladder: the current tier
 // is the last entry whose min_score is reached; next is the following one
-// (null at the top of the ladder).
-function tierOf(score: number, tiers: RankTierView[]): { current: RankTierView | null; next: RankTierView | null } {
+// (null at the top of the ladder). index is the ladder position (0-based).
+function tierOf(
+  score: number,
+  tiers: RankTierView[],
+): { current: RankTierView | null; next: RankTierView | null; index: number } {
   const sorted = [...tiers].sort((a, b) => a.min_score - b.min_score);
   let current: RankTierView | null = null;
   let next: RankTierView | null = null;
-  for (const tier of sorted) {
-    if (score >= tier.min_score) {
-      current = tier;
-    } else {
-      next = tier;
-      break;
+  let index = -1;
+  for (let i = 0; i < sorted.length; i++) {
+    if (score >= sorted[i].min_score) {
+      current = sorted[i];
+      index = i;
+    } else if (!next) {
+      next = sorted[i];
     }
   }
-  return { current, next };
+  return { current, next, index };
 }
 
 function topPercentLabel(position: number, total: number): string | null {
@@ -125,14 +130,20 @@ export default function RankCard({ rankType, season, winsCount, embedded = false
   }
 
   if (state === 'error') {
-    const body = <ErrorState message={loadErrorMessage(msg.rankCard.loadErrorData)} onRetry={load} />;
+    const body = (
+      <ErrorState
+        message={loadErrorMessage(msg.rankCard.loadErrorData)}
+        onRetry={load}
+        illustration={<Asset id="state-network-failure" size={240} />}
+      />
+    );
     return embedded ? body : <Panel>{body}</Panel>;
   }
 
   if (state === 'unranked' || !myRank) {
     const body = (
       <EmptyState
-        icon={<Icon as={Trophy} size={40} />}
+        illustration={<Asset id="tier-unranked" size={120} className="text-ink-faint" />}
         title={msg.rankCard.unrankedTitle}
         hint={msg.rankCard.unrankedHint}
       />
@@ -160,8 +171,16 @@ export default function RankCard({ rankType, season, winsCount, embedded = false
   const rankedBody = (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <Icon as={Trophy} className="text-gold" size={22} />
+        <div className="flex items-center gap-3">
+          {tier && tier.index >= 0 ? (
+            <Asset
+              id={`tier-${Math.min(tier.index + 1, 5)}` as AssetId}
+              size={48}
+              title={tier.current?.name}
+            />
+          ) : (
+            <Icon as={Trophy} className="text-gold" size={22} />
+          )}
           <h2 className="text-2xl font-bold text-ink">{msg.rankCard.title}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
