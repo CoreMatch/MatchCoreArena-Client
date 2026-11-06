@@ -97,6 +97,10 @@ type QueuePhase = 'idle' | 'joining' | 'queued' | 'found' | 'in_match' | 'settle
 const POLL_MS = 3000;
 const HANDOFF_POLL_MS = 2000;
 
+// The arena API exposes no Minecraft UUID for the signed-in player, so the
+// party roster's self entry is entered once and remembered locally.
+const SELF_UUID_STORAGE_KEY = 'mca_self_uuid';
+
 // Expectation management for unusually long waits (research 04 §A2).
 const LONG_WAIT_SECS = 60;
 
@@ -162,6 +166,13 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   const [partyOpen, setPartyOpen] = useState(false);
   const [partyInput, setPartyInput] = useState('');
   const [partyMembers, setPartyMembers] = useState<string[]>([]);
+  const [partySelfUuid, setPartySelfUuid] = useState(() => {
+    try {
+      return localStorage.getItem(SELF_UUID_STORAGE_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
   const [partyError, setPartyError] = useState<string | null>(null);
 
   const [queueEntry, setQueueEntry] = useState<QueueEntryView | null>(null);
@@ -303,9 +314,38 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Persist the self UUID so the player does not retype it every launch.
+  useEffect(() => {
+    try {
+      localStorage.setItem(SELF_UUID_STORAGE_KEY, partySelfUuid);
+    } catch {
+      // Storage unavailable — the value still works for this session.
+    }
+  }, [partySelfUuid]);
+
   const findMatch = async () => {
     setError(null);
     setErrorDetail(null);
+
+    // Server-side `party_members` is the complete roster and Join does not
+    // add the authenticated caller, so the player's own UUID must lead it.
+    // A party also needs at least two players (contract v1.4.0).
+    let roster = partyMembers;
+    if (partyOpen || partyMembers.length > 0) {
+      const selfUuid = normalizeUuid(partySelfUuid.trim());
+      if (!/^[0-9a-f]{32}$/.test(selfUuid)) {
+        setPartyError(msg.play.partySelfRequired);
+        return;
+      }
+      const deduped = [selfUuid, ...partyMembers.filter((u) => u !== selfUuid)];
+      if (deduped.length < 2) {
+        setPartyError(msg.play.partyTooSmall);
+        return;
+      }
+      roster = deduped;
+      setPartyError(null);
+    }
+
     setPhase('joining');
     try {
       await snapshotMatches();
@@ -313,7 +353,7 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
       const status = (statusResp?.data ?? statusResp) as MatchmakingStatusView;
       baselineGroupIds.current = new Set((status.recent_groups ?? []).map((g) => g.group_id));
 
-      await authFetch(() => JoinMatchmaking(mode.trim(), partyMembers));
+      await authFetch(() => JoinMatchmaking(mode.trim(), roster));
       setQueueEntry(null);
       setPhase('queued');
     } catch (err: unknown) {
@@ -558,6 +598,14 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
 
             {partyOpen && (
               <div className="space-y-4 rounded-md bg-raised p-6">
+                <Field label={msg.play.partySelfLabel}>
+                  <Input
+                    placeholder={msg.play.partySelfPlaceholder}
+                    value={partySelfUuid}
+                    onChange={(e) => setPartySelfUuid(e.target.value)}
+                    className="font-mono"
+                  />
+                </Field>
                 <div className="flex gap-3">
                   <Input
                     placeholder={msg.play.partyInputPlaceholder}

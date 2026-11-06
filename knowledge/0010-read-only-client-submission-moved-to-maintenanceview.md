@@ -30,9 +30,13 @@ hence the current split: queue in the client, reporting out of it.
   - Play (`frontend/src/components/PlayView.tsx`): profile summary, the
     rank card, the recent-matches list, and the matchmaking queue cycle
     (idle → queued → found → in-match → settled) driven by polling
-    `GET /api/matchmaking/status`; party join sends `party_members`
-    (UUID roster, same field name as the server/ops panel); a settled
-    cycle shows the recorded match id with a deep link into Career detail;
+    `GET /api/matchmaking/status`; party join sends the complete
+    `party_members` roster (same field name as the server/ops panel),
+    which must include the caller's own Minecraft UUID because the server
+    does not add the authenticated caller (see 0016); the roster puts the
+    self UUID first, de-duplicates it against the other members, and
+    requires at least two players; a settled cycle shows the recorded match
+    id with a deep link into Career detail;
   - Career (`frontend/src/components/MyMatchesView.tsx`): paginated
     `GET /api/matches/me` list plus per-match detail via `GET /api/matches/{id}`
     (participants with kills/deaths/survival and server-computed score

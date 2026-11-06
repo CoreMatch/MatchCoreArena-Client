@@ -46,7 +46,12 @@ const en = {
     queueCardTitle: 'Find a Match',
     mode: 'Mode',
     partyToggle: 'Queue as a party',
-    partyHint: 'Add member UUIDs. A party queues, matches and settles together.',
+    partyHint:
+      'A party roster must include your own Minecraft UUID plus every other member. A party queues, matches and settles together.',
+    partySelfLabel: 'Your Minecraft UUID',
+    partySelfPlaceholder: 'Your UUID (32-hex)',
+    partySelfRequired: 'Enter your Minecraft UUID (32 hex characters) to queue as a party.',
+    partyTooSmall: 'A party needs at least two players, including you.',
     partyInputPlaceholder: 'Member UUID (32-hex)',
     partyAdd: 'Add',
     partyInvalidUuid: 'Invalid UUID — expected 32 hex characters.',
