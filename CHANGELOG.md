@@ -70,6 +70,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All remaining hard-coded UI strings moved to the i18n catalog (login
   form, rankings filters/columns, app menu); all hard-coded colors moved
   into the theme
+- Play match-flow emphasis: phase banners take the semantic hue of their
+  stage (Match Found green, In Match blue) at display size; waits over one
+  minute show a "may take longer" expectation note; a Get-started
+  checklist (sign in / first match / rankings) guides new players until
+  their first settled match
 
 ### Changed
 - Client is now read-only for all business data: it only performs session
