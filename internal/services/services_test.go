@@ -102,17 +102,41 @@ func TestRankingServiceGetTopRankings(t *testing.T) {
 		if r.URL.Query().Get("limit") != "50" || r.URL.Query().Get("season") != "2" {
 			t.Errorf("unexpected query %s", r.URL.RawQuery)
 		}
-		w.Write(envelope(t, []models.Ranking{{ID: 1, UserUID: 9, Score: 1500, RankPosition: 1, Season: 2}}))
+		w.Write(envelope(t, map[string]any{
+			"rankings":    []models.Ranking{{ID: 1, UserUID: 9, Score: 1500, RankPosition: 1, Season: 2}},
+			"total_count": 42,
+		}))
 	}))
 	defer server.Close()
 
 	svc := NewRankingService(NewAPIService(server.URL))
-	rankings, err := svc.GetTopRankings("1v1", 50, 2)
+	top, err := svc.GetTopRankings("1v1", 50, 2)
 	if err != nil {
 		t.Fatalf("GetTopRankings failed: %v", err)
 	}
-	if len(rankings) != 1 || rankings[0].Score != 1500 || rankings[0].RankPosition != 1 {
-		t.Fatalf("unexpected rankings: %+v", rankings)
+	if len(top.Rankings) != 1 || top.Rankings[0].Score != 1500 || top.Rankings[0].RankPosition != 1 {
+		t.Fatalf("unexpected rankings: %+v", top)
+	}
+	if top.TotalCount != 42 {
+		t.Fatalf("expected total_count 42, got %d", top.TotalCount)
+	}
+}
+
+func TestRankingServiceGetTopRankingsLegacyArray(t *testing.T) {
+	// Backwards-compat: older servers send a bare array instead of the
+	// new {rankings, total_count} envelope.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(envelope(t, []models.Ranking{{ID: 5, Score: 900, RankPosition: 7}}))
+	}))
+	defer server.Close()
+
+	svc := NewRankingService(NewAPIService(server.URL))
+	top, err := svc.GetTopRankings("1v1", 100, 1)
+	if err != nil {
+		t.Fatalf("GetTopRankings legacy failed: %v", err)
+	}
+	if len(top.Rankings) != 1 || top.Rankings[0].Score != 900 {
+		t.Fatalf("unexpected legacy rankings: %+v", top)
 	}
 }
 
@@ -346,19 +370,36 @@ func TestMatchmakingServiceStatus(t *testing.T) {
 }
 
 func TestRankingServiceGetMyRankingNotFound(t *testing.T) {
+	// Server's typed 404 mca_ranking_not_found is the new "unranked" empty
+	// state — swallowed into (nil, nil), not surfaced as a fault.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"success":false,"message":"查询失败","code":"internal_error","error":"internal_error","meta":{"request_id":"x"}}`))
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"success":false,"message":"not found","code":"mca_ranking_not_found","error":"mca_ranking_not_found","meta":{"request_id":"x"}}`))
 	}))
 	defer server.Close()
 
 	svc := NewRankingService(NewAPIService(server.URL))
 	ranking, err := svc.GetMyRanking("1v1", 1)
 	if err != nil {
-		t.Fatalf("expected the missing-row envelope to map to an empty result, got error: %v", err)
+		t.Fatalf("expected the 404 mca_ranking_not_found to map to an empty result, got error: %v", err)
 	}
 	if ranking != nil {
 		t.Fatalf("expected nil ranking for a missing row, got %+v", ranking)
+	}
+}
+
+func TestRankingServiceGetMyRankingServerFault(t *testing.T) {
+	// A real server fault (500 internal_error) must propagate as an error,
+	// not be silently treated as unranked.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"success":false,"message":"internal error","code":"internal_error","error":"internal_error","meta":{"request_id":"x"}}`))
+	}))
+	defer server.Close()
+
+	svc := NewRankingService(NewAPIService(server.URL))
+	if _, err := svc.GetMyRanking("1v1", 1); err == nil {
+		t.Fatal("expected server fault to propagate as error, got nil")
 	}
 }
 
