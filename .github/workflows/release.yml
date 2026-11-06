@@ -44,8 +44,8 @@ jobs:
     - name: Install dependencies
       run: |
         go mod tidy
-        cd /home/lnb/Desktop/HA/ha-ui && npm install
-        cd frontend && npm install
+        (cd /home/lnb/Desktop/HA/ha-ui && npm install)
+        cd "$GITHUB_WORKSPACE/frontend" && npm install
     
     - name: Build frontend
       run: cd frontend && npm run build
