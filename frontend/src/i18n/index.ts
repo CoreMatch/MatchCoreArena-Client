@@ -28,6 +28,8 @@ const en = {
     draw: 'Draw',
     team: 'Team',
     pts: 'pts',
+    profile: 'Profile',
+    logout: 'Logout',
     // {data} is replaced by the failing dataset name (see the data* keys).
     loadErrorTemplate: "Couldn't load {data}. Check your connection and try again.",
     dataMatches: 'your match history',
@@ -61,6 +63,14 @@ const en = {
     stateSettled: 'Results In',
     groupLabel: 'Group',
     waitingResults: 'Your game is being played. Results appear here once reported.',
+    copyServerAddress: 'Copy Server Address',
+    joinServerHint:
+      'Join this server from your game client. Once the match settles it is also handed off to SamuelClient automatically.',
+    joinServerMissing:
+      'The arena server did not attach a server address to this match. After settlement the handoff falls back to the address in Settings.',
+    dismissMatch: 'Dismiss',
+    dismissHint:
+      'Dismiss only hides this match from Play — the formed group stays on the server and its result will still appear in Career.',
     matchRecorded: 'Match recorded',
     viewDetails: 'View Details',
     queueAgain: 'Queue Again',
@@ -111,6 +121,16 @@ const en = {
   rankings: {
     emptyTitle: 'No rankings yet',
     emptyHint: 'Rankings will appear once the first matches are played.',
+    type: 'Type',
+    season: 'Season',
+    limit: 'Limit',
+    colRank: 'Rank',
+    colPlayer: 'Player',
+    colScore: 'Score',
+    // {count} is replaced by the list size (e.g. "Top 100").
+    topTemplate: 'Top {count}',
+    // {uid} is replaced by the player uid.
+    playerTemplate: 'Player #{uid}',
   },
   friends: {
     title: 'Friends',
@@ -122,13 +142,28 @@ const en = {
     statusAccepted: 'Accepted',
     statusRejected: 'Rejected',
     statusUnknown: 'Unknown',
+    // {uuid} is replaced by the friend UUID when no username is known.
+    userTemplate: 'User {uuid}',
   },
   login: {
     failed: 'Sign-in failed. Check your credentials and try again.',
     totpInvalid: 'Invalid code. Enter the 6-digit code from your authenticator.',
+    subtitle: 'Sign in to your account',
+    email: 'Email',
+    password: 'Password',
+    signIn: 'Sign In',
+    totpPrompt: 'Enter the 6-digit code from your authenticator app',
+    totpCode: 'TOTP Code',
+    verify: 'Verify',
+    forgotPassword: 'Forgot password?',
   },
   settings: {
     title: 'Settings',
+    appearance: 'Appearance',
+    theme: 'Theme',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    themeHint: 'Dark is the default. Both themes share the same design tokens.',
     account: 'Account',
     accountUid: 'Player UID',
     accountLevel: 'Level',

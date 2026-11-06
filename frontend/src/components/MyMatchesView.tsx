@@ -15,7 +15,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Alert,
   IconButton,
   Button,
   Dialog,
@@ -23,16 +22,20 @@ import {
   DialogContent,
   DialogActions,
   Stack,
-  Skeleton,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Refresh as RefreshIcon,
   ChevronLeft as PrevIcon,
   ChevronRight as NextIcon,
+  History as HistoryIcon,
+  PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 import { GetMyMatches, GetMatch } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
+import { accentTint } from '../theme';
+import { EmptyState, ErrorState, LoadingList } from './StateViews';
 
 interface MatchSummary {
   id: number;
@@ -70,6 +73,8 @@ interface MyMatchesViewProps {
   // When set (deep navigation from Play), open this match's detail once.
   focusMatchId?: number | null;
   onConsumeFocus?: () => void;
+  // Empty-state next action: jump back to the Play queue.
+  onFindMatch?: () => void;
 }
 
 function formatTime(value: string): string {
@@ -97,17 +102,7 @@ function resultChip(p: ParticipantDetail): { text: string; color: 'success' | 'e
   return { text: msg.resultLose, color: 'error' };
 }
 
-function ListSkeleton() {
-  return (
-    <Box sx={{ p: 2 }}>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} height={44} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-      ))}
-    </Box>
-  );
-}
-
-export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }: MyMatchesViewProps) {
+export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, onFindMatch }: MyMatchesViewProps) {
   const msg = t();
 
   const [matches, setMatches] = useState<MatchSummary[]>([]);
@@ -190,199 +185,141 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }:
     : undefined;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4" sx={{ color: 'white' }}>
-          {msg.career.title}
-        </Typography>
+        <Typography variant="h4">{msg.career.title}</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <FormControl sx={{ minWidth: 110 }}>
-            <InputLabel sx={{ color: 'rgba(255,255,255,0.7)' }}>{msg.career.pageSize}</InputLabel>
+          <FormControl sx={{ minWidth: 110 }} size="small">
+            <InputLabel>{msg.career.pageSize}</InputLabel>
             <Select
               value={pageSize}
               label={msg.career.pageSize}
               onChange={(e) => handlePageSizeChange(e.target.value as number)}
-              sx={{
-                color: 'white',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
-                '& .MuiSvgIcon-root': { color: 'white' },
-              }}
-              MenuProps={{
-                slotProps: {
-                  paper: { sx: { backgroundColor: '#16213e', color: 'white' } },
-                },
-              }}
             >
               <MenuItem value={10}>10</MenuItem>
               <MenuItem value={20}>20</MenuItem>
               <MenuItem value={50}>50</MenuItem>
             </Select>
           </FormControl>
-          <IconButton onClick={fetchMatches} sx={{ color: 'white' }} title={msg.common.refresh}>
+          <IconButton onClick={fetchMatches} title={msg.common.refresh}>
             <RefreshIcon />
           </IconButton>
         </Box>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 2, backgroundColor: 'rgba(2, 136, 209, 0.12)', color: '#8ecdf5' }}>
-        {msg.readOnly.notice}
-      </Alert>
-
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}
-          action={
-            <Button color="inherit" size="small" onClick={fetchMatches}>
-              {msg.common.retry}
-            </Button>
-          }
-        >
-          {error}
-        </Alert>
-      )}
-
-      {!error && (
-        <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+      {error ? (
+        <Card>
+          <ErrorState message={error} onRetry={fetchMatches} />
+        </Card>
+      ) : (
+        <Card>
           {loading ? (
-            <ListSkeleton />
+            <LoadingList rows={6} />
+          ) : matches.length === 0 ? (
+            <EmptyState
+              icon={<HistoryIcon />}
+              title={msg.career.emptyTitle}
+              hint={msg.career.emptyHint}
+              action={
+                onFindMatch && (
+                  <Button variant="contained" startIcon={<PlayIcon />} onClick={onFindMatch}>
+                    {msg.play.findMatch}
+                  </Button>
+                )
+              }
+            />
           ) : (
-            <TableContainer component={Paper} sx={{ backgroundColor: 'transparent' }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    {msg.career.headers.map((h) => (
-                      <TableCell
-                        key={h}
-                        sx={{
-                          color: 'rgba(255,255,255,0.7)',
-                          fontWeight: 'bold',
-                          borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        }}
-                      >
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {matches.length === 0 ? (
+            <>
+              <TableContainer component={Paper} sx={{ backgroundColor: 'transparent' }}>
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={6} sx={{ borderBottom: 'none' }}>
-                        <Box sx={{ p: 4, textAlign: 'center' }}>
-                          <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
-                            {msg.career.emptyTitle}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                            {msg.career.emptyHint}
-                          </Typography>
-                        </Box>
-                      </TableCell>
+                      {msg.career.headers.map((h) => (
+                        <TableCell
+                          key={h}
+                          sx={{
+                            color: 'text.secondary',
+                            fontWeight: 'bold',
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                          }}
+                        >
+                          {h}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  ) : (
-                    matches.map((m) => (
+                  </TableHead>
+                  <TableBody>
+                    {matches.map((m) => (
                       <TableRow
                         key={m.id}
                         hover
                         onClick={() => openDetail(m.id)}
                         sx={{
                           cursor: 'pointer',
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
                           '&:last-child td': { borderBottom: 0 },
                         }}
                       >
-                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                           {formatTime(m.finished_at)}
                         </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                          <Chip
-                            label={m.match_type}
-                            size="small"
-                            sx={{ backgroundColor: 'rgba(233, 69, 96, 0.2)', color: '#e94560' }}
-                          />
+                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                          <Chip label={m.match_type} size="small" sx={accentTint} />
                         </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                           {m.map_name || '—'}
                         </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                           {winnerLabel(m.winner_team_id)}
                         </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                           {formatDuration(m.duration_seconds)}
                         </TableCell>
-                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                           {m.source || '—'}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-          {!loading && matches.length > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
-              <IconButton
-                onClick={() => setPageNum((p) => Math.max(1, p - 1))}
-                disabled={pageNum <= 1}
-                sx={{ color: 'white' }}
-                title={msg.career.previousPage}
-              >
-                <PrevIcon />
-              </IconButton>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                {msg.career.page} {pageNum}
-              </Typography>
-              <IconButton
-                onClick={() => setPageNum((p) => p + 1)}
-                disabled={matches.length < pageSize}
-                sx={{ color: 'white' }}
-                title={msg.career.nextPage}
-              >
-                <NextIcon />
-              </IconButton>
-            </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
+                <IconButton
+                  onClick={() => setPageNum((p) => Math.max(1, p - 1))}
+                  disabled={pageNum <= 1}
+                  title={msg.career.previousPage}
+                >
+                  <PrevIcon />
+                </IconButton>
+                <Typography variant="body2" color="text.secondary">
+                  {msg.career.page} {pageNum}
+                </Typography>
+                <IconButton
+                  onClick={() => setPageNum((p) => p + 1)}
+                  disabled={matches.length < pageSize}
+                  title={msg.career.nextPage}
+                >
+                  <NextIcon />
+                </IconButton>
+              </Box>
+            </>
           )}
         </Card>
       )}
 
       {/* Match detail dialog */}
-      <Dialog
-        open={detail !== null}
-        onClose={closeDetail}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: { sx: { backgroundColor: '#16213e', color: 'white' } },
-        }}
-      >
+      <Dialog open={detail !== null} onClose={closeDetail} maxWidth="md" fullWidth>
         <DialogTitle>
           {msg.career.title} {detail ? `#${detail.id}` : ''}
         </DialogTitle>
         <DialogContent>
-          {detailLoading && (
-            <Box sx={{ p: 1 }}>
-              <Skeleton height={32} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} height={40} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              ))}
-            </Box>
-          )}
+          {detailLoading && <LoadingList rows={5} />}
           {detailError && (
-            <Alert
-              severity="error"
-              sx={{ backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}
-              action={
-                detail ? (
-                  <Button color="inherit" size="small" onClick={() => openDetail(detail.id)}>
-                    {msg.common.retry}
-                  </Button>
-                ) : undefined
-              }
-            >
-              {detailError}
-            </Alert>
+            <ErrorState
+              message={detailError}
+              onRetry={detail ? () => openDetail(detail.id) : undefined}
+            />
           )}
           {!detailLoading && !detailError && detail && (
             <Box>
@@ -398,21 +335,9 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }:
                     sx={{ fontWeight: 'bold' }}
                   />
                 )}
-                <Chip
-                  label={`${msg.career.detailType}: ${detail.match_type}`}
-                  size="small"
-                  sx={{ backgroundColor: 'rgba(233, 69, 96, 0.2)', color: '#e94560' }}
-                />
-                <Chip
-                  label={`${msg.career.detailSource}: ${detail.source || '—'}`}
-                  size="small"
-                  sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-                />
-                <Chip
-                  label={`${msg.career.detailMap}: ${detail.map_name || '—'}`}
-                  size="small"
-                  sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-                />
+                <Chip label={`${msg.career.detailType}: ${detail.match_type}`} size="small" sx={accentTint} />
+                <Chip label={`${msg.career.detailSource}: ${detail.source || '—'}`} size="small" />
+                <Chip label={`${msg.career.detailMap}: ${detail.map_name || '—'}`} size="small" />
                 <Chip
                   label={
                     detail.winner_team_id
@@ -423,19 +348,19 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }:
                   color={detail.winner_team_id ? 'success' : 'default'}
                 />
               </Stack>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {msg.career.detailStarted} {formatTime(detail.started_at)} · {msg.career.detailFinished}{' '}
                 {formatTime(detail.finished_at)} · {msg.career.detailDuration}{' '}
                 {formatDuration(detail.duration_seconds)}
               </Typography>
 
               {detail.participants && detail.participants.length > 0 ? (
-                <TableContainer component={Paper} sx={{ backgroundColor: '#0f3460' }}>
+                <TableContainer component={Paper} sx={{ backgroundColor: 'action.hover' }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
                         {msg.career.detailHeaders.map((h) => (
-                          <TableCell key={h} sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                          <TableCell key={h} sx={{ color: 'text.secondary' }}>
                             {h}
                           </TableCell>
                         ))}
@@ -448,19 +373,17 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }:
                         return (
                           <TableRow
                             key={`${p.uid}-${p.team_id}`}
-                            sx={isMe ? { backgroundColor: 'rgba(233, 69, 96, 0.12)' } : undefined}
+                            sx={isMe ? { backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12) } : undefined}
                           >
-                            <TableCell sx={{ color: 'white', fontWeight: isMe ? 'bold' : 'normal' }}>
-                              #{p.uid}
-                            </TableCell>
-                            <TableCell sx={{ color: 'white' }}>{p.team_id}</TableCell>
+                            <TableCell sx={{ fontWeight: isMe ? 'bold' : 'normal' }}>#{p.uid}</TableCell>
+                            <TableCell>{p.team_id}</TableCell>
                             <TableCell>
                               <Chip label={result.text} size="small" color={result.color} />
                             </TableCell>
-                            <TableCell sx={{ color: 'white' }}>{p.kills}</TableCell>
-                            <TableCell sx={{ color: 'white' }}>{p.deaths}</TableCell>
-                            <TableCell sx={{ color: 'white' }}>{formatDuration(p.survival_time)}</TableCell>
-                            <TableCell sx={{ color: p.rank_score_delta >= 0 ? '#66bb6a' : '#ef5350' }}>
+                            <TableCell>{p.kills}</TableCell>
+                            <TableCell>{p.deaths}</TableCell>
+                            <TableCell>{formatDuration(p.survival_time)}</TableCell>
+                            <TableCell sx={{ color: p.rank_score_delta >= 0 ? 'success.main' : 'error.main' }}>
                               {formatPts(p.rank_score_delta)}
                             </TableCell>
                           </TableRow>
@@ -470,7 +393,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }:
                   </Table>
                 </TableContainer>
               ) : (
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                <Typography variant="body2" color="text.disabled">
                   {msg.career.noParticipants}
                 </Typography>
               )}
@@ -478,7 +401,7 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus }:
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDetail} sx={{ color: 'rgba(255,255,255,0.7)' }}>
+          <Button onClick={closeDetail} color="inherit">
             {msg.common.close}
           </Button>
         </DialogActions>

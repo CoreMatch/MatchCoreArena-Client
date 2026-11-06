@@ -13,7 +13,9 @@ import {
   IconButton,
   Stack,
   Collapse,
-  Skeleton,
+  Stepper,
+  Step,
+  StepLabel,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -21,6 +23,9 @@ import {
   Refresh as RefreshIcon,
   Add as AddIcon,
   Groups as GroupsIcon,
+  CheckCircle as CheckCircleIcon,
+  ContentCopy as ContentCopyIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import {
   GetMatchmakingStatus,
@@ -32,7 +37,9 @@ import {
 } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
 import { authFetch } from '../session';
+import { accentTint } from '../theme';
 import RankCard from './RankCard';
+import { EmptyState, LoadingList } from './StateViews';
 import type { UserProfile } from '../types';
 
 interface QueueEntryView {
@@ -94,6 +101,24 @@ type QueuePhase = 'idle' | 'joining' | 'queued' | 'found' | 'in_match' | 'settle
 const POLL_MS = 3000;
 const HANDOFF_POLL_MS = 2000;
 
+// Step order of the phase indicator shown while a cycle is active.
+const PHASE_STEPS = ['stateQueued', 'stateFound', 'stateInMatch', 'stateSettled'] as const;
+
+function phaseStepIndex(phase: QueuePhase): number {
+  switch (phase) {
+    case 'queued':
+      return 0;
+    case 'found':
+      return 1;
+    case 'in_match':
+      return 2;
+    case 'settled':
+      return 3;
+    default:
+      return -1;
+  }
+}
+
 function normalizeUuid(raw: string): string {
   return raw.replace(/-/g, '').toLowerCase();
 }
@@ -135,6 +160,7 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
   // a cycle settles; never carries credentials.
   const [handoff, setHandoff] = useState<HandoffStatus | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedJoin, setCopiedJoin] = useState(false);
   const handoffStartedFor = useRef<number | null>(null);
 
   // Cycle snapshots: groups known before joining and the highest match id
@@ -349,6 +375,19 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
     }
   };
 
+  // Copy the formed group's server address (Match Found "join server" exit).
+  const copyGroupAddress = async () => {
+    const jt = activeGroup?.join_target;
+    if (!jt) return;
+    try {
+      await navigator.clipboard.writeText(`${jt.host}:${jt.port}`);
+      setCopiedJoin(true);
+      setTimeout(() => setCopiedJoin(false), 2000);
+    } catch {
+      // Clipboard unavailable — the address stays visible for manual copy.
+    }
+  };
+
   const addPartyMember = () => {
     setPartyError(null);
     const uuid = normalizeUuid(partyInput.trim());
@@ -389,21 +428,21 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
     }
   };
 
+  const stepIndex = phaseStepIndex(phase);
+
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-        <Typography variant="h4" sx={{ color: 'white' }}>
-          {msg.play.title}
-        </Typography>
+        <Typography variant="h4">{msg.play.title}</Typography>
         {stateChip()}
       </Box>
 
-      <Alert severity="info" sx={{ mb: 3, backgroundColor: 'rgba(2, 136, 209, 0.12)', color: '#8ecdf5' }}>
+      <Alert severity="info" sx={{ mb: 3 }}>
         {msg.readOnly.notice}
       </Alert>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
           {errorDetail && (
             <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.8 }}>
@@ -416,10 +455,10 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
       <Grid container spacing={3}>
         {/* Player summary (merged from the former Home page) */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ backgroundColor: '#16213e', color: 'white', height: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: '#e94560', width: 48, height: 48, mr: 2, fontSize: '1.25rem' }}>
+                <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48, mr: 2, fontSize: '1.25rem' }}>
                   {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                 </Avatar>
                 <Box>
@@ -427,24 +466,24 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                   <Chip
                     label={`${msg.play.level} ${user?.level || 1}`}
                     size="small"
-                    sx={{ backgroundColor: 'rgba(233, 69, 96, 0.2)', color: '#e94560', fontWeight: 'bold' }}
+                    sx={{ ...accentTint, fontWeight: 'bold' }}
                   />
                 </Box>
               </Box>
               <Stack spacing={1}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.play.experience}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#4ecca3' }}>
+                  <Typography variant="body2" sx={{ color: 'success.main' }}>
                     {(user?.experience ?? 0).toLocaleString()}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <Typography variant="body2" color="text.secondary">
                     {msg.play.rankScore}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#ffd700' }}>
+                  <Typography variant="body2" sx={{ color: 'secondary.main' }}>
                     {user?.rank_score ?? '—'}
                   </Typography>
                 </Box>
@@ -460,11 +499,22 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
 
         {/* Queue card */}
         <Grid size={{ xs: 12 }}>
-          <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <Card>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 {msg.play.queueCardTitle}
               </Typography>
+
+              {/* Phase indicator: one glance tells where the cycle stands */}
+              {stepIndex >= 0 && (
+                <Stepper activeStep={stepIndex} sx={{ mb: 3 }}>
+                  {PHASE_STEPS.map((key) => (
+                    <Step key={key}>
+                      <StepLabel>{msg.play[key]}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+              )}
 
               {(phase === 'idle' || phase === 'joining') && (
                 <Box>
@@ -474,28 +524,19 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                       size="small"
                       value={mode}
                       onChange={(e) => setMode(e.target.value)}
-                      sx={{
-                        width: 160,
-                        '& .MuiOutlinedInput-root': { color: 'white' },
-                        '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
-                      }}
+                      sx={{ width: 160 }}
                     />
                     <Button
                       startIcon={<GroupsIcon />}
                       onClick={() => setPartyOpen((v) => !v)}
                       variant={partyOpen ? 'contained' : 'outlined'}
-                      sx={
-                        partyOpen
-                          ? { backgroundColor: '#e94560' }
-                          : { color: 'white', borderColor: 'rgba(255,255,255,0.4)' }
-                      }
                     >
                       {msg.play.partyToggle}
                     </Button>
                   </Stack>
 
                   <Collapse in={partyOpen}>
-                    <Alert severity="info" sx={{ mb: 1, backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
+                    <Alert severity="info" sx={{ mb: 1 }}>
                       {msg.play.partyHint}
                     </Alert>
                     <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
@@ -508,17 +549,13 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') addPartyMember();
                         }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': { color: 'white' },
-                          '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
-                        }}
                       />
-                      <Button onClick={addPartyMember} startIcon={<AddIcon />} variant="outlined" sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}>
+                      <Button onClick={addPartyMember} startIcon={<AddIcon />} variant="outlined">
                         {msg.play.partyAdd}
                       </Button>
                     </Stack>
                     {partyError && (
-                      <Typography variant="caption" sx={{ color: '#ff6b6b', display: 'block', mb: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mb: 1 }}>
                         {partyError}
                       </Typography>
                     )}
@@ -529,7 +566,7 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                           label={uuid}
                           size="small"
                           onDelete={() => setPartyMembers((prev) => prev.filter((u) => u !== uuid))}
-                          sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', fontFamily: 'monospace' }}
+                          sx={{ fontFamily: 'monospace' }}
                         />
                       ))}
                     </Box>
@@ -541,7 +578,6 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                     disabled={phase === 'joining' || mode.trim() === ''}
                     variant="contained"
                     size="large"
-                    sx={{ backgroundColor: '#e94560', '&:hover': { backgroundColor: '#c81e45' } }}
                   >
                     {phase === 'joining' ? msg.play.joining : msg.play.findMatch}
                   </Button>
@@ -551,20 +587,15 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
               {phase === 'queued' && (
                 <Box>
                   <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold' }}>
+                    <Typography variant="h5" sx={{ color: 'warning.main' }}>
                       {formatWait(queueEntry?.enqueued_at ?? '', now)}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                    <Typography variant="body2" color="text.secondary">
                       {msg.play.waiting} · {queueEntry?.match_type ?? mode}
                       {queueEntry?.party_id ? ` · ${msg.play.partyToggle}` : ''}
                     </Typography>
                   </Stack>
-                  <Button
-                    startIcon={<CancelIcon />}
-                    onClick={cancelQueue}
-                    variant="outlined"
-                    sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
-                  >
+                  <Button startIcon={<CancelIcon />} onClick={cancelQueue} variant="outlined">
                     {msg.play.cancelQueue}
                   </Button>
                 </Box>
@@ -572,74 +603,111 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
 
               {(phase === 'found' || phase === 'in_match') && activeGroup && (
                 <Box>
-                  <Typography variant="h6" sx={{ color: '#66bb6a', mb: 1 }}>
-                    {phase === 'found' ? msg.play.stateFound : msg.play.stateInMatch} ·{' '}
-                    {msg.play.groupLabel} #{activeGroup.group_id}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 2 }}>
-                    {msg.play.waitingResults}
-                  </Typography>
-                  <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="h6">
+                      {phase === 'found' ? msg.play.stateFound : msg.play.stateInMatch} ·{' '}
+                      {msg.play.groupLabel} #{activeGroup.group_id}
+                    </Typography>
+                  </Box>
+
+                  <Stack spacing={1} sx={{ mb: 2 }}>
                     {teamsOfGroup(activeGroup).map(([teamId, members]) => (
                       <Box key={teamId} sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Chip
-                          label={`${msg.common.team} ${teamId}`}
-                          size="small"
-                          sx={{ backgroundColor: 'rgba(233, 69, 96, 0.2)', color: '#e94560' }}
-                        />
+                        <Chip label={`${msg.common.team} ${teamId}`} size="small" sx={accentTint} />
                         {members.map((m) => (
-                          <Chip
-                            key={m.uid}
-                            label={`#${m.uid} · ${m.rank_score}`}
-                            size="small"
-                            sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-                          />
+                          <Chip key={m.uid} label={`#${m.uid} · ${m.rank_score}`} size="small" />
                         ))}
                       </Box>
                     ))}
                   </Stack>
+
+                  {phase === 'found' && (
+                    <Box sx={{ p: 2, borderRadius: 1, backgroundColor: 'action.hover', mb: 2 }}>
+                      {activeGroup.join_target ? (
+                        <>
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: 'monospace',
+                                backgroundColor: 'background.default',
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: 1,
+                              }}
+                            >
+                              {activeGroup.join_target.host}:{activeGroup.join_target.port}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              startIcon={<ContentCopyIcon />}
+                              onClick={copyGroupAddress}
+                            >
+                              {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
+                            </Button>
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary">
+                            {msg.play.joinServerHint}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          {msg.play.joinServerMissing}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+
+                  {phase === 'in_match' && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {msg.play.waitingResults}
+                    </Typography>
+                  )}
+
+                  {/* Client-side exit: the formed group itself stays on the
+                      server; dismiss only stops tracking it here. */}
+                  <Button size="small" color="inherit" onClick={resetCycle} sx={{ color: 'text.secondary' }}>
+                    {msg.play.dismissMatch}
+                  </Button>
+                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+                    {msg.play.dismissHint}
+                  </Typography>
                 </Box>
               )}
 
               {phase === 'settled' && settledMatch && (
                 <Box>
-                  <Typography variant="h6" sx={{ color: '#66bb6a', mb: 1 }}>
-                    {msg.play.matchRecorded} · #{settledMatch.id}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <CheckCircleIcon color="success" />
+                    <Typography variant="h6">
+                      {msg.play.matchRecorded} · #{settledMatch.id}
+                    </Typography>
+                  </Box>
                   <Stack direction="row" spacing={2}>
-                    <Button
-                      variant="contained"
-                      onClick={() => onViewMatch(settledMatch.id)}
-                      sx={{ backgroundColor: '#e94560', '&:hover': { backgroundColor: '#c81e45' } }}
-                    >
+                    <Button variant="contained" onClick={() => onViewMatch(settledMatch.id)}>
                       {msg.play.viewDetails}
                     </Button>
-                    <Button variant="outlined" onClick={resetCycle} sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}>
+                    <Button variant="outlined" onClick={resetCycle}>
                       {msg.play.queueAgain}
                     </Button>
                   </Stack>
 
                   {/* Match handoff (INTEROP-SPEC v1) */}
                   {handoff && (
-                    <Box sx={{ mt: 3, p: 2, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                    <Box sx={{ mt: 3, p: 2, borderRadius: 1, backgroundColor: 'action.hover' }}>
                       <Typography variant="subtitle1" sx={{ mb: 1 }}>
                         {msg.handoff.title}
                       </Typography>
 
                       {handoff.state === 'delivering' && (
-                        <Alert severity="info" sx={{ backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
-                          {msg.handoff.delivering}
-                        </Alert>
+                        <Alert severity="info">{msg.handoff.delivering}</Alert>
                       )}
                       {handoff.state === 'waiting_receiver' && (
-                        <Alert severity="info" sx={{ backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
-                          {msg.handoff.waitingReceiver}
-                        </Alert>
+                        <Alert severity="info">{msg.handoff.waitingReceiver}</Alert>
                       )}
                       {handoff.state === 'delivered' && (
-                        <Alert severity="success" sx={{ backgroundColor: 'rgba(102,187,106,0.1)', color: '#a5d6a7' }}>
-                          {msg.handoff.delivered}
-                        </Alert>
+                        <Alert severity="success">{msg.handoff.delivered}</Alert>
                       )}
                       {(handoff.state === 'busy' ||
                         handoff.state === 'timeout' ||
@@ -648,7 +716,6 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                         handoff.state === 'error') && (
                         <Alert
                           severity="warning"
-                          sx={{ backgroundColor: 'rgba(255,167,38,0.1)', color: '#ffcc80' }}
                           action={
                             <Button color="inherit" size="small" onClick={() => startHandoff(settledMatch, activeGroup?.join_target)}>
                               {msg.handoff.retry}
@@ -663,29 +730,33 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                         </Alert>
                       )}
                       {handoff.state === 'missing_config' && (
-                        <Alert severity="info" sx={{ backgroundColor: 'rgba(2,136,209,0.08)', color: '#8ecdf5' }}>
-                          {msg.handoff.missingConfig}
-                        </Alert>
+                        <Alert severity="info">{msg.handoff.missingConfig}</Alert>
                       )}
 
                       {handoff.host && handoff.port && handoff.state !== 'delivered' && (
                         <Box sx={{ mt: 2 }}>
                           {!handoff.game_reachable && (
-                            <Typography variant="caption" sx={{ color: '#ffcc80', display: 'block', mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: 'warning.main', display: 'block', mb: 1 }}>
                               {msg.handoff.gameUnreachable}
                             </Typography>
                           )}
-                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                             {msg.handoff.manualJoinHint}
                           </Typography>
                           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                             <Typography
                               variant="body2"
-                              sx={{ fontFamily: 'monospace', color: 'white', backgroundColor: '#0f3460', px: 1.5, py: 0.5, borderRadius: 1 }}
+                              sx={{
+                                fontFamily: 'monospace',
+                                backgroundColor: 'background.default',
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: 1,
+                              }}
                             >
                               {handoff.host}:{handoff.port}
                             </Typography>
-                            <Button size="small" onClick={copyJoinAddress} sx={{ color: '#e94560' }}>
+                            <Button size="small" onClick={copyJoinAddress} startIcon={<ContentCopyIcon />}>
                               {copied ? msg.handoff.copied : msg.handoff.copy}
                             </Button>
                           </Stack>
@@ -701,24 +772,21 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
 
         {/* Recent matches */}
         <Grid size={{ xs: 12 }}>
-          <Card sx={{ backgroundColor: '#16213e', color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <Card>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="h6">{msg.play.recentMatches}</Typography>
-                <IconButton onClick={refreshRecent} sx={{ color: 'white' }} title={msg.common.refresh}>
+                <IconButton onClick={refreshRecent} title={msg.common.refresh}>
                   <RefreshIcon />
                 </IconButton>
               </Box>
               {recentLoading ? (
-                <Box sx={{ p: 1 }}>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} height={40} sx={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-                  ))}
-                </Box>
+                <LoadingList rows={3} rowHeight={40} />
               ) : recentMatches.length === 0 ? (
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                  {msg.play.noRecentMatches}
-                </Typography>
+                <EmptyState
+                  icon={<HistoryIcon />}
+                  title={msg.play.noRecentMatches}
+                />
               ) : (
                 <Stack spacing={1}>
                   {recentMatches.map((m) => (
@@ -731,20 +799,16 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                         alignItems: 'center',
                         p: 1.5,
                         borderRadius: 1,
-                        backgroundColor: '#0f3460',
+                        backgroundColor: 'action.hover',
                         cursor: 'pointer',
-                        '&:hover': { backgroundColor: 'rgba(15, 52, 96, 0.7)' },
+                        '&:hover': { backgroundColor: 'action.selected' },
                       }}
                     >
-                      <Chip
-                        label={m.match_type}
-                        size="small"
-                        sx={{ backgroundColor: 'rgba(233, 69, 96, 0.2)', color: '#e94560' }}
-                      />
-                      <Typography variant="body2" sx={{ color: 'white', flexGrow: 1 }}>
+                      <Chip label={m.match_type} size="small" sx={accentTint} />
+                      <Typography variant="body2" sx={{ flexGrow: 1 }}>
                         {m.map_name || '—'}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <Typography variant="caption" color="text.disabled">
                         {new Date(m.finished_at).toLocaleString()}
                       </Typography>
                     </Box>

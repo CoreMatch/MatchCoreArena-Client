@@ -1,35 +1,38 @@
-import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  AppBar, 
-  Toolbar, 
-  Typography, 
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  AppBar,
+  Toolbar,
+  Typography,
   IconButton,
   Avatar,
   Menu,
   MenuItem,
-  Divider
+  Divider,
+  CssBaseline,
 } from '@mui/material';
-import { 
-  PlayCircle, 
-  Group, 
-  Leaderboard, 
-  Logout, 
-  Person, 
+import { ThemeProvider, alpha } from '@mui/material/styles';
+import {
+  PlayCircle,
+  Group,
+  Leaderboard,
+  Logout,
+  Person,
   Menu as MenuIcon,
   ChevronLeft,
   History,
-  Settings
+  Settings,
 } from '@mui/icons-material';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import { t } from './i18n';
 import { authFetch, SESSION_EXPIRED_EVENT } from './session';
+import { buildTheme, type ThemeMode } from './theme';
 import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
@@ -39,6 +42,7 @@ import MyMatchesView from './components/MyMatchesView';
 import type { UserProfile } from './types';
 
 const drawerWidth = 240;
+const THEME_MODE_KEY = 'theme_mode';
 
 interface NavItem {
   id: string;
@@ -54,15 +58,28 @@ const navItems: NavItem[] = [
   { id: 'settings', label: t().nav.settings, icon: Settings },
 ];
 
+function initialThemeMode(): ThemeMode {
+  const stored = localStorage.getItem(THEME_MODE_KEY);
+  return stored === 'light' ? 'light' : 'dark';
+}
+
 export default function App() {
   const [selectedView, setSelectedView] = useState<string>('play');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(initialThemeMode);
   // When set, Career opens this match's detail as soon as it renders
   // (deep navigation from Play's settled match / recent matches).
   const [careerFocusMatchId, setCareerFocusMatchId] = useState<number | null>(null);
+
+  const theme = useMemo(() => buildTheme(themeMode), [themeMode]);
+
+  const changeThemeMode = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    localStorage.setItem(THEME_MODE_KEY, mode);
+  };
 
   useEffect(() => {
     // Check if user is already logged in
@@ -153,6 +170,7 @@ export default function App() {
             userUid={user?.uid}
             focusMatchId={careerFocusMatchId}
             onConsumeFocus={() => setCareerFocusMatchId(null)}
+            onFindMatch={() => setSelectedView('play')}
           />
         );
       case 'rankings':
@@ -161,145 +179,164 @@ export default function App() {
       case 'friends':
         return <FriendList />;
       case 'settings':
-        return <SettingsView user={user} />;
+        return <SettingsView user={user} themeMode={themeMode} onThemeModeChange={changeThemeMode} />;
       default:
         return <PlayView user={user} onViewMatch={handleViewMatch} />;
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
-      {/* App Bar */}
-      <AppBar 
-        position="fixed" 
-        sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: '#1a1a2e',
-          color: 'white'
-        }}
-      >
-        <Toolbar>
-          {isLoggedIn && (
-            <IconButton
-              color="inherit"
-              aria-label="toggle drawer"
-              onClick={toggleDrawer}
-              edge="start"
-              sx={{ mr: 2 }}
-            >
-              {drawerOpen ? <ChevronLeft /> : <MenuIcon />}
-            </IconButton>
-          )}
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            MatchCoreArena
-          </Typography>
-          {isLoggedIn && (
-            <>
-              <IconButton
-                color="inherit"
-                onClick={handleMenuOpen}
-                sx={{ p: 0 }}
-              >
-                <Avatar sx={{ bgcolor: '#e94560' }}>
-                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                </Avatar>
-              </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      backgroundColor: '#16213e',
-                      color: 'white',
-                      minWidth: 200,
-                    }
-                  }
-                }}
-              >
-                <MenuItem onClick={() => { setSelectedView('settings'); handleMenuClose(); }}>
-                  <ListItemIcon>
-                    <Person fontSize="small" sx={{ color: 'white' }} />
-                  </ListItemIcon>
-                  Profile
-                </MenuItem>
-                <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                <MenuItem onClick={handleLogout}>
-                  <ListItemIcon>
-                    <Logout fontSize="small" sx={{ color: 'white' }} />
-                  </ListItemIcon>
-                  Logout
-                </MenuItem>
-              </Menu>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
-
-      {/* Sidebar */}
-      {isLoggedIn && (
-        <Drawer
-          variant="persistent"
-          open={drawerOpen}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ display: 'flex', height: '100vh' }}>
+        {/* App Bar */}
+        <AppBar
+          position="fixed"
+          elevation={0}
           sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              boxSizing: 'border-box',
-              backgroundColor: '#16213e',
-              color: 'white',
-              marginTop: '64px', // Height of AppBar
-            },
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+            backgroundColor: 'background.paper',
+            color: 'text.primary',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
           }}
         >
-          <Box sx={{ overflow: 'auto', marginTop: '16px' }}>
-            <List>
-              {navItems.map((item) => (
-                <ListItem key={item.id} disablePadding>
-                  <ListItemButton
-                    selected={selectedView === item.id}
-                    onClick={() => setSelectedView(item.id)}
-                    sx={{
-                      '&.Mui-selected': {
-                        backgroundColor: 'rgba(233, 69, 96, 0.2)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(233, 69, 96, 0.3)',
-                        },
+          <Toolbar>
+            {isLoggedIn && (
+              <IconButton
+                color="inherit"
+                aria-label="toggle drawer"
+                onClick={toggleDrawer}
+                edge="start"
+                sx={{ mr: 2 }}
+              >
+                {drawerOpen ? <ChevronLeft /> : <MenuIcon />}
+              </IconButton>
+            )}
+            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+              MatchCoreArena
+            </Typography>
+            {isLoggedIn && (
+              <>
+                <IconButton color="inherit" onClick={handleMenuOpen} sx={{ p: 0 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
+                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                  </Avatar>
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        minWidth: 200,
+                        border: '1px solid',
+                        borderColor: 'divider',
                       },
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                      <item.icon />
+                    },
+                  }}
+                >
+                  <MenuItem onClick={() => { setSelectedView('settings'); handleMenuClose(); }}>
+                    <ListItemIcon>
+                      <Person fontSize="small" sx={{ color: 'text.primary' }} />
                     </ListItemIcon>
-                    <ListItemText primary={item.label} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        </Drawer>
-      )}
+                    {t().common.profile}
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon>
+                      <Logout fontSize="small" sx={{ color: 'text.primary' }} />
+                    </ListItemIcon>
+                    {t().common.logout}
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </Toolbar>
+        </AppBar>
 
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          marginTop: '64px', // Height of AppBar
-          marginLeft: isLoggedIn && drawerOpen ? `${drawerWidth}px` : 0,
-          transition: 'margin-left 0.3s ease',
-          backgroundColor: '#0f3460',
-          minHeight: '100vh',
-        }}
-      >
-        {renderContent()}
+        {/* Sidebar */}
+        {isLoggedIn && (
+          <Drawer
+            variant="persistent"
+            open={drawerOpen}
+            sx={{
+              width: drawerWidth,
+              flexShrink: 0,
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+                backgroundColor: 'background.paper',
+                color: 'text.primary',
+                borderRight: '1px solid',
+                borderColor: 'divider',
+                marginTop: '64px', // Height of AppBar
+              },
+            }}
+          >
+            <Box sx={{ overflow: 'auto', mt: 2 }}>
+              <List>
+                {navItems.map((item) => {
+                  const selected = selectedView === item.id;
+                  return (
+                    <ListItem key={item.id} disablePadding>
+                      <ListItemButton
+                        selected={selected}
+                        onClick={() => setSelectedView(item.id)}
+                        sx={{
+                          '&.Mui-selected': {
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                            '&:hover': {
+                              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.24),
+                            },
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: 40,
+                            color: selected ? 'primary.main' : 'text.secondary',
+                          }}
+                        >
+                          <item.icon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.label}
+                          slotProps={{
+                            primary: {
+                              sx: {
+                                color: selected ? 'primary.main' : 'text.primary',
+                                fontWeight: selected ? 600 : 400,
+                              },
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
+          </Drawer>
+        )}
+
+        {/* Main Content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            marginTop: '64px', // Height of AppBar
+            marginLeft: isLoggedIn && drawerOpen ? `${drawerWidth}px` : 0,
+            transition: 'margin-left 0.3s ease',
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+          }}
+        >
+          {renderContent()}
+        </Box>
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 }
