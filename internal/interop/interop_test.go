@@ -124,6 +124,66 @@ func TestPushFlowDelivers(t *testing.T) {
 	}
 }
 
+// TestServerProvidedJoinTargetWins covers the precedence rule (contract
+// v1.6.0): the join_target attached to the formed group beats the local
+// fallback configuration.
+func TestServerProvidedJoinTargetWins(t *testing.T) {
+	var gotBody HandoffPayload
+	receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"accepted","handoff_id":"x"}`))
+	}))
+	defer receiver.Close()
+
+	parsed, err := url.Parse(receiver.URL)
+	if err != nil {
+		t.Fatalf("failed to parse receiver URL: %v", err)
+	}
+	port, err := strconv.Atoi(parsed.Port())
+	if err != nil {
+		t.Fatalf("failed to parse receiver port: %v", err)
+	}
+
+	dir := t.TempDir()
+	disc := DiscoveryFile{
+		App: "samuel-client", ProtocolVersion: ProtocolVersion,
+		PID: os.Getpid(), Port: port, Token: "recv-token",
+		CreatedAt: time.Now().Format(time.RFC3339),
+	}
+	data, _ := json.Marshal(disc)
+	if err := os.WriteFile(filepath.Join(dir, receiverDiscoveryFile), data, 0o600); err != nil {
+		t.Fatalf("failed to write discovery: %v", err)
+	}
+
+	// Local fallback config exists but must lose to the server-provided target.
+	mgr, err := NewManager(func() GameServer { return GameServer{Host: "fallback.local", Port: 11111} })
+	if err != nil {
+		t.Fatalf("NewManager failed: %v", err)
+	}
+	mgr.dir = dir
+
+	st := mgr.PrepareHandoff(MatchInfo{
+		MatchID: 7, MatchType: "1v1",
+		ServerHost: "arena-provided.example", ServerPort: 25999,
+	})
+	deadline := time.Now().Add(3 * time.Second)
+	for st.State != StateDelivered && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+		st = mgr.Status()
+	}
+	if st.State != StateDelivered {
+		t.Fatalf("expected delivered, got %+v", st)
+	}
+	if gotBody.Match.JoinTarget.Host != "arena-provided.example" || gotBody.Match.JoinTarget.Port != 25999 {
+		t.Fatalf("expected the server-provided join target to win, got %+v", gotBody.Match.JoinTarget)
+	}
+	if st.Host != "arena-provided.example" || st.Port != 25999 {
+		t.Fatalf("status should expose the used join target, got %+v", st)
+	}
+}
+
 // TestPullFlowServesOnce covers the sender's pull endpoint: the pending
 // payload is served once with the sender token, then answered 404 gone.
 func TestPullFlowServesOnce(t *testing.T) {

@@ -101,7 +101,7 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 }
 ```
 
-`game_server_host` / `game_server_port` (editable in Settings) tell the match handoff where games are played; they are not provided by the arena server.
+`game_server_host` / `game_server_port` (editable in Settings) are an **optional fallback** for the match handoff: matches normally carry their own server address from the arena server (`join_target`, contract v1.6.0); the local values are only used when a formed match does not provide one.
 
 ## API Integration
 

@@ -112,10 +112,15 @@ type Status struct {
 }
 
 // MatchInfo is everything the sender needs from the settled match.
+// ServerHost/ServerPort carry the join_target the arena server attached to
+// the formed group (contract v1.6.0); they take precedence over the local
+// fallback configuration. Empty values mean "server provided nothing".
 type MatchInfo struct {
-	MatchID   int64
-	MatchType string
-	MapName   string
+	MatchID    int64
+	MatchType  string
+	MapName    string
+	ServerHost string
+	ServerPort int
 }
 
 // GameServer is the player-configured join target.
@@ -221,13 +226,21 @@ func (m *Manager) Status() Status {
 }
 
 // deliver runs the delivery state machine (flows A/B of INTEROP-SPEC §7).
+// Join target precedence: server-provided join_target from the formed
+// group, then the local fallback configuration, then the manual-join
+// degradation (missing_config).
 func (m *Manager) deliver(info MatchInfo) {
-	srv := m.gameSrv()
+	srv := GameServer{Host: info.ServerHost, Port: info.ServerPort}
+	if !validHost(srv.Host) || srv.Port < 1 || srv.Port > 65535 {
+		// The server did not provide a (usable) join target for this
+		// match — fall back to the locally configured address.
+		srv = m.gameSrv()
+	}
 	if !validHost(srv.Host) || srv.Port < 1 || srv.Port > 65535 {
 		m.setStatus(Status{
 			State:   StateMissingConfig,
 			MatchID: fmt.Sprintf("m-%d", info.MatchID),
-			Detail:  "game server address missing or invalid — set it in Settings",
+			Detail:  "no game server address from the arena server or the local settings",
 		})
 		return
 	}

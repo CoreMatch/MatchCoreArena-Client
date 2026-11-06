@@ -95,8 +95,8 @@ func (a *App) GetMatchmakingStatus() (interface{}, error) {
 
 // Match handoff methods (INTEROP-SPEC v1 sender side; loopback-only,
 // credential-free delivery of the settled match to SamuelClient)
-func (a *App) PrepareHandoff(matchID int64, matchType, mapName string) (interface{}, error) {
-	return a.handler.PrepareHandoff(matchID, matchType, mapName)
+func (a *App) PrepareHandoff(matchID int64, matchType, mapName, serverHost string, serverPort int) (interface{}, error) {
+	return a.handler.PrepareHandoff(matchID, matchType, mapName, serverHost, serverPort)
 }
 
 func (a *App) GetHandoffStatus() (interface{}, error) {

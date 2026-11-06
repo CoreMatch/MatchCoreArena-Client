@@ -55,6 +55,9 @@ interface FormedGroupView {
   match_type: string;
   formed_at: string;
   members: GroupMemberView[];
+  // Game server address attached by the arena server (contract v1.6.0);
+  // omitted when the server has none configured.
+  join_target?: { host: string; port: number };
 }
 
 interface MatchmakingStatusView {
@@ -298,22 +301,26 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
     maxKnownMatchId.current = 0;
   };
 
-  const startHandoff = useCallback(async (m: MatchSummary) => {
+  const startHandoff = useCallback(async (m: MatchSummary, jt?: { host: string; port: number }) => {
     try {
-      const resp = await authFetch(() => PrepareHandoff(m.id, m.match_type, m.map_name ?? ''));
+      const resp = await authFetch(() =>
+        PrepareHandoff(m.id, m.match_type, m.map_name ?? '', jt?.host ?? '', jt?.port ?? 0),
+      );
       setHandoff((resp?.data ?? resp) as HandoffStatus);
     } catch {
       setHandoff({ state: 'error', game_reachable: false });
     }
   }, []);
 
-  // Auto-start the handoff once per settled match.
+  // Auto-start the handoff once per settled match. The server-provided
+  // join_target (when present) takes precedence over the local fallback
+  // configuration — the Go side applies that precedence.
   useEffect(() => {
     if (phase === 'settled' && settledMatch && handoffStartedFor.current !== settledMatch.id) {
       handoffStartedFor.current = settledMatch.id;
-      startHandoff(settledMatch);
+      startHandoff(settledMatch, activeGroup?.join_target);
     }
-  }, [phase, settledMatch, startHandoff]);
+  }, [phase, settledMatch, activeGroup, startHandoff]);
 
   // Poll transient handoff states until delivery settles.
   useEffect(() => {
@@ -643,7 +650,7 @@ export default function PlayView({ user, onViewMatch }: PlayViewProps) {
                           severity="warning"
                           sx={{ backgroundColor: 'rgba(255,167,38,0.1)', color: '#ffcc80' }}
                           action={
-                            <Button color="inherit" size="small" onClick={() => startHandoff(settledMatch)}>
+                            <Button color="inherit" size="small" onClick={() => startHandoff(settledMatch, activeGroup?.join_target)}>
                               {msg.handoff.retry}
                             </Button>
                           }
