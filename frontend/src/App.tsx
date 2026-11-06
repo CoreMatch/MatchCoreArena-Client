@@ -1,38 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
-  Avatar,
-  Menu,
-  MenuItem,
-  Divider,
-  CssBaseline,
-} from '@mui/material';
-import { ThemeProvider, alpha } from '@mui/material/styles';
-import {
-  PlayCircle,
-  Group,
-  Leaderboard,
-  Logout,
-  Person,
-  Menu as MenuIcon,
-  ChevronLeft,
-  History,
-  Settings,
-} from '@mui/icons-material';
+import { useState, useEffect } from 'react';
+import { History, LogOut, Settings, Swords, Trophy, User, Users } from 'lucide-react';
+import { Menu, MenuItem, MenuSeparator, Icon } from '@ha/ui';
 import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
 import { t } from './i18n';
 import { authFetch, SESSION_EXPIRED_EVENT } from './session';
-import { buildTheme, type ThemeMode } from './theme';
 import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
@@ -41,45 +12,27 @@ import SettingsView from './components/SettingsView';
 import MyMatchesView from './components/MyMatchesView';
 import type { UserProfile } from './types';
 
-const drawerWidth = 240;
-const THEME_MODE_KEY = 'theme_mode';
-
 interface NavItem {
   id: string;
   label: string;
-  icon: typeof PlayCircle;
+  icon: typeof Swords;
 }
 
 const navItems: NavItem[] = [
-  { id: 'play', label: t().nav.play, icon: PlayCircle },
+  { id: 'play', label: t().nav.play, icon: Swords },
   { id: 'matches', label: t().nav.career, icon: History },
-  { id: 'rankings', label: t().nav.rankings, icon: Leaderboard },
-  { id: 'friends', label: t().nav.friends, icon: Group },
+  { id: 'rankings', label: t().nav.rankings, icon: Trophy },
+  { id: 'friends', label: t().nav.friends, icon: Users },
   { id: 'settings', label: t().nav.settings, icon: Settings },
 ];
-
-function initialThemeMode(): ThemeMode {
-  const stored = localStorage.getItem(THEME_MODE_KEY);
-  return stored === 'light' ? 'light' : 'dark';
-}
 
 export default function App() {
   const [selectedView, setSelectedView] = useState<string>('play');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [drawerOpen, setDrawerOpen] = useState(true);
-  const [themeMode, setThemeMode] = useState<ThemeMode>(initialThemeMode);
   // When set, Career opens this match's detail as soon as it renders
   // (deep navigation from Play's settled match / recent matches).
   const [careerFocusMatchId, setCareerFocusMatchId] = useState<number | null>(null);
-
-  const theme = useMemo(() => buildTheme(themeMode), [themeMode]);
-
-  const changeThemeMode = (mode: ThemeMode) => {
-    setThemeMode(mode);
-    localStorage.setItem(THEME_MODE_KEY, mode);
-  };
 
   useEffect(() => {
     // Check if user is already logged in
@@ -146,18 +99,6 @@ export default function App() {
     setSelectedView('matches');
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
   const renderContent = () => {
     if (!isLoggedIn) {
       return <LoginView onLoginSuccess={handleLoginSuccess} />;
@@ -175,11 +116,10 @@ export default function App() {
         );
       case 'rankings':
         return <RankingView winsCount={user?.wins_count} />;
-
       case 'friends':
         return <FriendList />;
       case 'settings':
-        return <SettingsView user={user} themeMode={themeMode} onThemeModeChange={changeThemeMode} />;
+        return <SettingsView user={user} />;
       default:
         return (
           <PlayView
@@ -192,157 +132,80 @@ export default function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ display: 'flex', height: '100vh' }}>
-        {/* App Bar */}
-        <AppBar
-          position="fixed"
-          elevation={0}
-          sx={{
-            zIndex: (theme) => theme.zIndex.drawer + 1,
-            backgroundColor: 'background.paper',
-            color: 'text.primary',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Toolbar>
-            {isLoggedIn && (
-              <IconButton
-                color="inherit"
-                aria-label="toggle drawer"
-                onClick={toggleDrawer}
-                edge="start"
-                sx={{ mr: 2 }}
-              >
-                {drawerOpen ? <ChevronLeft /> : <MenuIcon />}
-              </IconButton>
-            )}
-            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-              MatchCoreArena
-            </Typography>
-            {isLoggedIn && (
-              <>
-                <IconButton color="inherit" onClick={handleMenuOpen} sx={{ p: 0 }}>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
-                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                  </Avatar>
-                </IconButton>
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={handleMenuClose}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        minWidth: 200,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                      },
-                    },
-                  }}
+    <div className="flex h-screen bg-base text-ink">
+      {/* Persistent sidebar */}
+      {isLoggedIn && (
+        <aside className="fixed inset-y-0 left-0 z-10 flex w-56 flex-col border-r border-edge bg-panel">
+          <div className="border-b border-edge px-5 py-5">
+            <div className="text-sm font-bold uppercase tracking-[0.2em] text-ink">
+              MatchCore<span className="text-accent">Arena</span>
+            </div>
+            <div className="mt-0.5 text-[11px] uppercase tracking-wider text-ink-faint">
+              Competitive Client
+            </div>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto py-3">
+            {navItems.map((item) => {
+              const selected = selectedView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedView(item.id)}
+                  className={`flex w-full items-center gap-3 border-l-2 px-5 py-2.5 text-sm font-semibold
+                    transition-colors duration-150 ease-standard
+                    ${selected
+                      ? 'border-accent bg-raised text-ink'
+                      : 'border-transparent text-ink-muted hover:bg-raised/60 hover:text-ink'}`}
                 >
-                  <MenuItem onClick={() => { setSelectedView('settings'); handleMenuClose(); }}>
-                    <ListItemIcon>
-                      <Person fontSize="small" sx={{ color: 'text.primary' }} />
-                    </ListItemIcon>
-                    {t().common.profile}
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleLogout}>
-                    <ListItemIcon>
-                      <Logout fontSize="small" sx={{ color: 'text.primary' }} />
-                    </ListItemIcon>
-                    {t().common.logout}
-                  </MenuItem>
-                </Menu>
-              </>
-            )}
-          </Toolbar>
-        </AppBar>
+                  <Icon as={item.icon} className={selected ? 'text-accent' : ''} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
 
-        {/* Sidebar */}
-        {isLoggedIn && (
-          <Drawer
-            variant="persistent"
-            open={drawerOpen}
-            sx={{
-              width: drawerWidth,
-              flexShrink: 0,
-              '& .MuiDrawer-paper': {
-                width: drawerWidth,
-                boxSizing: 'border-box',
-                backgroundColor: 'background.paper',
-                color: 'text.primary',
-                borderRight: '1px solid',
-                borderColor: 'divider',
-                marginTop: '64px', // Height of AppBar
-              },
-            }}
-          >
-            <Box sx={{ overflow: 'auto', mt: 2 }}>
-              <List>
-                {navItems.map((item) => {
-                  const selected = selectedView === item.id;
-                  return (
-                    <ListItem key={item.id} disablePadding>
-                      <ListItemButton
-                        selected={selected}
-                        onClick={() => setSelectedView(item.id)}
-                        sx={{
-                          '&.Mui-selected': {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.16),
-                            '&:hover': {
-                              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.24),
-                            },
-                          },
-                        }}
-                      >
-                        <ListItemIcon
-                          sx={{
-                            minWidth: 40,
-                            color: selected ? 'primary.main' : 'text.secondary',
-                          }}
-                        >
-                          <item.icon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={item.label}
-                          slotProps={{
-                            primary: {
-                              sx: {
-                                color: selected ? 'primary.main' : 'text.primary',
-                                fontWeight: selected ? 600 : 400,
-                              },
-                            },
-                          }}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </Box>
-          </Drawer>
-        )}
+          {/* User block */}
+          <div className="border-t border-edge p-3">
+            <Menu
+              trigger={
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors duration-150 hover:bg-raised"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent font-bold text-on-accent">
+                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-ink">
+                      {user?.username || 'Player'}
+                    </span>
+                    <span className="block truncate font-mono text-xs text-ink-faint">
+                      #{user?.uid ?? '—'}
+                    </span>
+                  </span>
+                </button>
+              }
+            >
+              <MenuItem onSelect={() => setSelectedView('settings')}>
+                <Icon as={User} size={16} />
+                {t().common.profile}
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem onSelect={handleLogout}>
+                <Icon as={LogOut} size={16} />
+                {t().common.logout}
+              </MenuItem>
+            </Menu>
+          </div>
+        </aside>
+      )}
 
-        {/* Main Content */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            marginTop: '64px', // Height of AppBar
-            marginLeft: isLoggedIn && drawerOpen ? `${drawerWidth}px` : 0,
-            transition: 'margin-left 0.3s ease',
-            backgroundColor: 'background.default',
-            minHeight: '100vh',
-          }}
-        >
-          {renderContent()}
-        </Box>
-      </Box>
-    </ThemeProvider>
+      {/* Main content — single column */}
+      <main className={`flex-1 overflow-y-auto ${isLoggedIn ? 'ml-56' : ''}`}>
+        <div className="mx-auto max-w-5xl px-8 py-8">{renderContent()}</div>
+      </main>
+    </div>
   );
 }

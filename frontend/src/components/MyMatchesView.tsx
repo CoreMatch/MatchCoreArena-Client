@@ -1,41 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, History, Play, RefreshCw } from 'lucide-react';
 import {
-  Box,
-  Typography,
-  Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  IconButton,
+  Badge,
+  Banner,
   Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Stack,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import {
-  Refresh as RefreshIcon,
-  ChevronLeft as PrevIcon,
-  ChevronRight as NextIcon,
-  History as HistoryIcon,
-  PlayArrow as PlayIcon,
-} from '@mui/icons-material';
+  EmptyState,
+  ErrorState,
+  Field,
+  Icon,
+  Panel,
+  Select,
+  Skeleton,
+  Table,
+  Td,
+  Th,
+} from '@ha/ui';
+import type { BadgeTone } from '@ha/ui';
 import { GetMyMatches, GetMatch } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
-import { accentTint } from '../theme';
-import { EmptyState, ErrorState, LoadingList } from './StateViews';
 
 interface MatchSummary {
   id: number;
@@ -105,21 +89,21 @@ function formatPts(delta: number): string {
   return `${delta >= 0 ? '+' : ''}${delta} ${t().common.pts}`;
 }
 
-function resultChip(p: ParticipantDetail): { text: string; color: 'success' | 'error' | 'default' } {
+function resultChip(p: ParticipantDetail): { text: string; tone: BadgeTone } {
   const msg = t().career;
-  if (p.is_draw) return { text: msg.resultDraw, color: 'default' };
-  if (p.is_winner) return { text: msg.resultWin, color: 'success' };
-  return { text: msg.resultLose, color: 'error' };
+  if (p.is_draw) return { text: msg.resultDraw, tone: 'neutral' };
+  if (p.is_winner) return { text: msg.resultWin, tone: 'ok' };
+  return { text: msg.resultLose, tone: 'danger' };
 }
 
 // Own-view result badge for a list row (contract v1.7.0 self_summary);
 // null when the server did not provide it.
-function selfResultChip(ss: SelfSummaryView | undefined): { text: string; color: 'success' | 'error' | 'default' } | null {
+function selfResultChip(ss: SelfSummaryView | undefined): { text: string; tone: BadgeTone } | null {
   if (!ss) return null;
   const msg = t().career;
-  if (ss.is_draw) return { text: msg.drawResult, color: 'default' };
-  if (ss.is_winner) return { text: msg.victory, color: 'success' };
-  return { text: msg.defeat, color: 'error' };
+  if (ss.is_draw) return { text: msg.drawResult, tone: 'neutral' };
+  if (ss.is_winner) return { text: msg.victory, tone: 'ok' };
+  return { text: msg.defeat, tone: 'danger' };
 }
 
 export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, onFindMatch }: MyMatchesViewProps) {
@@ -188,8 +172,8 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
     setDetailSelfSummary(null);
   };
 
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
+  const handlePageSizeChange = (size: string) => {
+    setPageSize(Number(size));
     setPageNum(1);
   };
 
@@ -204,16 +188,16 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
 
   const myResultChip = myParticipant
     ? myParticipant.is_draw
-      ? { text: msg.career.drawResult, color: 'default' as const }
+      ? { text: msg.career.drawResult, tone: 'neutral' as BadgeTone }
       : myParticipant.is_winner
-        ? { text: msg.career.victory, color: 'success' as const }
-        : { text: msg.career.defeat, color: 'error' as const }
+        ? { text: msg.career.victory, tone: 'ok' as BadgeTone }
+        : { text: msg.career.defeat, tone: 'danger' as BadgeTone }
     : detailSelfSummary
       ? detailSelfSummary.is_draw
-        ? { text: msg.career.drawResult, color: 'default' as const }
+        ? { text: msg.career.drawResult, tone: 'neutral' as BadgeTone }
         : detailSelfSummary.is_winner
-          ? { text: msg.career.victory, color: 'success' as const }
-          : { text: msg.career.defeat, color: 'error' as const }
+          ? { text: msg.career.victory, tone: 'ok' as BadgeTone }
+          : { text: msg.career.defeat, tone: 'danger' as BadgeTone }
       : undefined;
 
   // Own delta/after for the detail header: participant rows are primary,
@@ -227,44 +211,56 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
     (myParticipant ? myParticipant.rank_score_before + myParticipant.rank_score_delta : undefined);
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">{msg.career.title}</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <FormControl sx={{ minWidth: 110 }} size="small">
-            <InputLabel>{msg.career.pageSize}</InputLabel>
+    <div className="space-y-6">
+      {/* Header + controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-display font-bold tracking-tight text-ink">{msg.career.title}</h1>
+        <div className="flex items-end gap-3">
+          <Field label={msg.career.pageSize}>
             <Select
-              value={pageSize}
-              label={msg.career.pageSize}
-              onChange={(e) => handlePageSizeChange(e.target.value as number)}
-            >
-              <MenuItem value={10}>10</MenuItem>
-              <MenuItem value={20}>20</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
-            </Select>
-          </FormControl>
-          <IconButton onClick={fetchMatches} title={msg.common.refresh}>
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Box>
+              value={String(pageSize)}
+              onValueChange={handlePageSizeChange}
+              ariaLabel={msg.career.pageSize}
+              options={[
+                { value: '10', label: '10' },
+                { value: '20', label: '20' },
+                { value: '50', label: '50' },
+              ]}
+              className="w-24"
+            />
+          </Field>
+          <button
+            type="button"
+            onClick={fetchMatches}
+            title={msg.common.refresh}
+            className="mb-0.5 rounded-md border border-edge-strong p-2.5 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
+          >
+            <Icon as={RefreshCw} size={16} />
+          </button>
+        </div>
+      </div>
 
       {error ? (
-        <Card>
+        <Panel>
           <ErrorState message={error} onRetry={fetchMatches} />
-        </Card>
+        </Panel>
       ) : (
-        <Card>
+        <Panel>
           {loading ? (
-            <LoadingList rows={6} />
+            <div className="space-y-2 p-4">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
           ) : matches.length === 0 ? (
             <EmptyState
-              icon={<HistoryIcon />}
+              icon={<Icon as={History} size={34} />}
               title={msg.career.emptyTitle}
               hint={msg.career.emptyHint}
               action={
                 onFindMatch && (
-                  <Button variant="contained" startIcon={<PlayIcon />} onClick={onFindMatch}>
+                  <Button variant="primary" onClick={onFindMatch}>
+                    <Icon as={Play} size={16} />
                     {msg.play.findMatch}
                   </Button>
                 )
@@ -272,209 +268,193 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
             />
           ) : (
             <>
-              <TableContainer component={Paper} sx={{ backgroundColor: 'transparent' }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      {msg.career.headers.map((h) => (
-                        <TableCell
-                          key={h}
-                          sx={{
-                            color: 'text.secondary',
-                            fontWeight: 'bold',
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                          }}
+              <Table>
+                <thead>
+                  <tr>
+                    {msg.career.headers.map((h) => (
+                      <Th key={h}>{h}</Th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {matches.map((m) => {
+                    const self = selfResultChip(m.self_summary);
+                    return (
+                      <tr
+                        key={m.id}
+                        onClick={() => openDetail(m.id, m.self_summary ?? null)}
+                        className="cursor-pointer transition-colors duration-150 hover:bg-raised"
+                      >
+                        <Td className="whitespace-nowrap font-mono text-xs text-ink-muted">
+                          {formatTime(m.finished_at)}
+                        </Td>
+                        <Td>
+                          <Badge tone="accent" className="font-mono">{m.match_type}</Badge>
+                        </Td>
+                        <Td>
+                          {self ? (
+                            <Badge tone={self.tone} strong>{self.text}</Badge>
+                          ) : (
+                            <span className="text-ink-faint">—</span>
+                          )}
+                        </Td>
+                        <Td
+                          className={`font-mono font-bold tabular-nums ${
+                            m.self_summary
+                              ? m.self_summary.rank_score_delta >= 0
+                                ? 'text-ok'
+                                : 'text-danger'
+                              : 'text-ink-faint'
+                          }`}
                         >
-                          {h}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {matches.map((m) => {
-                      const self = selfResultChip(m.self_summary);
-                      return (
-                        <TableRow
-                          key={m.id}
-                          hover
-                          onClick={() => openDetail(m.id, m.self_summary ?? null)}
-                          sx={{
-                            cursor: 'pointer',
-                            '&:last-child td': { borderBottom: 0 },
-                          }}
-                        >
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            {formatTime(m.finished_at)}
-                          </TableCell>
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            <Chip label={m.match_type} size="small" sx={accentTint} />
-                          </TableCell>
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            {self ? (
-                              <Chip label={self.text} size="small" color={self.color} sx={{ fontWeight: 'bold' }} />
-                            ) : (
-                              '—'
-                            )}
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              borderBottom: '1px solid',
-                              borderColor: 'divider',
-                              color: m.self_summary
-                                ? m.self_summary.rank_score_delta >= 0
-                                  ? 'success.main'
-                                  : 'error.main'
-                                : 'text.primary',
-                              fontWeight: m.self_summary ? 'bold' : 'normal',
-                            }}
-                          >
-                            {m.self_summary ? formatPts(m.self_summary.rank_score_delta) : '—'}
-                          </TableCell>
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            {m.map_name || '—'}
-                          </TableCell>
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            {winnerLabel(m.winner_team_id)}
-                          </TableCell>
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            {formatDuration(m.duration_seconds)}
-                          </TableCell>
-                          <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            {m.source || '—'}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                          {m.self_summary ? formatPts(m.self_summary.rank_score_delta) : '—'}
+                        </Td>
+                        <Td className="text-ink">{m.map_name || '—'}</Td>
+                        <Td className="text-ink-muted">{winnerLabel(m.winner_team_id)}</Td>
+                        <Td className="font-mono text-xs tabular-nums text-ink-muted">
+                          {formatDuration(m.duration_seconds)}
+                        </Td>
+                        <Td className="text-ink-faint">{m.source || '—'}</Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, p: 2 }}>
-                <IconButton
+              {/* Pagination */}
+              <div className="flex items-center justify-end gap-2 px-4 py-3">
+                <button
+                  type="button"
                   onClick={() => setPageNum((p) => Math.max(1, p - 1))}
                   disabled={pageNum <= 1}
                   title={msg.career.previousPage}
+                  className="rounded-md p-2 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
                 >
-                  <PrevIcon />
-                </IconButton>
-                <Typography variant="body2" color="text.secondary">
+                  <Icon as={ChevronLeft} size={16} />
+                </button>
+                <span className="font-mono text-xs tabular-nums text-ink-muted">
                   {msg.career.page} {pageNum}
-                </Typography>
-                <IconButton
+                </span>
+                <button
+                  type="button"
                   onClick={() => setPageNum((p) => p + 1)}
                   disabled={matches.length < pageSize}
                   title={msg.career.nextPage}
+                  className="rounded-md p-2 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
                 >
-                  <NextIcon />
-                </IconButton>
-              </Box>
+                  <Icon as={ChevronRight} size={16} />
+                </button>
+              </div>
             </>
           )}
-        </Card>
+        </Panel>
       )}
 
       {/* Match detail dialog */}
-      <Dialog open={detail !== null} onClose={closeDetail} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {msg.career.title} {detail ? `#${detail.id}` : ''}
-        </DialogTitle>
-        <DialogContent>
-          {detailLoading && <LoadingList rows={5} />}
-          {detailError && (
-            <ErrorState
-              message={detailError}
-              onRetry={detail ? () => openDetail(detail.id, detailSelfSummary) : undefined}
-            />
-          )}
-          {!detailLoading && !detailError && detail && (
-            <Box>
-              <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-                {myResultChip && (
-                  <Chip
-                    label={
-                      myDelta !== undefined && !(myParticipant?.is_draw ?? detailSelfSummary?.is_draw)
-                        ? `${myResultChip.text} · ${formatPts(myDelta)}`
-                        : myResultChip.text
-                    }
-                    color={myResultChip.color}
-                    sx={{ fontWeight: 'bold' }}
-                  />
-                )}
-                <Chip label={`${msg.career.detailType}: ${detail.match_type}`} size="small" sx={accentTint} />
-                <Chip label={`${msg.career.detailSource}: ${detail.source || '—'}`} size="small" />
-                <Chip label={`${msg.career.detailMap}: ${detail.map_name || '—'}`} size="small" />
-                <Chip
-                  label={
-                    detail.winner_team_id
-                      ? `${msg.career.detailWinner}: ${msg.common.team} ${detail.winner_team_id}`
-                      : msg.common.draw
-                  }
-                  size="small"
-                  color={detail.winner_team_id ? 'success' : 'default'}
-                />
-              </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {msg.career.detailStarted} {formatTime(detail.started_at)} · {msg.career.detailFinished}{' '}
-                {formatTime(detail.finished_at)} · {msg.career.detailDuration}{' '}
-                {formatDuration(detail.duration_seconds)}
-                {myAfter !== undefined && (
-                  <> · {msg.career.scoreAfter}: {myAfter.toLocaleString()}</>
-                )}
-              </Typography>
-
-              {detail.participants && detail.participants.length > 0 ? (
-                <TableContainer component={Paper} sx={{ backgroundColor: 'action.hover' }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        {msg.career.detailHeaders.map((h) => (
-                          <TableCell key={h} sx={{ color: 'text.secondary' }}>
-                            {h}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {detail.participants.map((p) => {
-                        const result = resultChip(p);
-                        const isMe = userUid !== undefined && p.uid === userUid;
-                        return (
-                          <TableRow
-                            key={`${p.uid}-${p.team_id}`}
-                            sx={isMe ? { backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12) } : undefined}
-                          >
-                            <TableCell sx={{ fontWeight: isMe ? 'bold' : 'normal' }}>#{p.uid}</TableCell>
-                            <TableCell>{p.team_id}</TableCell>
-                            <TableCell>
-                              <Chip label={result.text} size="small" color={result.color} />
-                            </TableCell>
-                            <TableCell>{p.kills}</TableCell>
-                            <TableCell>{p.deaths}</TableCell>
-                            <TableCell>{formatDuration(p.survival_time)}</TableCell>
-                            <TableCell sx={{ color: p.rank_score_delta >= 0 ? 'success.main' : 'error.main' }}>
-                              {formatPts(p.rank_score_delta)}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Typography variant="body2" color="text.disabled">
-                  {msg.career.noParticipants}
-                </Typography>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDetail} color="inherit">
+      <Dialog
+        open={detail !== null}
+        onClose={closeDetail}
+        wide
+        title={`${msg.career.title} ${detail ? `#${detail.id}` : ''}`}
+        footer={
+          <Button variant="outline" onClick={closeDetail}>
             {msg.common.close}
           </Button>
-        </DialogActions>
+        }
+      >
+        {detailLoading && (
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-2/3" />
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        )}
+        {detailError && (
+          <ErrorState
+            message={detailError}
+            onRetry={detail ? () => openDetail(detail.id, detailSelfSummary) : undefined}
+          />
+        )}
+        {!detailLoading && !detailError && detail && (
+          <div className="space-y-4">
+            {/* Header chips: own result + match facts */}
+            <div className="flex flex-wrap items-center gap-2">
+              {myResultChip && (
+                <Badge tone={myResultChip.tone} strong className="px-3 py-1 text-sm">
+                  {myDelta !== undefined && !(myParticipant?.is_draw ?? detailSelfSummary?.is_draw)
+                    ? `${myResultChip.text} · ${formatPts(myDelta)}`
+                    : myResultChip.text}
+                </Badge>
+              )}
+              <Badge tone="accent" className="font-mono">
+                {msg.career.detailType}: {detail.match_type}
+              </Badge>
+              <Badge>{msg.career.detailSource}: {detail.source || '—'}</Badge>
+              <Badge>{msg.career.detailMap}: {detail.map_name || '—'}</Badge>
+              <Badge tone={detail.winner_team_id ? 'ok' : 'neutral'}>
+                {detail.winner_team_id
+                  ? `${msg.career.detailWinner}: ${msg.common.team} ${detail.winner_team_id}`
+                  : msg.common.draw}
+              </Badge>
+            </div>
+
+            <p className="font-mono text-xs leading-relaxed text-ink-faint">
+              {msg.career.detailStarted} {formatTime(detail.started_at)} · {msg.career.detailFinished}{' '}
+              {formatTime(detail.finished_at)} · {msg.career.detailDuration}{' '}
+              {formatDuration(detail.duration_seconds)}
+              {myAfter !== undefined && (
+                <> · {msg.career.scoreAfter}: {myAfter.toLocaleString()}</>
+              )}
+            </p>
+
+            {detail.participants && detail.participants.length > 0 ? (
+              <div className="overflow-hidden rounded-md border border-edge">
+                <Table>
+                  <thead>
+                    <tr>
+                      {msg.career.detailHeaders.map((h) => (
+                        <Th key={h}>{h}</Th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.participants.map((p) => {
+                      const result = resultChip(p);
+                      const isMe = userUid !== undefined && p.uid === userUid;
+                      return (
+                        <tr key={`${p.uid}-${p.team_id}`} className={isMe ? 'bg-accent/10' : ''}>
+                          <Td className={`font-mono ${isMe ? 'font-bold text-accent' : 'text-ink'}`}>
+                            #{p.uid}
+                          </Td>
+                          <Td className="text-ink">{p.team_id}</Td>
+                          <Td>
+                            <Badge tone={result.tone}>{result.text}</Badge>
+                          </Td>
+                          <Td className="font-mono tabular-nums text-ink">{p.kills}</Td>
+                          <Td className="font-mono tabular-nums text-ink">{p.deaths}</Td>
+                          <Td className="font-mono tabular-nums text-ink-muted">
+                            {formatDuration(p.survival_time)}
+                          </Td>
+                          <Td
+                            className={`font-mono font-bold tabular-nums ${
+                              p.rank_score_delta >= 0 ? 'text-ok' : 'text-danger'
+                            }`}
+                          >
+                            {formatPts(p.rank_score_delta)}
+                          </Td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </Table>
+              </div>
+            ) : (
+              <Banner tone="info">{msg.career.noParticipants}</Banner>
+            )}
+          </div>
+        )}
       </Dialog>
-    </Box>
+    </div>
   );
 }

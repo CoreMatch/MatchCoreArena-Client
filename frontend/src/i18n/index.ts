@@ -158,6 +158,9 @@ const en = {
     statusUnknown: 'Unknown',
     // {uuid} is replaced by the friend UUID when no username is known.
     userTemplate: 'User {uuid}',
+    notImplementedTitle: 'Friends are not implemented yet',
+    notImplementedHint:
+      'The arena server answers 501 for the friend feature. This list fills itself once the server ships it — nothing is faked here.',
   },
   login: {
     failed: 'Sign-in failed. Check your credentials and try again.',
@@ -173,11 +176,6 @@ const en = {
   },
   settings: {
     title: 'Settings',
-    appearance: 'Appearance',
-    theme: 'Theme',
-    themeDark: 'Dark',
-    themeLight: 'Light',
-    themeHint: 'Dark is the default. Both themes share the same design tokens.',
     account: 'Account',
     accountUid: 'Player UID',
     accountLevel: 'Level',

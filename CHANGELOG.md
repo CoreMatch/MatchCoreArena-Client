@@ -87,6 +87,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New read-only binding `GetRankingTiers` (display-only tier ladder);
   the bound-surface allow-list was updated accordingly (knowledge 0014)
 
+### Changed (frontend rebuild on @ha/ui)
+- The frontend was rebuilt from scratch on the new shared design system
+  `@ha/ui` (`/home/lnb/Desktop/HA/ha-ui`, consumed via
+  `file:/home/lnb/Desktop/HA/ha-ui`): Tailwind v4 tokens + Radix
+  primitives + Lucide icons. MUI is fully removed (`@mui/*`,
+  `@emotion/*`, `theme.ts`, all `sx` styling) — knowledge 0015
+- Art direction: near-black cool base, single accent, hard 1px borders,
+  no shadows, big mono numerals; dark only — the light theme and the
+  Settings appearance toggle are gone
+- Fonts are bundled locally via @fontsource (Inter for text, JetBrains
+  Mono for numerals/addresses/logs); no CDN
+- Friends now surfaces the server's typed `501 mca_not_implemented` as
+  an honest "not implemented yet" state instead of a generic load error
+- All behavior is preserved: queue state machine, handoff sender,
+  read-only surface and binding allow-list (unchanged), Career
+  list/detail with self_summary reconciliation, rankings with tiers,
+  Settings, i18n catalog
+
 ### Changed
 - Client is now read-only for all business data: it only performs session
   auth calls and read queries against the MatchCoreArena server

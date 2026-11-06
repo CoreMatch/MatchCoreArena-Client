@@ -1,36 +1,30 @@
+@import "tailwindcss";
+@import "@ha/ui/tokens.css";
+@source "../node_modules/@ha/ui/src";
+
+/* Dark-only app: the browser chrome follows the baseline surface. */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark light;
-  /* Dark is the baseline theme; the MUI theme paints the actual surfaces. */
-  background-color: #1a1d21;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  background-color: var(--ha-base);
+  color: var(--ha-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  width: 100%;
-  height: 100%;
+/* Sparse, hard scrollbars to match the arena chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ha-edge-strong) transparent;
 }

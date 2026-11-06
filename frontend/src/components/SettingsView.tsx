@@ -1,31 +1,23 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Stack,
-  Chip,
-  TextField,
-  Button,
-  Alert,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-} from '@mui/material';
+import { Banner, Button, Field, Input, Panel, Select } from '@ha/ui';
 import { GetGameServerConfig, SetGameServerConfig } from '../../wailsjs/go/main/App';
 import { t } from '../i18n';
-import type { ThemeMode } from '../theme';
 import type { UserProfile } from '../types';
 
 interface SettingsViewProps {
   user: UserProfile | null;
-  themeMode: ThemeMode;
-  onThemeModeChange: (mode: ThemeMode) => void;
 }
 
-export default function SettingsView({ user, themeMode, onThemeModeChange }: SettingsViewProps) {
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between border-b border-edge/60 py-2.5 last:border-b-0">
+      <span className="text-sm text-ink-muted">{label}</span>
+      <span className="font-mono text-sm font-medium tabular-nums text-ink">{value}</span>
+    </div>
+  );
+}
+
+export default function SettingsView({ user }: SettingsViewProps) {
   const msg = t();
 
   const [gameHost, setGameHost] = useState('');
@@ -57,151 +49,79 @@ export default function SettingsView({ user, themeMode, onThemeModeChange }: Set
   };
 
   return (
-    <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        {msg.settings.title}
-      </Typography>
+    <div className="space-y-6">
+      <h1 className="text-display font-bold tracking-tight text-ink">{msg.settings.title}</h1>
 
-      <Stack spacing={3}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              {msg.settings.appearance}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {msg.settings.themeHint}
-            </Typography>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-              <FormControl sx={{ minWidth: 200 }} size="small">
-                <InputLabel>{msg.settings.theme}</InputLabel>
-                <Select
-                  value={themeMode}
-                  label={msg.settings.theme}
-                  onChange={(e) => onThemeModeChange(e.target.value as ThemeMode)}
-                >
-                  <MenuItem value="dark">{msg.settings.themeDark}</MenuItem>
-                  <MenuItem value="light">{msg.settings.themeLight}</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-          </CardContent>
-        </Card>
+      {/* Account */}
+      <Panel className="px-6 py-5">
+        <h2 className="mb-3 text-lg font-bold text-ink">{msg.settings.account}</h2>
+        {user ? (
+          <div>
+            <Row label={msg.settings.accountUid} value={user.uid !== undefined ? String(user.uid) : '—'} />
+            <Row label={msg.settings.accountLevel} value={user.level !== undefined ? String(user.level) : '—'} />
+            <Row label={msg.settings.accountExp} value={(user.experience ?? 0).toLocaleString()} />
+            <Row label={msg.settings.accountRankScore} value={user.rank_score !== undefined ? String(user.rank_score) : '—'} />
+            <Row label={msg.settings.accountWins} value={user.wins_count !== undefined ? String(user.wins_count) : '—'} />
+          </div>
+        ) : (
+          <p className="text-sm text-ink-faint">{msg.settings.accountMissing}</p>
+        )}
+      </Panel>
 
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              {msg.settings.account}
-            </Typography>
-            {user ? (
-              <Stack spacing={1}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.settings.accountUid}
-                  </Typography>
-                  <Typography variant="body2">{user.uid ?? '—'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.settings.accountLevel}
-                  </Typography>
-                  <Typography variant="body2">{user.level ?? '—'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.settings.accountExp}
-                  </Typography>
-                  <Typography variant="body2">{(user.experience ?? 0).toLocaleString()}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.settings.accountRankScore}
-                  </Typography>
-                  <Typography variant="body2">{user.rank_score ?? '—'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {msg.settings.accountWins}
-                  </Typography>
-                  <Typography variant="body2">{user.wins_count ?? '—'}</Typography>
-                </Box>
-              </Stack>
-            ) : (
-              <Typography variant="body2" color="text.disabled">
-                {msg.settings.accountMissing}
-              </Typography>
-            )}
-          </CardContent>
-        </Card>
+      {/* Game server fallback */}
+      <Panel className="px-6 py-5">
+        <h2 className="mb-1 text-lg font-bold text-ink">{msg.settings.gameServer}</h2>
+        <p className="mb-4 text-sm leading-relaxed text-ink-muted">{msg.settings.gameServerHint}</p>
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label={msg.settings.gameServerHost} className="min-w-64 flex-1">
+            <Input value={gameHost} onChange={(e) => setGameHost(e.target.value)} className="font-mono" />
+          </Field>
+          <Field label={msg.settings.gameServerPort} className="w-28">
+            <Input
+              type="number"
+              value={gamePort}
+              onChange={(e) => setGamePort(e.target.value)}
+              className="font-mono"
+            />
+          </Field>
+          <Button variant="primary" onClick={saveGameServer} disabled={saveState === 'saving'} className="mb-0.5">
+            {saveState === 'saving' ? msg.settings.saving : msg.settings.save}
+          </Button>
+        </div>
+        {saveState === 'saved' && (
+          <div className="mt-3">
+            <Banner tone="ok">{msg.settings.saved}</Banner>
+          </div>
+        )}
+        {saveState === 'failed' && (
+          <div className="mt-3">
+            <Banner tone="danger">{msg.settings.saveFailed}</Banner>
+          </div>
+        )}
+      </Panel>
 
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              {msg.settings.gameServer}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {msg.settings.gameServerHint}
-            </Typography>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-              <TextField
-                label={msg.settings.gameServerHost}
-                size="small"
-                value={gameHost}
-                onChange={(e) => setGameHost(e.target.value)}
-                sx={{ minWidth: 260 }}
-              />
-              <TextField
-                label={msg.settings.gameServerPort}
-                size="small"
-                type="number"
-                value={gamePort}
-                onChange={(e) => setGamePort(e.target.value)}
-                sx={{ width: 120 }}
-              />
-              <Button onClick={saveGameServer} disabled={saveState === 'saving'} variant="contained">
-                {saveState === 'saving' ? msg.settings.saving : msg.settings.save}
-              </Button>
-            </Stack>
-            {saveState === 'saved' && (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                {msg.settings.saved}
-              </Alert>
-            )}
-            {saveState === 'failed' && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {msg.settings.saveFailed}
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+      {/* Language */}
+      <Panel className="px-6 py-5">
+        <h2 className="mb-3 text-lg font-bold text-ink">{msg.settings.language}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <Field label={msg.settings.language} className="w-52">
+            <Select
+              value="en"
+              onValueChange={() => undefined}
+              ariaLabel={msg.settings.language}
+              disabled
+              options={[{ value: 'en', label: msg.settings.languageEnglish }]}
+            />
+          </Field>
+          <span className="text-xs text-ink-faint">{msg.settings.languageNote}</span>
+        </div>
+      </Panel>
 
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              {msg.settings.language}
-            </Typography>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-              <FormControl sx={{ minWidth: 200 }} size="small">
-                <InputLabel>{msg.settings.language}</InputLabel>
-                <Select value="en" label={msg.settings.language} disabled>
-                  <MenuItem value="en">{msg.settings.languageEnglish}</MenuItem>
-                </Select>
-              </FormControl>
-              <Chip label={msg.settings.languageNote} size="small" />
-            </Stack>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              {msg.settings.about}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {msg.settings.aboutText}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Stack>
-    </Box>
+      {/* About */}
+      <Panel className="px-6 py-5">
+        <h2 className="mb-1 text-lg font-bold text-ink">{msg.settings.about}</h2>
+        <p className="text-sm leading-relaxed text-ink-muted">{msg.settings.aboutText}</p>
+      </Panel>
+    </div>
   );
 }
