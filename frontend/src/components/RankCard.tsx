@@ -19,12 +19,6 @@ interface MyRank {
   season: number;
 }
 
-// TOTAL_PROBE_LIMIT bounds the probe used to learn the ranked population.
-// When the probe returns fewer rows than requested, the total is exact and a
-// "Top X%" positioning can be shown; otherwise only the absolute rank is
-// shown (a total-count field is a backend enhancement, see PENDING-DECISIONS).
-const TOTAL_PROBE_LIMIT = 1000;
-
 function topPercentLabel(position: number, total: number): string | null {
   if (total <= 0 || position <= 0) return null;
   const pct = (position / total) * 100;
@@ -44,6 +38,9 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
     setMyRank(null);
     setTotalKnown(null);
 
+    // 1. Fetch personal ranking. The Go backend translates the server's
+    // typed 404 mca_ranking_not_found into (nil, nil); any other error is
+    // propagated as a fault.
     try {
       const resp = await authFetch(() => GetMyRanking(rankType, season));
       const data = resp?.data ?? resp;
@@ -58,13 +55,16 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
       return;
     }
 
-    // Population probe for the "Top X%" positioning (silent on failure:
-    // the absolute rank stays displayable without it).
+    // 2. Fetch total population count for the "Top X%" positioning
+    // (silent on failure: the absolute rank stays displayable without it).
     try {
-      const probe = await authFetch(() => GetTopRankings(rankType, TOTAL_PROBE_LIMIT, season));
-      const rows = probe?.data ?? probe;
-      if (Array.isArray(rows) && rows.length < TOTAL_PROBE_LIMIT) {
-        setTotalKnown(rows.length);
+      const probe = await authFetch(() => GetTopRankings(rankType, 1, season));
+      const response = probe?.data ?? probe;
+      if (!Array.isArray(response) && response?.total_count !== undefined) {
+        setTotalKnown(response.total_count);
+      } else if (Array.isArray(response)) {
+        // Legacy flat-array fallback
+        setTotalKnown(response.length);
       }
     } catch {
       setTotalKnown(null);

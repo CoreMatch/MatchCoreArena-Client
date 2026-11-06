@@ -20,10 +20,8 @@ export const tokens = {
     // Surface ladder (SamuelClient dark chrome).
     baseDark: '#1a1d21',
     surfaceDark: '#212529',
-    raisedDark: '#282c34',
     // Brand accent of this app (primary CTA only, per research 04 §A7).
     accent: '#e94560',
-    accentHover: '#c81e45',
     // Rank metals — data visualization, not semantic state.
     gold: '#ffd700',
     silver: '#c0c0c0',
