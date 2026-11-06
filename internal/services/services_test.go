@@ -57,7 +57,12 @@ func TestMatchServiceGetMyMatches(t *testing.T) {
 		if r.URL.Query().Get("page_num") != "1" || r.URL.Query().Get("page_size") != "20" {
 			t.Errorf("unexpected query %s", r.URL.RawQuery)
 		}
-		w.Write(envelope(t, []models.Match{{ID: 7, MatchType: "1v1", Source: "virtual"}}))
+		w.Write(envelope(t, []models.Match{{
+			ID: 7, MatchType: "1v1", Source: "virtual",
+			SelfSummary: &models.SelfSummary{
+				TeamID: "A", IsWinner: true, RankScoreDelta: 12, RankScoreAfter: 1012,
+			},
+		}}))
 	}))
 	defer server.Close()
 
@@ -68,6 +73,10 @@ func TestMatchServiceGetMyMatches(t *testing.T) {
 	}
 	if len(matches) != 1 || matches[0].ID != 7 || matches[0].MatchType != "1v1" {
 		t.Fatalf("unexpected matches: %+v", matches)
+	}
+	ss := matches[0].SelfSummary
+	if ss == nil || ss.TeamID != "A" || !ss.IsWinner || ss.IsDraw || ss.RankScoreDelta != 12 || ss.RankScoreAfter != 1012 {
+		t.Fatalf("unexpected self summary: %+v", ss)
 	}
 }
 
@@ -352,6 +361,7 @@ func TestMatchmakingServiceStatus(t *testing.T) {
 				FormedAt:  "2026-11-06T09:00:00Z",
 				Members:   []models.GroupMember{{UID: 1, TeamID: "A", RankScore: 1000}, {UID: 2, TeamID: "B", RankScore: 1010}},
 			}},
+			QueueStats: models.QueueStats{Players: 12, Parties: 3, AverageWaitSeconds: 84},
 		}))
 	}))
 	defer server.Close()
@@ -366,6 +376,9 @@ func TestMatchmakingServiceStatus(t *testing.T) {
 	}
 	if len(status.RecentGroups) != 1 || status.RecentGroups[0].GroupID != 7 || len(status.RecentGroups[0].Members) != 2 {
 		t.Fatalf("unexpected recent groups: %+v", status.RecentGroups)
+	}
+	if status.QueueStats.Players != 12 || status.QueueStats.Parties != 3 || status.QueueStats.AverageWaitSeconds != 84 {
+		t.Fatalf("unexpected queue stats: %+v", status.QueueStats)
 	}
 }
 
@@ -410,5 +423,45 @@ func TestRankingServiceGetMyRankingTransportError(t *testing.T) {
 	svc := NewRankingService(NewAPIService(server.URL))
 	if _, err := svc.GetMyRanking("1v1", 1); err == nil {
 		t.Fatal("expected transport error, got nil")
+	}
+}
+
+func TestRankingServiceGetRankingTiers(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/rankings/tiers" {
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+		w.Write(envelope(t, []models.RankTier{
+			{Name: "Bronze", MinScore: 0},
+			{Name: "Gold", MinScore: 1400},
+		}))
+	}))
+	defer server.Close()
+
+	svc := NewRankingService(NewAPIService(server.URL))
+	tiers, err := svc.GetRankingTiers()
+	if err != nil {
+		t.Fatalf("GetRankingTiers failed: %v", err)
+	}
+	if len(tiers) != 2 || tiers[0].Name != "Bronze" || tiers[1].MinScore != 1400 {
+		t.Fatalf("unexpected tiers: %+v", tiers)
+	}
+}
+
+func TestRankingServiceGetRankingTiersEmpty(t *testing.T) {
+	// Unconfigured ladder = empty array, a valid answer (no progress bar),
+	// not an error.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(envelope(t, []models.RankTier{}))
+	}))
+	defer server.Close()
+
+	svc := NewRankingService(NewAPIService(server.URL))
+	tiers, err := svc.GetRankingTiers()
+	if err != nil {
+		t.Fatalf("GetRankingTiers failed: %v", err)
+	}
+	if len(tiers) != 0 {
+		t.Fatalf("expected empty tiers, got %+v", tiers)
 	}
 }

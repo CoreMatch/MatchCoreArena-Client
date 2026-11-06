@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Card, CardContent, Chip, Skeleton } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, Skeleton, LinearProgress } from '@mui/material';
 import { EmojiEvents as TrophyIcon } from '@mui/icons-material';
-import { GetMyRanking, GetTopRankings } from '../../wailsjs/go/main/App';
+import { GetMyRanking, GetTopRankings, GetRankingTiers } from '../../wailsjs/go/main/App';
 import { t, loadErrorMessage } from '../i18n';
 import { authFetch } from '../session';
 import { accentTint } from '../theme';
@@ -19,6 +19,32 @@ interface MyRank {
   season: number;
 }
 
+// RankTier mirrors the server's display-only ladder entry (contract
+// v1.7.0). Thresholds always come from the server — the client never
+// hard-codes tier boundaries.
+interface RankTierView {
+  name: string;
+  min_score: number;
+}
+
+// tierOf locates the player on the server-provided ladder: the current tier
+// is the last entry whose min_score is reached; next is the following one
+// (null at the top of the ladder).
+function tierOf(score: number, tiers: RankTierView[]): { current: RankTierView | null; next: RankTierView | null } {
+  const sorted = [...tiers].sort((a, b) => a.min_score - b.min_score);
+  let current: RankTierView | null = null;
+  let next: RankTierView | null = null;
+  for (const tier of sorted) {
+    if (score >= tier.min_score) {
+      current = tier;
+    } else {
+      next = tier;
+      break;
+    }
+  }
+  return { current, next };
+}
+
 function topPercentLabel(position: number, total: number): string | null {
   if (total <= 0 || position <= 0) return null;
   const pct = (position / total) * 100;
@@ -32,6 +58,7 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
   const [state, setState] = useState<'loading' | 'unranked' | 'ranked' | 'error'>('loading');
   const [myRank, setMyRank] = useState<MyRank | null>(null);
   const [totalKnown, setTotalKnown] = useState<number | null>(null);
+  const [tiers, setTiers] = useState<RankTierView[] | null>(null);
 
   const load = useCallback(async () => {
     setState('loading');
@@ -68,6 +95,17 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
       }
     } catch {
       setTotalKnown(null);
+    }
+
+    // 3. Display-only tier ladder (contract v1.7.0). Empty array = server
+    // has no tiers configured → no progress bar; failures degrade silently
+    // the same way. Thresholds are never invented client-side.
+    try {
+      const resp = await authFetch(() => GetRankingTiers());
+      const rows = resp?.data ?? resp;
+      setTiers(Array.isArray(rows) ? (rows as RankTierView[]) : null);
+    } catch {
+      setTiers(null);
     }
   }, [rankType, season]);
 
@@ -109,6 +147,21 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
   }
 
   const topLabel = totalKnown !== null ? topPercentLabel(myRank.rank_position, totalKnown) : null;
+  const tier = tiers && tiers.length > 0 ? tierOf(myRank.score, tiers) : null;
+  const toNextPts = tier?.next ? tier.next.min_score - myRank.score : 0;
+  const tierProgress = tier?.next
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          tier.current
+            ? ((myRank.score - tier.current.min_score) /
+                Math.max(1, tier.next.min_score - tier.current.min_score)) *
+                100
+            : (myRank.score / Math.max(1, tier.next.min_score)) * 100,
+        ),
+      )
+    : 0;
 
   return (
     <Card sx={{ height: '100%' }}>
@@ -119,6 +172,9 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
             <Typography variant="h6">{msg.rankCard.title}</Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
+            {tier?.current && (
+              <Chip label={tier.current.name} size="small" color="secondary" sx={{ fontWeight: 700 }} />
+            )}
             <Chip label={`${msg.career.detailType}: ${rankType}`} size="small" sx={accentTint} />
             <Chip label={`${msg.rankCard.season} ${season}`} size="small" />
           </Box>
@@ -155,6 +211,28 @@ export default function RankCard({ rankType, season, winsCount }: RankCardProps)
             </Box>
           )}
         </Box>
+
+        {/* Tier progress — only when the server provides a ladder */}
+        {tier?.next && (
+          <Box sx={{ mt: 2 }}>
+            <LinearProgress
+              variant="determinate"
+              value={tierProgress}
+              color="secondary"
+              sx={{ height: 8, borderRadius: 1, mb: 0.5 }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              {msg.rankCard.toNextTemplate
+                .replace('{pts}', String(toNextPts))
+                .replace('{tier}', tier.next.name)}
+            </Typography>
+          </Box>
+        )}
+        {tier && tier.current && !tier.next && (
+          <Typography variant="caption" sx={{ color: 'secondary.main', fontWeight: 600, display: 'block', mt: 2 }}>
+            {msg.rankCard.topTier}
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );

@@ -71,6 +71,12 @@ func (a *App) GetMyRanking(rankType string, season int) (interface{}, error) {
 	return a.handler.GetMyRanking(rankType, season)
 }
 
+// GetRankingTiers is a read-only query of the display-only tier ladder
+// (contract v1.7.0); an empty array means "no tiers configured".
+func (a *App) GetRankingTiers() (interface{}, error) {
+	return a.handler.GetRankingTiers()
+}
+
 // Match methods (read-only)
 func (a *App) GetMatch(id int64) (interface{}, error) {
 	return a.handler.GetMatch(id)

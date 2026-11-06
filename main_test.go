@@ -31,6 +31,9 @@ func TestAppBoundSurfaceIsReadOnly(t *testing.T) {
 		// Read-only queries
 		"GetCurrentUser": {}, "GetFriends": {},
 		"GetTopRankings": {}, "GetMyRanking": {},
+		// GetRankingTiers: display-only tier ladder (contract v1.7.0),
+		// pure read of server configuration; no settlement semantics.
+		"GetRankingTiers": {},
 		"GetMatch": {}, "GetMyMatches": {},
 		// Player's own matchmaking queue operations (no match-data writes)
 		"JoinMatchmaking": {}, "LeaveMatchmaking": {}, "GetMatchmakingStatus": {},

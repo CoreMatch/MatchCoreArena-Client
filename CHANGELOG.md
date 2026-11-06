@@ -75,6 +75,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   minute show a "may take longer" expectation note; a Get-started
   checklist (sign in / first match / rankings) guides new players until
   their first settled match
+- Contract v1.7.0 display fields: the queue card shows live queue
+  busyness (`queue_stats`: players/parties plus the average wait as a
+  reference — display-only, the state machine is untouched); Career list
+  rows show the player's own result badge and score change from
+  `self_summary`, and the match detail reconciles against it (own result
+  fallback plus the "score after" line); the rank card draws the tier
+  badge and progress bar from `GET /api/rankings/tiers` when the server
+  provides a ladder — an empty ladder means no progress bar, and tier
+  thresholds are never hard-coded client-side
+- New read-only binding `GetRankingTiers` (display-only tier ladder);
+  the bound-surface allow-list was updated accordingly (knowledge 0014)
 
 ### Changed
 - Client is now read-only for all business data: it only performs session

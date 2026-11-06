@@ -57,6 +57,10 @@ const en = {
     leaveError: "Couldn't cancel the queue. Try again.",
     cancelQueue: 'Cancel Queue',
     queueLongWait: 'Queue may take longer than usual at this time.',
+    // {players}/{parties} are replaced by the live queue counts.
+    queueStatsTemplate: '{players} players · {parties} parties',
+    // {time} is replaced by the formatted average wait (m:ss).
+    avgWaitTemplate: 'Avg wait ~{time}',
     getStartedTitle: 'Get started',
     getStartedSignIn: 'Sign in to your account',
     getStartedQueue: 'Queue your first match',
@@ -97,6 +101,9 @@ const en = {
     loadErrorData: 'your ranking',
     topPercentTemplate: 'Top {pct}%',
     topPercentTiny: 'Top <0.1%',
+    // {pts} is replaced by the missing points, {tier} by the next tier name.
+    toNextTemplate: '{pts} pts to {tier}',
+    topTier: 'Top tier',
   },
   career: {
     title: 'Career',
@@ -104,7 +111,8 @@ const en = {
     page: 'Page',
     previousPage: 'Previous page',
     nextPage: 'Next page',
-    headers: ['Time', 'Mode', 'Map', 'Winner', 'Duration', 'Source'],
+    headers: ['Time', 'Mode', 'Result', 'Score', 'Map', 'Winner', 'Duration', 'Source'],
+    scoreAfter: 'Score after',
     emptyTitle: 'No matches yet',
     emptyHint: 'Queue up to play your first match.',
     victory: 'Victory',

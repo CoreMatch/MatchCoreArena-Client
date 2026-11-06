@@ -86,6 +86,36 @@ func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Rank
 	return &ranking, nil
 }
 
+// GetRankingTiers returns the display-only rank-tier ladder (contract
+// v1.7.0). An empty slice is a valid answer: the server has no tiers
+// configured and the UI must not draw a progress bar (and must never
+// hard-code thresholds itself).
+func (s *RankingService) GetRankingTiers() ([]models.RankTier, error) {
+	resp, err := s.api.Get("/api/rankings/tiers")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ranking tiers: %w", err)
+	}
+
+	var tiersResp models.SuccessEnvelope
+	if err := json.Unmarshal(resp, &tiersResp); err != nil {
+		return nil, fmt.Errorf("failed to parse tiers response: %w", err)
+	}
+
+	if tiersResp.Data == nil {
+		return []models.RankTier{}, nil
+	}
+	dataBytes, err := json.Marshal(tiersResp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal tiers data: %w", err)
+	}
+
+	var tiers []models.RankTier
+	if err := json.Unmarshal(dataBytes, &tiers); err != nil {
+		return nil, fmt.Errorf("failed to parse tiers data: %w", err)
+	}
+	return tiers, nil
+}
+
 // isRankingNotFound reports whether an APIService error is the server's
 // typed 404 mca_ranking_not_found — an unranked empty state, not a fault.
 func isRankingNotFound(err error) bool {

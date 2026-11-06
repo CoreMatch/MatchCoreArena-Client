@@ -10,3 +10,10 @@ type Ranking struct {
 	Season       int    `json:"season"`
 	UpdatedAt    string `json:"updated_at"`
 }
+
+// RankTier 段位阶梯展示项（契约 v1.7.0，纯展示配置；服务端未配置时
+// GET /api/rankings/tiers 返回空数组，客户端不得自行硬编码阈值）。
+type RankTier struct {
+	Name     string `json:"name"`
+	MinScore int    `json:"min_score"`
+}
