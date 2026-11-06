@@ -4,6 +4,7 @@ import (
 	"MatchCoreArena-Client/internal/models"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type RankingService struct {
@@ -38,9 +39,16 @@ func (s *RankingService) GetTopRankings(rankType string, limit, season int) ([]m
 	return rankings, nil
 }
 
+// GetMyRanking returns the player's ranking row, or (nil, nil) when the
+// player simply has no ranking yet: the server answers an error envelope
+// for a missing row (no typed not-found code exists), and that case is an
+// empty state, not a failure. Transport problems still return an error.
 func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Ranking, error) {
 	resp, err := s.api.Get(fmt.Sprintf("/api/rankings/me?type=%s&season=%d", rankType, season))
 	if err != nil {
+		if isServerErrorEnvelope(err) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to get my ranking: %w", err)
 	}
 
@@ -60,4 +68,11 @@ func (s *RankingService) GetMyRanking(rankType string, season int) (*models.Rank
 	}
 
 	return &ranking, nil
+}
+
+// isServerErrorEnvelope reports whether an APIService error carries a server
+// error envelope body ({"success":false,...}), i.e. the server did respond
+// and rejected the request, as opposed to a transport-level failure.
+func isServerErrorEnvelope(err error) bool {
+	return err != nil && strings.Contains(err.Error(), `"success":false`)
 }
