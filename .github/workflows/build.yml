@@ -11,22 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    # The frontend consumes the shared @ha/ui design system through a
+    # file: dependency (frontend/package.json -> ../ha-ui), pinned as a git
+    # submodule at the repo root, so a recursive checkout is all the setup
+    # the dependency needs — no host paths, no sudo path replication.
     - uses: actions/checkout@v7
-
-    # Shared design system consumed by the frontend via
-    # file:/home/lnb/Desktop/HA/ha-ui (public repo, same org). checkout must
-    # stay inside the workspace, so it is copied to the absolute path after.
-    - name: Check out @ha/ui
-      uses: actions/checkout@v7
       with:
-        repository: CoreMatch/ha-ui
-        path: ha-ui
-
-    - name: "Place @ha/ui at its file: dependency path"
-      run: |
-        sudo mkdir -p /home/lnb/Desktop/HA
-        sudo cp -r ha-ui /home/lnb/Desktop/HA/ha-ui
-        sudo chown -R "$USER" /home/lnb/Desktop/HA/ha-ui
+        submodules: true
 
     - name: Set up Go
       uses: actions/setup-go@v7
@@ -43,8 +34,8 @@ jobs:
     - name: Install dependencies
       run: |
         go mod tidy
-        (cd /home/lnb/Desktop/HA/ha-ui && npm install)
-        cd "$GITHUB_WORKSPACE/frontend" && npm install
+        (cd "$GITHUB_WORKSPACE/ha-ui" && npm ci)
+        cd "$GITHUB_WORKSPACE/frontend" && npm ci
     
     - name: Build frontend
       run: cd frontend && npm run build

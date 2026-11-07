@@ -13,7 +13,7 @@
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
-    "@ha/ui": "file:/home/lnb/Desktop/HA/ha-ui",
+    "@ha/ui": "file:../ha-ui",
     "lucide-react": "^0.545.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
