@@ -103,6 +103,8 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 
 `game_server_host` / `game_server_port` (editable in Settings) are an **optional fallback** for the match handoff: matches normally carry their own server address from the arena server (`join_target`, contract v1.6.0); the local values are only used when a formed match does not provide one.
 
+`server_url` precedence (highest first): an explicit non-empty `server_url` in the config file wins; otherwise the `MCA_SERVER_URL` environment variable applies; otherwise the built-in default `https://arena.mcnb.dev/` is used.
+
 ## API Integration
 
 This client connects to the MatchCoreArena server API. It performs read queries plus the player's own session and queue operations; match reporting is not part of the client. Make sure the server is running and accessible at the configured URL.

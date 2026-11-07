@@ -10,15 +10,33 @@ so they stay visible until decided. The root-level `PENDING-DECISIONS.md`
 mirrors this list for task workflows.
 
 ## Decision
-Record the following items as pending author decisions:
+No open items remain. Both former pending items were resolved on
+2026-11-08 (leftover-cleanup batch):
 
-1. **`SERVER_URL` wiring**: no code path reads environment variables
-   (`internal/config/config.go::LoadConfig` reads only
-   `~/.matchcorearena/config.json`). If an env var should work, someone
-   must choose its precedence relative to `config.json` (env-over-file vs
-   file-over-env), which changes effective container behavior.
-2. **Docker image purpose**: the Dockerfile packages a GUI desktop binary
-   into a headless alpine image; the intended use is not documented.
+1. **`SERVER_URL` wiring** — settled as the conventional precedence
+   "explicit config first, env second, built-in default last": a non-empty
+   `server_url` in `~/.matchcorearena/config.json` always wins; otherwise
+   `MCA_SERVER_URL` (the env name the code actually reads) applies;
+   otherwise the built-in default `https://arena.mcnb.dev/`. Implemented in
+   `internal/config/config.go::LoadConfig` and pinned by
+   `internal/config/config_test.go::TestServerURLPrecedence`
+   (file-beats-env; env when the file omits or empties server_url; default
+   fallback; file-sourced game-server fields). Documented in README/USAGE
+   and `.env.example` (which previously advertised an unread `SERVER_URL`
+   name). Note: the pre-settlement code had env-over-file precedence
+   (commit 88fd723); the settlement flips it so an explicit user config is
+   never silently overridden by the environment.
+2. **Docker image purpose** — decision: keep the Dockerfile unchanged and
+   document its status. The image packages the Wails GUI desktop binary
+   into a headless alpine runtime that cannot display a GUI, and the
+   builder stage lacks the GTK/WebKit toolchain a Linux Wails build needs;
+   it is a build/packaging placeholder, not a runnable runtime. No
+   config-path adjustment was required for the precedence settlement:
+   `docker-compose.yml` mounts `~/.matchcorearena` into the container, so
+   the mounted config file keeps highest precedence, and `MCA_SERVER_URL`
+   can additionally be injected through the compose environment. Removing
+   or reworking the image remains an author option; nothing depends on it
+   today.
 
 Resolved since the read-only refactor (see 0010/0011):
 
@@ -45,10 +63,11 @@ Resolved since the read-only refactor (see 0010/0011):
 ## Consequences
 - The repository compiles and passes `go build ./...`, `go vet ./...`,
   `go test ./...`; frontend `npm run build` (tsc + vite) passes.
-- The two open items above remain; each blocks on an author choice.
+- No open items remain in this entry; the root `PENDING-DECISIONS.md`
+  mirrors the resolutions.
 
 ## Evidence
-- internal/config/config.go::LoadConfig (config only from JSON file, no env reads)
+- internal/config/config.go::LoadConfig (server_url precedence: file > MCA_SERVER_URL > default)
 - Dockerfile::MatchCoreArenaClient (GUI binary in a headless alpine image)
 - internal/models/user.go::UID, internal/models/ranking.go::UserUID (uid-based identity models)
 - frontend/src/session.ts::authFetch (token refresh wired)

@@ -77,6 +77,16 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 | `game_server_host` | string | `""` | Optional fallback game server host, used only when a formed match carries no join_target |
 | `game_server_port` | number | `0` | Optional fallback game server port, used only when a formed match carries no join_target |
 
+### `server_url` precedence
+
+Highest first:
+
+1. **Explicit config file** — a non-empty `server_url` in `~/.matchcorearena/config.json` always wins.
+2. **Environment variable** — `MCA_SERVER_URL` is used when the config file does not explicitly set `server_url` (or the file is absent).
+3. **Built-in default** — `https://arena.mcnb.dev/`.
+
+All other options come from the config file when present, falling back to their defaults.
+
 ## Keyboard Shortcuts
 
 - **Ctrl+R / Cmd+R**: Refresh current view

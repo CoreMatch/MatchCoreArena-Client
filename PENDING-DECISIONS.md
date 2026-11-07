@@ -6,14 +6,29 @@ Each item proceeds with a conservative default until decided. Mirrored by
 
 ## Open
 
-1. **`SERVER_URL` env wiring** — `LoadConfig` reads only
-   `~/.matchcorearena/config.json`; no environment variable is read.
-   Decision needed: env-over-file vs file-over-env precedence.
-   Conservative default until then: config file only (current behavior).
-2. **Docker image purpose** — the Dockerfile packages a GUI desktop binary
-   into a headless alpine image; intended use undocumented.
-   Decision needed: document the purpose or remove the image.
-   Conservative default until then: keep the Dockerfile unchanged.
+(none)
+
+## Resolved (2026-11-08, leftover-cleanup batch)
+
+1. **`SERVER_URL` env wiring** — settled as the conventional precedence
+   "explicit config first, env second, built-in default last": a non-empty
+   `server_url` in `~/.matchcorearena/config.json` always wins; otherwise
+   `MCA_SERVER_URL` (the env name the code actually reads) applies;
+   otherwise the built-in default `https://arena.mcnb.dev/`. Implemented in
+   `internal/config/config.go::LoadConfig`, pinned by
+   `internal/config/config_test.go::TestServerURLPrecedence`, and
+   documented in README/USAGE/`.env.example`. The pre-settlement code had
+   env-over-file precedence (commit 88fd723); the settlement flips it so an
+   explicit user config is never silently overridden by the environment.
+2. **Docker image purpose** — decision: keep the Dockerfile unchanged and
+   document its status (build/packaging placeholder, not a runnable
+   runtime: headless alpine cannot display the Wails GUI and the builder
+   lacks the GTK/WebKit toolchain). No config-path adjustment was required:
+   `docker-compose.yml` mounts `~/.matchcorearena`, so the mounted config
+   file keeps highest precedence and `MCA_SERVER_URL` can additionally be
+   injected through the compose environment. Removing or reworking the
+   image remains an author option; nothing depends on it today.
+   Mirrored by `knowledge/0006-pending-author-decisions.md`.
 
 ## Resolved (2026-11-07, server display-unblock landed)
 

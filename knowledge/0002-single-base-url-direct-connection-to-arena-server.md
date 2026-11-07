@@ -39,10 +39,11 @@ every client endpoint above matches a route registered in the server's
   `config.example.json` on first run.
 - Single point of failure: no fallback URL, no retry logic; any HTTP status
   ≥ 400 becomes a plain error string surfaced to the UI.
-- Configuration comes only from the mounted `~/.matchcorearena/config.json`:
-  no code path reads environment variables (no `os.Getenv`/`LookupEnv` in
-  the repo). Wiring a real env override (e.g. `SERVER_URL` for the
-  containerized path) is a pending author decision (see 0006).
+- Configuration comes from `~/.matchcorearena/config.json` with a
+  documented `server_url` precedence (settled 2026-11-08, see 0006): an
+  explicit non-empty `server_url` in the file wins; otherwise the
+  `MCA_SERVER_URL` environment variable applies; otherwise the built-in
+  default. All other fields come from the file when present.
 - The arena REST API itself is defined inside MatchCoreArena-Server, not in
   HA-Contract (HA-Contract's documented scope covers HRPAuth, HASkinLib,
   WinnerProxy, Cascade, etc.). This entry documents internal client
