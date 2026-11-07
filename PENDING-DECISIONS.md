@@ -15,23 +15,25 @@ Each item proceeds with a conservative default until decided. Mirrored by
    Decision needed: document the purpose or remove the image.
    Conservative default until then: keep the Dockerfile unchanged.
 
-## Backend enhancement items (no client-side estimation until they exist)
+## Resolved (2026-11-07, server display-unblock landed)
 
-Recorded from the A4 rank-card work — the client renders only what the
-server provides; these fields would unlock the remaining Faceit-style
-presentation:
+The three backend enhancement items recorded below on 2026-11-06 are all
+delivered and consumed — nothing pending remains from that list:
 
-1. **Tier ladder** — tier names plus score thresholds per rank type. Needed
-   for the progress bar ("current score / score to next tier") and tier
-   badges. Until then the rank card shows score/rank/Top%/wins only.
-2. **Ranked population count** — a total-count field on
-   `GET /api/rankings/{type}`. Until then "Top X%" is shown only when a
-   bounded probe (limit 1000) returns fewer rows than requested; otherwise
-   the absolute rank is shown.
-3. **Typed ranking-not-found** — a `404 mca_ranking_not_found` for
-   `GET /api/rankings/me` instead of `500 internal_error`, so the client
-   can distinguish "unranked" from a real server fault without parsing the
-   envelope body.
+1. **Tier ladder** — the server ships tier display config
+   (HA-Contract MCA 1.7.0, Server `52bfb26` "display unblock"), and the
+   rank card renders the progress bar with "{pts} pts to {tier}" plus a
+   "Top tier" state (`frontend/src/i18n` `rankCard.toNextTemplate` /
+   `rankCard.topTier`, `RankCard.tsx`).
+2. **Ranked population count** — `GET /api/rankings/{type}` returns the
+   `{rankings, total_count}` envelope (Server `99c8815`); the client parses
+   `total_count` (`internal/services/ranking.go`) and positions "Top X%"
+   from the known population (`RankingView.tsx`, `RankCard.tsx`).
+3. **Typed ranking-not-found** — the server answers `404
+   mca_ranking_not_found` for `GET /api/rankings/me` (Server `99c8815`);
+   the client maps it to the "unranked" empty state
+   (`internal/services/ranking.go` `isRankingNotFound`, pinned by
+   `internal/services/services_test.go`).
 
 ## Resolved (2026-11-06, read-only client follow-up batch)
 
