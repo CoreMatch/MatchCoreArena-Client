@@ -49,7 +49,7 @@ or change the contract/server.
   `mca_self_uuid` initialization and persistence)
 - frontend/src/i18n/index.ts::partySelfRequired (`partySelfLabel`,
   `partySelfPlaceholder`, `partyTooSmall`, updated `partyHint`)
-- Cross-repo (read-only): MatchCoreArena-Server `internal/service/matchmaking.go::joinAsParty`
+- Cross-repo (read-only): MatchCoreArena-Server `internal/service/matchmaking.go::joinAsParty` [xref]
   (resolves the roster; does not add the authenticated caller)
 - Cross-repo (read-only): MatchCoreArena-Server `internal/service/user.go`
   (`GET /api/users/me` exposes uid only, hence no client-side UUID source)

@@ -49,6 +49,6 @@ The application is built with Wails v2:
 - main.go::assets (`//go:embed all:frontend/dist`, `wails.Run` with `Bind: []interface{}{app}`)
 - app.go::App (all bound methods: auth, user, friend, ranking, match — read-only queries plus session auth)
 - internal/handlers/app.go::AppHandler (AppHandler composing config + per-domain services)
-- frontend/package.json (field: @mui/material) (React ^19.1.0, @mui/material ^9.0.1, TypeScript ^5.5.0, Vite ^6.3.5)
+- frontend/package.json (field: @ha/ui) (React ^19.1.0, @ha/ui file:../ha-ui shared design system, TypeScript ^5.5.0, Vite ^6.3.5; Material UI was removed when the UI moved to @ha/ui)
 - frontend/wailsjs/go/main/App.d.ts::Login (generated binding surface)
 - README.md::Wails (tech-stack table)
