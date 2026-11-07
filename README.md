@@ -18,7 +18,7 @@ The client is the player-facing companion for MatchCoreArena: it queues matches 
 | Layer    | Technology |
 |----------|------------|
 | Backend  | Go 1.26, [Wails v2](https://wails.io/), standard library `net/http` for API calls |
-| Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), [Material UI v9](https://mui.com/) |
+| Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), Tailwind CSS v4 + Radix UI primitives (shared `@ha/ui` design system) |
 | Build    | Wails CLI (WebKitGTK 2.41+ on Linux) |
 
 ## Project Layout
@@ -32,6 +32,7 @@ MatchCoreArena-Client/
 ├── internal/
 │   ├── config/             # Configuration loading
 │   ├── handlers/           # Wails binding handlers
+│   ├── interop/            # Match handoff sender (INTEROP-SPEC v1, loopback channel to SamuelClient)
 │   ├── models/             # Domain & API models
 │   └── services/           # API service layer
 ├── frontend/
@@ -57,11 +58,13 @@ MatchCoreArena-Client/
 
 ### Setup
 
-1. Clone the repository:
+1. Clone the repository (the `ha-ui` design-system submodule must come along,
+   the frontend depends on it via `file:../ha-ui`):
    ```bash
-   git clone <repository-url>
+   git clone --recurse-submodules <repository-url>
    cd MatchCoreArena-Client
    ```
+   (Existing checkouts: `git submodule update --init`.)
 
 2. Install dependencies:
    ```bash
