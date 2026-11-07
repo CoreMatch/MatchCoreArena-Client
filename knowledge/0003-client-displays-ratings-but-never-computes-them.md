@@ -48,8 +48,8 @@ This client is a pure consumer/display layer for the rating system:
 - internal/models/user.go::RankScore (`RankScore`, `Level`, `Experience` fields consumed for display)
 - internal/models/match.go::ParticipantDetail (`RankScoreBefore`/`RankScoreDelta` received from server, rendered verbatim)
 - frontend/src/components/RankingView.tsx::RankingView (fetch + render), frontend/src/components/RankingView.tsx::rank_position (renders `rank_position`/`score` verbatim)
-- frontend/src/components/HomeView.tsx::rank_score (displays `rank_score` from user object)
-- frontend/src/components/MyMatchesView.tsx::resultLabel (renders server settlement fields without arithmetic)
+- frontend/src/components/PlayView.tsx::rank_score (displays `rank_score` from user object)
+- frontend/src/components/MyMatchesView.tsx::winnerLabel (renders server settlement fields without arithmetic)
 - app.go::GetTopRankings, app.go::GetMatch (ranking/match bindings are read-only queries)
 - Repo-wide case-insensitive search for `elo|mmr|rating|glicko|trueskill`: no scoring-logic matches
 - Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0002-match-results-are-pushed-by-bedwarsrel-mca.md (match reports pushed by BedwarsRel-MCA with `match:report` scope)

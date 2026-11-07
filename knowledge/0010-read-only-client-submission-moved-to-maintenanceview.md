@@ -83,7 +83,7 @@ hence the current split: queue in the client, reporting out of it.
 - app.go::GetMyMatches (bound surface is auth + read queries only)
 - frontend/wailsjs/go/main/App.d.ts::GetMatch (generated bindings contain no submission function)
 - frontend/src/components/MyMatchesView.tsx::MyMatchesView (read-only match history with detail dialog)
-- frontend/src/components/HomeView.tsx::READ (read-only notice pointing to the maintenance panel)
+- frontend/src/components/PlayView.tsx::readOnly (read-only notice pointing to the maintenance panel)
 - frontend/src/components/FriendList.tsx::GetFriends (view-only friend list)
 - internal/services/api.go::Get (APIService exposes only Get/Post; Post used by auth endpoints)
 - internal/services/match.go::GetMatch (match service is query-only)
