@@ -360,6 +360,10 @@ func TestMatchmakingServiceStatus(t *testing.T) {
 				MatchType: "1v1",
 				FormedAt:  "2026-11-06T09:00:00Z",
 				Members:   []models.GroupMember{{UID: 1, TeamID: "A", RankScore: 1000}, {UID: 2, TeamID: "B", RankScore: 1010}},
+				// contract 1.10.0 room layer: reserved room plus the bound
+				// sub-server address travel with the formed group.
+				Room:       "arena-1",
+				JoinTarget: &models.GroupJoinTarget{Host: "10.0.0.5", Port: 25566},
 			}},
 			QueueStats: models.QueueStats{Players: 12, Parties: 3, AverageWaitSeconds: 84},
 		}))
@@ -376,6 +380,13 @@ func TestMatchmakingServiceStatus(t *testing.T) {
 	}
 	if len(status.RecentGroups) != 1 || status.RecentGroups[0].GroupID != 7 || len(status.RecentGroups[0].Members) != 2 {
 		t.Fatalf("unexpected recent groups: %+v", status.RecentGroups)
+	}
+	group := status.RecentGroups[0]
+	if group.Room != "arena-1" {
+		t.Errorf("recent group room = %q, want arena-1 (contract 1.10.0 room layer)", group.Room)
+	}
+	if group.JoinTarget == nil || group.JoinTarget.Host != "10.0.0.5" || group.JoinTarget.Port != 25566 {
+		t.Errorf("unexpected recent group join_target: %+v", group.JoinTarget)
 	}
 	if status.QueueStats.Players != 12 || status.QueueStats.Parties != 3 || status.QueueStats.AverageWaitSeconds != 84 {
 		t.Fatalf("unexpected queue stats: %+v", status.QueueStats)

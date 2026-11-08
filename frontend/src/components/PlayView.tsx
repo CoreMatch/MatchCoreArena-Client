@@ -53,6 +53,9 @@ interface FormedGroupView {
   // Game server address attached by the arena server (contract v1.6.0);
   // omitted when the server has none configured.
   join_target?: { host: string; port: number };
+  // Reserved room on the target sub-server (contract v1.10.0 room layer);
+  // omitted without a room inventory or when the reservation lapsed.
+  room?: string;
 }
 
 interface MatchmakingStatusView {
@@ -796,6 +799,14 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
                     >
                       {activeGroup.join_target.host}:{activeGroup.join_target.port}
                     </span>
+                    {activeGroup.room && (
+                      <span
+                        title={msg.play.roomHint}
+                        className="cursor-help rounded-md bg-base px-4 py-2 font-mono text-base font-medium text-ink-muted"
+                      >
+                        {msg.play.roomLabel} {activeGroup.room}
+                      </span>
+                    )}
                     <Button variant="primary" onClick={copyGroupAddress}>
                       <Asset id="icon-copy" size={16} />
                       {copiedJoin ? msg.handoff.copied : msg.play.copyServerAddress}
