@@ -85,6 +85,9 @@ const en = {
     groupLabel: 'Group',
     waitingResults: 'Your game is being played. Results appear here once reported.',
     copyServerAddress: 'Copy Server Address',
+    roomLabel: 'Room',
+    roomHint:
+      'The arena reserved for this match on the game server (room layer). The game server places you into it automatically when you join.',
     joinServerHint:
       'Join this server from your game client. Once the match settles it is also handed off to SamuelClient automatically.',
     joinServerMissing:

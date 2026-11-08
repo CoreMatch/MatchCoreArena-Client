@@ -24,13 +24,17 @@ type GroupJoinTarget struct {
 	Port int    `json:"port"`
 }
 
-// FormedGroup 匹配成局记录（服务端契约 v1.6.0 FormedGroup）。
+// FormedGroup 匹配成局记录（服务端契约 v1.6.0 FormedGroup；Room 为
+// v1.10.0 房间层字段）。
 type FormedGroup struct {
 	GroupID    int64            `json:"group_id"`
 	MatchType  string           `json:"match_type"`
 	FormedAt   string           `json:"formed_at"`
 	Members    []GroupMember    `json:"members"`
 	JoinTarget *GroupJoinTarget `json:"join_target,omitempty"`
+	// Room 房间层（契约 v1.10.0）下为该成局预占的房间名（目标子服命名
+	// 空间下的 arena/游戏名）；无房间层或预占失效时省略。
+	Room string `json:"room,omitempty"`
 }
 
 // QueueStats 全局队列繁忙度（契约 v1.7.0，纯展示；跨模式全局口径，
