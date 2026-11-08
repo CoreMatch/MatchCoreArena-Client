@@ -14,7 +14,7 @@ If you discover a security vulnerability in MatchCoreArena Client, please report
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue
-2. **DO** email security concerns to: security@matchcorearena.com
+2. **DO** email security concerns to: me@samuelcheston.com
 3. **DO** include the following information:
    - Description of the vulnerability
    - Steps to reproduce
@@ -73,7 +73,7 @@ We currently do not have a formal bug bounty program, but we appreciate responsi
 ### Contact
 
 For security-related questions or concerns:
-- Email: security@matchcorearena.com
+- Email: me@samuelcheston.com
 - PGP Key: [Available upon request]
 
 Thank you for helping keep MatchCoreArena Client secure!
