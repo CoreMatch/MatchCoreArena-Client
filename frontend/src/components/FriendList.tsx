@@ -8,8 +8,8 @@ import { authFetch } from '../session';
 
 interface Friend {
   id: number;
-  user_uuid: string;
-  friend_uuid: string;
+  user_uid: number;
+  friend_uid: number;
   status: number; // 0=pending, 1=accepted, 2=rejected
   created_at: string;
   username?: string;
@@ -75,7 +75,7 @@ export default function FriendList() {
   };
 
   const friendName = (friend: Friend) =>
-    friend.username || msg.friends.userTemplate.replace('{uuid}', friend.friend_uuid);
+    friend.username || msg.friends.userTemplate.replace('{uid}', String(friend.friend_uid));
 
   if (loading) {
     return (

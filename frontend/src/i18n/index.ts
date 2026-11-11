@@ -174,8 +174,8 @@ const en = {
     statusAccepted: 'Accepted',
     statusRejected: 'Rejected',
     statusUnknown: 'Unknown',
-    // {uuid} is replaced by the friend UUID when no username is known.
-    userTemplate: 'User {uuid}',
+    // {uid} is replaced by the friend uid when no username is known.
+    userTemplate: 'User {uid}',
     notImplementedTitle: 'Friends are not implemented yet',
     notImplementedHint: 'Server returns 501 — nothing is faked here.',
   },

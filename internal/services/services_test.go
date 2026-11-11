@@ -173,7 +173,7 @@ func TestFriendServiceGetFriends(t *testing.T) {
 		if r.URL.Path != "/api/friends" {
 			t.Errorf("unexpected path %s", r.URL.Path)
 		}
-		w.Write(envelope(t, []models.Friend{{ID: 1, FriendUUID: "f1", Status: 1}}))
+		w.Write(envelope(t, []models.Friend{{ID: 1, UserUID: 1001, FriendUID: 2001, Status: 1}}))
 	}))
 	defer server.Close()
 
@@ -182,7 +182,7 @@ func TestFriendServiceGetFriends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetFriends failed: %v", err)
 	}
-	if len(friends) != 1 || friends[0].FriendUUID != "f1" || friends[0].Status != 1 {
+	if len(friends) != 1 || friends[0].UserUID != 1001 || friends[0].FriendUID != 2001 || friends[0].Status != 1 {
 		t.Fatalf("unexpected friends: %+v", friends)
 	}
 }
