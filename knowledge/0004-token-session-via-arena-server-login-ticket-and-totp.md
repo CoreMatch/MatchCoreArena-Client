@@ -69,4 +69,4 @@ from the client's point of view the arena server is the only auth counterparty.
 - frontend/src/App.tsx::SetToken (startup restore: `localStorage.getItem('access_token')` → `SetToken`), frontend/src/App.tsx::SESSION_EXPIRED_EVENT (logout on session expiry), frontend/src/App.tsx::setItem (stores both tokens), frontend/src/App.tsx::removeItem (logout clears storage)
 - USAGE.md::Authentication (automatic token refresh on expiry)
 - frontend/src/components/LoginView.tsx::href (inert "Forgot password?" link)
-- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/auth.go::AuthHandler (auth endpoints are a transparent proxy to HRPAuth), /home/lnb/Desktop/HA/MatchCoreArena-Server/api/middleware/auth.go::Auth (Bearer verification, 401 oauth_token_expired with the expectation that the client refreshes)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/handler/auth.go::AuthHandler (auth endpoints are a transparent proxy to HRPAuth), /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/middleware/auth.go::Auth (Bearer verification, 401 oauth_token_expired with the expectation that the client refreshes)

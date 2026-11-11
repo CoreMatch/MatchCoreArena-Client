@@ -52,4 +52,4 @@ This client is a pure consumer/display layer for the rating system:
 - frontend/src/components/MyMatchesView.tsx::winnerLabel (renders server settlement fields without arithmetic)
 - app.go::GetTopRankings, app.go::GetMatch (ranking/match bindings are read-only queries)
 - Repo-wide case-insensitive search for `elo|mmr|rating|glicko|trueskill`: no scoring-logic matches
-- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0002-match-results-are-pushed-by-bedwarsrel-mca.md (match reports pushed by BedwarsRel-MCA with `match:report` scope)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/knowledge/0001-server-side-weighted-elo-rating.md (Status Accepted — rating computed server-side) and /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/knowledge/0002-match-results-are-pushed-by-bedwarsrel-mca.md (match reports pushed by BedwarsRel-MCA with `match:report` scope)

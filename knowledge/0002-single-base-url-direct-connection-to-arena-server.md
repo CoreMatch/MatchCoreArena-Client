@@ -30,7 +30,7 @@ configurable base URL:
 
 Cross-verification against the read-only MatchCoreArena-Server worktree:
 every client endpoint above matches a route registered in the server's
-/home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Register
+/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/router.go::Register
 (auth group, logout, users, friends, matches, rankings routes).
 
 ## Consequences
@@ -57,6 +57,6 @@ every client endpoint above matches a route registered in the server's
 - config.example.json (field: server_url)
 - internal/services/api.go::APIService (APIService, 10s timeout in internal/services/api.go::NewAPIService, Bearer header in internal/services/api.go::makeRequest)
 - Endpoint call sites: internal/services/auth.go::Login, internal/services/auth.go::VerifyTOTP, internal/services/auth.go::RefreshToken, internal/services/auth.go::Logout; internal/services/user.go::GetCurrentUser; internal/services/friend.go::GetFriends; internal/services/match.go::GetMatch, internal/services/match.go::GetMyMatches; internal/services/ranking.go::GetTopRankings, internal/services/ranking.go::GetMyRanking
-- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Register (matching route registrations)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/router.go::Register (matching route registrations)
 - docker-compose.yml (field: volumes) (volume mount for `~/.matchcorearena`)
 - start.sh::matchcorearena (seeds default config on first run)

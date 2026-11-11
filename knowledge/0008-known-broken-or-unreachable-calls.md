@@ -39,4 +39,4 @@ Record the following verified inventory:
 - .github/workflows/release.yml::windows (mingw install + `wails build -platform windows/amd64` steps), .github/workflows/release.yml::tags (workflow triggers only on `v*` tags)
 - frontend/src/components/FriendList.tsx::GetFriends (friend UI is view-only)
 - Cross-reference: 0006 (pending author decisions), 0010 (read-only refactor), 0011 (read-only invariant)
-- Cross-repo (read-only): /home/lnb/Desktop/HA/MatchCoreArena-Server/knowledge/0010-friend-and-team-endpoints-are-explicitly-unimplemented.md (friend/team endpoints answer 501 mca_not_implemented)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/knowledge/0010-friend-and-team-endpoints-are-explicitly-unimplemented.md (friend/team endpoints answer 501 mca_not_implemented)

@@ -6,7 +6,7 @@ Accepted
 ## Context
 After a queued match settles, the player must get into the game server. The
 receiver side (SamuelClient) implements the MatchCore ↔ SamuelClient match
-handoff protocol (`/home/lnb/Desktop/HA/INTEROP-SPEC.md`, v1, Linux-first):
+handoff protocol (`/home/lnb/Desktop/HA/matchcore/INTEROP-SPEC.md`, v1, Linux-first):
 a loopback-only, token-authenticated channel plus a credential-free
 `matchcore://join` deep link. This client is the sender.
 
@@ -60,4 +60,4 @@ a loopback-only, token-authenticated channel plus a credential-free
 - frontend/src/components/PlayView.tsx::startHandoff (auto-delivery on settle, manual join fallback)
 - frontend/src/components/SettingsView.tsx::saveGameServer (game server address settings)
 - internal/interop/interop_test.go::TestPushFlowDelivers (flow A), internal/interop/interop_test.go::TestPullFlowServesOnce (one-time pull), internal/interop/interop_test.go::TestStaleDiscoveryIgnored (dead-pid discovery rejected)
-- Cross-repo (read-only): /home/lnb/Desktop/HA/INTEROP-SPEC.md (protocol v1), /home/lnb/Desktop/HA/SamuelClient (receiver implementation, be25fab)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/INTEROP-SPEC.md (protocol v1), /home/lnb/Desktop/HA/matchcore/SamuelClient (receiver implementation, be25fab)
