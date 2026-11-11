@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Queue expiry is now visible on the Play page: when the server removes a
+  queue entry without a formed match (queue timeout), the client shows a
+  "Queue Expired" state with a re-queue affordance instead of silently
+  returning to idle.
+- The release Windows cross-compile path (knowledge 0008 item 1) was
+  verified out-of-CI by reproducing the exact release steps in a disposable
+  container (`wails build -platform windows/amd64` produces the .exe).
+
 ### Added
 - Initial release
 - User authentication with email/password
