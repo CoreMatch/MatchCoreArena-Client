@@ -82,6 +82,9 @@ const en = {
     stateFound: 'Match Found',
     stateInMatch: 'In Match',
     stateSettled: 'Results In',
+    stateExpired: 'Queue Expired',
+    expiredHint:
+      'You were removed from the queue without a match (queue timeout). Queue again when ready.',
     groupLabel: 'Group',
     waitingResults: 'Your game is being played. Results appear here once reported.',
     copyServerAddress: 'Copy Server Address',

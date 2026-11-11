@@ -95,7 +95,9 @@ interface HandoffStatus {
 
 // Queue phases of one matchmaking cycle:
 // idle → queued (wait timer) → found → in_match → settled
-type QueuePhase = 'idle' | 'joining' | 'queued' | 'found' | 'in_match' | 'settled';
+// expired: left the queue server-side (queue timeout) without a formed
+// group — shown instead of silently falling back to idle.
+type QueuePhase = 'idle' | 'joining' | 'queued' | 'found' | 'in_match' | 'settled' | 'expired';
 
 const POLL_MS = 3000;
 const HANDOFF_POLL_MS = 2000;
@@ -270,8 +272,10 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
         setPhase('found');
         await checkSettlement();
       } else if (!status.in_queue) {
-        // Left the queue without a formed group (e.g. removed server-side).
-        setPhase('idle');
+        // Left the queue without a formed group — the server removes
+        // entries after queue_timeout_seconds. Surface it instead of
+        // silently returning to idle.
+        setPhase('expired');
       }
     } else if (current === 'found') {
       if (await checkSettlement()) return;
@@ -489,6 +493,8 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
         return <Badge tone="info" strong><Asset id="flow-in-match" size={16} />{msg.play.stateInMatch}</Badge>;
       case 'settled':
         return <Badge tone="neutral" strong><Asset id="flow-settled" size={16} />{msg.play.stateSettled}</Badge>;
+      case 'expired':
+        return <Badge tone="warn" strong><Asset id="flow-idle" size={16} />{msg.play.stateExpired}</Badge>;
       default:
         return null;
     }
@@ -579,8 +585,13 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
           </div>
         )}
 
-        {(phase === 'idle' || phase === 'joining') && (
+        {(phase === 'idle' || phase === 'joining' || phase === 'expired') && (
           <div className="space-y-6">
+            {phase === 'expired' && (
+              <Banner tone="warn">
+                <span title={msg.play.expiredHint}>{msg.play.expiredHint}</span>
+              </Banner>
+            )}
             <div className="flex flex-wrap items-end gap-4">
               <Field label={msg.play.mode} className="w-48">
                 <Input value={mode} onChange={(e) => setMode(e.target.value)} className="font-mono" />
