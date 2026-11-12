@@ -26,6 +26,22 @@ export function GetMatchmakingStatus() {
   return window['go']['main']['App']['GetMatchmakingStatus']();
 }
 
+export function InviteParty(arg1, arg2) {
+  return window['go']['main']['App']['InviteParty'](arg1, arg2);
+}
+
+export function MyPartyInvites() {
+  return window['go']['main']['App']['MyPartyInvites']();
+}
+
+export function AcceptPartyInvite(arg1) {
+  return window['go']['main']['App']['AcceptPartyInvite'](arg1);
+}
+
+export function RejectPartyInvite(arg1) {
+  return window['go']['main']['App']['RejectPartyInvite'](arg1);
+}
+
 export function GetMyMatches(arg1, arg2) {
   return window['go']['main']['App']['GetMyMatches'](arg1, arg2);
 }

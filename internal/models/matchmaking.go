@@ -52,3 +52,18 @@ type MatchmakingStatus struct {
 	RecentGroups []FormedGroup `json:"recent_groups"`
 	QueueStats   QueueStats    `json:"queue_stats"`
 }
+
+// PartyInvite 组队邀请（契约 1.11.0 PartyInvite）。
+// expired 为读取时的有效态（pending 且已过 expires_at），不落库。
+type PartyInvite struct {
+	ID         int64  `json:"id"`
+	InviterUID int64  `json:"inviter_uid"`
+	InviteeUID int64  `json:"invitee_uid"`
+	MatchType  string `json:"match_type"`
+	// status: pending / accepted / rejected / expired（expired 为客户端惰性判定态）
+	Status     string `json:"status"`
+	CreatedAt  string `json:"created_at"`
+	ExpiresAt  string `json:"expires_at"`
+	ResolvedAt string `json:"resolved_at,omitempty"`
+	ConsumedAt string `json:"consumed_at,omitempty"`
+}

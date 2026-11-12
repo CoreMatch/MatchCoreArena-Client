@@ -13,6 +13,14 @@ export function GetMatch(arg1:number):Promise<any>;
 
 export function GetMatchmakingStatus():Promise<any>;
 
+export function InviteParty(arg1:string,arg2:Array<string>):Promise<any>;
+
+export function MyPartyInvites():Promise<any>;
+
+export function AcceptPartyInvite(arg1:number):Promise<any>;
+
+export function RejectPartyInvite(arg1:number):Promise<any>;
+
 export function GetMyMatches(arg1:number,arg2:number):Promise<any>;
 
 export function GetMyRanking(arg1:string,arg2:number):Promise<any>;

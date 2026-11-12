@@ -28,6 +28,7 @@ import {
 import { t } from '../i18n';
 import { authFetch } from '../session';
 import RankCard from './RankCard';
+import PartyInvites from './PartyInvites';
 import type { UserProfile } from '../types';
 
 interface QueueEntryView {
@@ -935,6 +936,13 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
           </div>
         )}
       </Panel>
+
+      {/* Party invite panel (contract 1.11.0). The server enforces the
+          invite-consent gate: all non-caller members of a party must have
+          accepted an invite for the same match_type before they can be put
+          into party_members for join. This panel lets the player invite,
+          accept and reject invites without leaving Play. */}
+      <PartyInvites userUid={user?.uid} onChange={() => { /* parent can re-check party state if needed */ }} />
 
       {/* Recent matches */}
       <Panel className="p-8">
