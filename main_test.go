@@ -37,6 +37,10 @@ func TestAppBoundSurfaceIsReadOnly(t *testing.T) {
 		"GetMatch": {}, "GetMyMatches": {},
 		// Player's own matchmaking queue operations (no match-data writes)
 		"JoinMatchmaking": {}, "LeaveMatchmaking": {}, "GetMatchmakingStatus": {},
+		// Party invite state machine (contract 1.11.0): pre-queue consent
+		// flow — writes only matchmaking_party_invites rows, never scores.
+		"InviteParty": {}, "MyPartyInvites": {},
+		"AcceptPartyInvite": {}, "RejectPartyInvite": {},
 		// Local match handoff (loopback IPC, credential-free) + local settings
 		"PrepareHandoff": {}, "GetHandoffStatus": {},
 		"GetGameServerConfig": {}, "SetGameServerConfig": {},

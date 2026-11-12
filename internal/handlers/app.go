@@ -137,6 +137,32 @@ func (h *AppHandler) GetMatchmakingStatus() (interface{}, error) {
 	return h.matchmaking.Status()
 }
 
+// Party invite methods (contract 1.11.0). The invite flow is a precondition
+// for party matchmaking: all non-caller members must have accepted an invite
+// from the caller for the same match_type before the caller can put them in
+// party_members for join. These methods expose that state machine.
+
+// InviteParty sends party invites for a match type (only pending, no join).
+// memberUUIDs must not include the caller; duplicates and unknown UUIDs fail.
+func (h *AppHandler) InviteParty(matchType string, memberUUIDs []string) (interface{}, error) {
+	return h.matchmaking.Invite(matchType, memberUUIDs)
+}
+
+// MyPartyInvites returns invites the user sent or received (newest first, max 50).
+func (h *AppHandler) MyPartyInvites() (interface{}, error) {
+	return h.matchmaking.MyInvites()
+}
+
+// AcceptPartyInvite accepts an incoming invite (terminal state, invitee only).
+func (h *AppHandler) AcceptPartyInvite(id int64) (interface{}, error) {
+	return h.matchmaking.AcceptInvite(id)
+}
+
+// RejectPartyInvite rejects an incoming invite (terminal state, invitee only).
+func (h *AppHandler) RejectPartyInvite(id int64) (interface{}, error) {
+	return h.matchmaking.RejectInvite(id)
+}
+
 // Match handoff methods (INTEROP-SPEC v1 sender side). The handoff never
 // carries credentials; it only delivers the settled match summary plus the
 // player-configured game server address to SamuelClient on this machine.

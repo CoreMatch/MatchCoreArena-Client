@@ -71,3 +71,88 @@ func (s *MatchmakingService) Status() (*models.MatchmakingStatus, error) {
 	}
 	return &status, nil
 }
+
+// Invite 向成员 UUID 列表发出组队邀请（契约 1.11.0）。
+// 只建 pending 邀请，不入队；memberUUIDs 不得包含调用者本人。
+func (s *MatchmakingService) Invite(matchType string, memberUUIDs []string) ([]models.PartyInvite, error) {
+	body := map[string]interface{}{
+		"match_type":   matchType,
+		"member_uuids": memberUUIDs,
+	}
+	resp, err := s.api.Post("/api/matchmaking/invites", body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send party invites: %w", err)
+	}
+
+	var envelope models.SuccessEnvelope
+	if err := json.Unmarshal(resp, &envelope); err != nil {
+		return nil, fmt.Errorf("failed to parse invite response: %w", err)
+	}
+
+	dataBytes, _ := json.Marshal(envelope.Data)
+	var invites []models.PartyInvite
+	if err := json.Unmarshal(dataBytes, &invites); err != nil {
+		return nil, fmt.Errorf("failed to parse invites: %w", err)
+	}
+	return invites, nil
+}
+
+// MyInvites 列出本人相关的邀请（发出或收到），新到旧，至多 50 条。
+func (s *MatchmakingService) MyInvites() ([]models.PartyInvite, error) {
+	resp, err := s.api.Get("/api/matchmaking/invites")
+	if err != nil {
+		return nil, fmt.Errorf("failed to list my invites: %w", err)
+	}
+
+	var envelope models.SuccessEnvelope
+	if err := json.Unmarshal(resp, &envelope); err != nil {
+		return nil, fmt.Errorf("failed to parse invites response: %w", err)
+	}
+
+	dataBytes, _ := json.Marshal(envelope.Data)
+	var invites []models.PartyInvite
+	if err := json.Unmarshal(dataBytes, &invites); err != nil {
+		return nil, fmt.Errorf("failed to parse invites: %w", err)
+	}
+	return invites, nil
+}
+
+// AcceptInvite 接受组队邀请（终态）；仅受邀人可操作。
+func (s *MatchmakingService) AcceptInvite(id int64) (*models.PartyInvite, error) {
+	resp, err := s.api.Post(fmt.Sprintf("/api/matchmaking/invites/%d/accept", id), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to accept invite: %w", err)
+	}
+
+	var envelope models.SuccessEnvelope
+	if err := json.Unmarshal(resp, &envelope); err != nil {
+		return nil, fmt.Errorf("failed to parse accept response: %w", err)
+	}
+
+	dataBytes, _ := json.Marshal(envelope.Data)
+	var inv models.PartyInvite
+	if err := json.Unmarshal(dataBytes, &inv); err != nil {
+		return nil, fmt.Errorf("failed to parse invite: %w", err)
+	}
+	return &inv, nil
+}
+
+// RejectInvite 拒绝组队邀请（终态）；仅受邀人可操作。
+func (s *MatchmakingService) RejectInvite(id int64) (*models.PartyInvite, error) {
+	resp, err := s.api.Post(fmt.Sprintf("/api/matchmaking/invites/%d/reject", id), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reject invite: %w", err)
+	}
+
+	var envelope models.SuccessEnvelope
+	if err := json.Unmarshal(resp, &envelope); err != nil {
+		return nil, fmt.Errorf("failed to parse reject response: %w", err)
+	}
+
+	dataBytes, _ := json.Marshal(envelope.Data)
+	var inv models.PartyInvite
+	if err := json.Unmarshal(dataBytes, &inv); err != nil {
+		return nil, fmt.Errorf("failed to parse invite: %w", err)
+	}
+	return &inv, nil
+}

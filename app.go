@@ -99,6 +99,26 @@ func (a *App) GetMatchmakingStatus() (interface{}, error) {
 	return a.handler.GetMatchmakingStatus()
 }
 
+// Party invite state machine (contract 1.11.0) — the consent gate that must
+// precede party queueing: all non-caller members must accept an invite from
+// the caller for the same match_type before they can be put into party_members
+// for join. Invites only write matchmaking_party_invites rows, never scores.
+func (a *App) InviteParty(matchType string, memberUUIDs []string) (interface{}, error) {
+	return a.handler.InviteParty(matchType, memberUUIDs)
+}
+
+func (a *App) MyPartyInvites() (interface{}, error) {
+	return a.handler.MyPartyInvites()
+}
+
+func (a *App) AcceptPartyInvite(id int64) (interface{}, error) {
+	return a.handler.AcceptPartyInvite(id)
+}
+
+func (a *App) RejectPartyInvite(id int64) (interface{}, error) {
+	return a.handler.RejectPartyInvite(id)
+}
+
 // Match handoff methods (INTEROP-SPEC v1 sender side; loopback-only,
 // credential-free delivery of the settled match to SamuelClient)
 func (a *App) PrepareHandoff(matchID int64, matchType, mapName, serverHost string, serverPort int) (interface{}, error) {
