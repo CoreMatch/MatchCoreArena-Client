@@ -24,24 +24,27 @@ Record the following verified inventory:
    (PE32+ GUI executable, x86-64). Remaining caveat: the binary is unsigned;
    code-signing would need a certificate the project does not have, and the
    tag-triggered workflow run still has not executed.
-2. **Friend endpoints answer `501 mca_not_implemented`.** The server's
-   friend feature is explicitly unimplemented (author decision;
-   MatchCoreArena-Server knowledge 0010), so the read-only FriendList UI
-   receives a typed 501 error envelope instead of data. The UI surfaces the
-   error; no fake friend data is returned.
+2. **Friend endpoints now answer with real data (resolved 2026-11-12).**
+   The server shipped the real friend/team implementation (HA-Contract
+   1.14.0; MatchCoreArena-Server knowledge 0010 "friend-and-team-endpoints").
+   The FriendList UI already parses the unified envelope and Friend shape
+   (pinned by `internal/services/services_test.go`), so it receives real
+   lists when the server has rows; the former typed-501 error state now
+   only appears on genuine server errors. No client code change was
+   required.
 
 ## Consequences
 - Item 1 means the Windows cross-compile is known-good out-of-CI; the
   tag-triggered release run itself still has not executed (and the artifact
   stays unsigned).
-- Item 2 means the friend list shows an error until the server implements
-  the feature; this is intentional (no fake successes).
-- Costs/limitations: fixing either item depends on external factors (a tag
-  run; the server implementing friends). This entry only records facts; it
-  prescribes no fix.
+- Item 2 is resolved: the friend list renders real data from the server
+  (contract 1.14.0). The remaining caveat in item 1 (unsigned artifact,
+  unexecuted tag run) is unchanged.
+- Costs/limitations: item 1 depends on external factors (a tag run). This
+  entry only records facts; it prescribes no fix.
 
 ## Evidence
 - .github/workflows/release.yml::windows (mingw install + `wails build -platform windows/amd64` steps), .github/workflows/release.yml::tags (workflow triggers only on `v*` tags)
 - frontend/src/components/FriendList.tsx::GetFriends (friend UI is view-only)
 - Cross-reference: 0006 (pending author decisions), 0010 (read-only refactor), 0011 (read-only invariant)
-- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/knowledge/0010-friend-and-team-endpoints-are-explicitly-unimplemented.md (friend/team endpoints answer 501 mca_not_implemented)
+- Cross-repo (read-only): /home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/knowledge/0010-friend-and-team-endpoints.md (friend/team endpoints implemented, contract 1.14.0)
