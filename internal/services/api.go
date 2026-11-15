@@ -1,4 +1,3 @@
-package main
 package services
 
 import (
@@ -31,7 +30,7 @@ func (s *APIService) SetToken(token string) {
 
 func (s *APIService) makeRequest(method, endpoint string, body interface{}) ([]byte, error) {
 	url := fmt.Sprintf("%s%s", s.baseURL, endpoint)
-	
+
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -77,10 +76,8 @@ func (s *APIService) Post(endpoint string, body interface{}) ([]byte, error) {
 	return s.makeRequest("POST", endpoint, body)
 }
 
-func (s *APIService) Put(endpoint string, body interface{}) ([]byte, error) {
-	return s.makeRequest("PUT", endpoint, body)
-}
-
+// Delete 仅用于玩家自己的排队操作（离开匹配队列）；对局数据写接口
+// 不经过本客户端（见 knowledge 0010/0011）。
 func (s *APIService) Delete(endpoint string) ([]byte, error) {
 	return s.makeRequest("DELETE", endpoint, nil)
 }

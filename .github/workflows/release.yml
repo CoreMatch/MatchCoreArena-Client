@@ -8,34 +8,57 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
-    - uses: actions/checkout@v4
-    
+    # The frontend consumes the shared @ha/ui design system through a
+    # file: dependency (frontend/package.json -> ../ha-ui), pinned as a git
+    # submodule at the repo root — the release builds exactly the ha-ui
+    # commit this tag recorded.
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+
     - name: Set up Go
       uses: actions/setup-go@v7
       with:
-        go-version: '1.25'
-    
+        go-version: '1.26'
+
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
-        node-version: '18'
+        node-version: '22'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
-    
+
     - name: Install dependencies
       run: |
         go mod tidy
-        cd frontend && npm install
+        (cd "$GITHUB_WORKSPACE/ha-ui" && npm ci)
+        cd "$GITHUB_WORKSPACE/frontend" && npm ci
+    
+    - name: Build frontend
+      run: cd frontend && npm run build
+    
+    - name: Install Linux build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
     
     - name: Build application
       run: |
-        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
         wails build
     
+    - name: Install Windows cross-compile toolchain
+      run: sudo apt-get install -y gcc-mingw-w64-x86-64
+    
+    - name: Build Windows application
+      run: wails build -platform windows/amd64
+    
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v3
       with:
         files: |
           build/bin/MatchCoreArenaClient
@@ -43,5 +66,3 @@ jobs:
         draft: false
         prerelease: false
         generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

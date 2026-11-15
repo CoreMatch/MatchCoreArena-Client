@@ -1,114 +1,102 @@
 import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  IconButton,
-  Avatar,
-  Menu,
-  MenuItem,
-  Divider
-} from '@mui/material';
-import { 
-  Home, 
-  Group, 
-  Leaderboard, 
-  Login, 
-  Logout, 
-  Person, 
-  Menu as MenuIcon,
-  ChevronLeft
-} from '@mui/icons-material';
-import LoginView from './components/LoginView';
+import { LogOut, User } from 'lucide-react';
+import { Asset, Menu, MenuItem, MenuSeparator, Icon, type AssetId } from '@ha/ui';
+import { GetCurrentUser, Logout as LogoutAPI, SetToken } from '../wailsjs/go/main/App';
+import { t } from './i18n';
+import { authFetch, SESSION_EXPIRED_EVENT } from './session';
+import LoginView, { type TokenData } from './components/LoginView';
 import FriendList from './components/FriendList';
 import RankingView from './components/RankingView';
-import HomeView from './components/HomeView';
-
-const drawerWidth = 240;
+import PlayView from './components/PlayView';
+import SettingsView from './components/SettingsView';
+import MyMatchesView from './components/MyMatchesView';
+import type { UserProfile } from './types';
 
 interface NavItem {
   id: string;
   label: string;
-  icon: typeof Home;
+  icon: AssetId;
 }
 
 const navItems: NavItem[] = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'friends', label: 'Friends', icon: Group },
-  { id: 'rankings', label: 'Rankings', icon: Leaderboard },
+  { id: 'play', label: t().nav.play, icon: 'icon-play' },
+  { id: 'matches', label: t().nav.career, icon: 'icon-career-history' },
+  { id: 'rankings', label: t().nav.rankings, icon: 'icon-rankings' },
+  { id: 'friends', label: t().nav.friends, icon: 'icon-friends' },
+  { id: 'settings', label: t().nav.settings, icon: 'icon-settings' },
 ];
 
 export default function App() {
-  const [selectedView, setSelectedView] = useState<string>('home');
+  const [selectedView, setSelectedView] = useState<string>('play');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  // When set, Career opens this match's detail as soon as it renders
+  // (deep navigation from Play's settled match / recent matches).
+  const [careerFocusMatchId, setCareerFocusMatchId] = useState<number | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem('access_token');
     if (token) {
-      // Validate token and get user info
-      checkAuthStatus();
+      // Restore token to Go backend on refresh
+      SetToken(token).then(() => {
+        setIsLoggedIn(true);
+        fetchUserProfile();
+      }).catch(err => {
+        console.error('Failed to restore session:', err);
+        handleLogout();
+      });
     }
   }, []);
 
-  const checkAuthStatus = async () => {
+  useEffect(() => {
+    // Session expiry (refresh failed) returns the user to the login screen.
+    const onSessionExpired = () => {
+      handleLogout();
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, []);
+
+  const fetchUserProfile = async () => {
     try {
-      // TODO: Implement token validation and user info fetch
-      // For now, just check if token exists
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        setIsLoggedIn(true);
-        // TODO: Fetch user info from /api/users/me
-      }
+      // authFetch transparently refreshes the access token on 401.
+      const resp = await authFetch(() => GetCurrentUser());
+      const userData = resp?.data ?? resp;
+      setUser(userData);
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      setIsLoggedIn(false);
+      // Non-auth failures (e.g. the profile row is not provisioned until the
+      // first settled match) keep the session and render the empty profile.
+      console.error('Failed to fetch user profile:', error);
+      setUser(null);
     }
   };
 
-  const handleLoginSuccess = (tokenData: any) => {
+  const handleLoginSuccess = (tokenData: TokenData) => {
     localStorage.setItem('access_token', tokenData.access_token);
     localStorage.setItem('refresh_token', tokenData.refresh_token);
     setIsLoggedIn(true);
-    // TODO: Fetch user info
-    setSelectedView('home');
+    fetchUserProfile();
+    setSelectedView('play');
   };
 
   const handleLogout = async () => {
     try {
-      // TODO: Call /api/auth/logout
+      await LogoutAPI();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       setIsLoggedIn(false);
       setUser(null);
-      setSelectedView('home');
-    } catch (error) {
-      console.error('Logout failed:', error);
+      setSelectedView('play');
     }
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
+  const handleViewMatch = (id: number) => {
+    setCareerFocusMatchId(id);
+    setSelectedView('matches');
   };
 
   const renderContent = () => {
@@ -117,146 +105,105 @@ export default function App() {
     }
 
     switch (selectedView) {
+      case 'matches':
+        return (
+          <MyMatchesView
+            userUid={user?.uid}
+            focusMatchId={careerFocusMatchId}
+            onConsumeFocus={() => setCareerFocusMatchId(null)}
+            onFindMatch={() => setSelectedView('play')}
+          />
+        );
+      case 'rankings':
+        return <RankingView winsCount={user?.wins_count} />;
       case 'friends':
         return <FriendList />;
-      case 'rankings':
-        return <RankingView />;
+      case 'settings':
+        return <SettingsView user={user} />;
       default:
-        return <HomeView user={user} />;
+        return (
+          <PlayView
+            user={user}
+            onViewMatch={handleViewMatch}
+            onOpenRankings={() => setSelectedView('rankings')}
+          />
+        );
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
-      {/* App Bar */}
-      <AppBar 
-        position="fixed" 
-        sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: '#1a1a2e',
-          color: 'white'
-        }}
-      >
-        <Toolbar>
-          {isLoggedIn && (
-            <IconButton
-              color="inherit"
-              aria-label="toggle drawer"
-              onClick={toggleDrawer}
-              edge="start"
-              sx={{ mr: 2 }}
-            >
-              {drawerOpen ? <ChevronLeft /> : <MenuIcon />}
-            </IconButton>
-          )}
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            MatchCoreArena
-          </Typography>
-          {isLoggedIn && (
-            <>
-              <IconButton
-                color="inherit"
-                onClick={handleMenuOpen}
-                sx={{ p: 0 }}
-              >
-                <Avatar sx={{ bgcolor: '#e94560' }}>
-                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                </Avatar>
-              </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    backgroundColor: '#16213e',
-                    color: 'white',
-                    minWidth: 200,
-                  }
-                }}
-              >
-                <MenuItem onClick={() => { setSelectedView('profile'); handleMenuClose(); }}>
-                  <ListItemIcon>
-                    <Person fontSize="small" sx={{ color: 'white' }} />
-                  </ListItemIcon>
-                  Profile
-                </MenuItem>
-                <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                <MenuItem onClick={handleLogout}>
-                  <ListItemIcon>
-                    <Logout fontSize="small" sx={{ color: 'white' }} />
-                  </ListItemIcon>
-                  Logout
-                </MenuItem>
-              </Menu>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
-
-      {/* Sidebar */}
+    <div className="flex h-screen bg-base text-ink">
+      {/* Persistent sidebar */}
       {isLoggedIn && (
-        <Drawer
-          variant="persistent"
-          open={drawerOpen}
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              boxSizing: 'border-box',
-              backgroundColor: '#16213e',
-              color: 'white',
-              marginTop: '64px', // Height of AppBar
-            },
-          }}
-        >
-          <Box sx={{ overflow: 'auto', marginTop: '16px' }}>
-            <List>
-              {navItems.map((item) => (
-                <ListItem key={item.id} disablePadding>
-                  <ListItemButton
-                    selected={selectedView === item.id}
-                    onClick={() => setSelectedView(item.id)}
-                    sx={{
-                      '&.Mui-selected': {
-                        backgroundColor: 'rgba(233, 69, 96, 0.2)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(233, 69, 96, 0.3)',
-                        },
-                      },
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                      <item.icon />
-                    </ListItemIcon>
-                    <ListItemText primary={item.label} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        </Drawer>
+        <aside className="fixed inset-y-0 left-0 z-10 flex w-64 flex-col border-r border-edge bg-panel">
+          <div className="flex items-center gap-3 border-b border-edge px-6 py-6">
+            <Asset id="brand-mca" size={34} className="text-accent" />
+            <div className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
+              MatchCore<span className="text-accent">Arena</span>
+            </div>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto py-4">
+            {navItems.map((item) => {
+              const selected = selectedView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedView(item.id)}
+                  className={`flex w-full items-center gap-3.5 border-l-2 px-6 py-3 text-base font-semibold
+                    transition-colors duration-150 ease-standard
+                    ${selected
+                      ? 'border-accent bg-raised text-ink'
+                      : 'border-transparent text-ink-muted hover:bg-raised/60 hover:text-ink'}`}
+                >
+                  <Asset id={item.icon} size={20} className={selected ? 'text-accent' : ''} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* User block */}
+          <div className="border-t border-edge p-4">
+            <Menu
+              trigger={
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-colors duration-150 hover:bg-raised"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-accent text-base font-bold text-on-accent">
+                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-base font-semibold text-ink">
+                      {user?.username || 'Player'}
+                    </span>
+                    <span className="block truncate font-mono text-sm text-ink-faint">
+                      #{user?.uid ?? '—'}
+                    </span>
+                  </span>
+                </button>
+              }
+            >
+              <MenuItem onSelect={() => setSelectedView('settings')}>
+                <Icon as={User} size={18} />
+                {t().common.profile}
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem onSelect={handleLogout}>
+                <Icon as={LogOut} size={18} />
+                {t().common.logout}
+              </MenuItem>
+            </Menu>
+          </div>
+        </aside>
       )}
 
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          marginTop: '64px', // Height of AppBar
-          marginLeft: isLoggedIn && drawerOpen ? `${drawerWidth}px` : 0,
-          transition: 'margin-left 0.3s ease',
-          backgroundColor: '#0f3460',
-          minHeight: '100vh',
-        }}
-      >
-        {renderContent()}
-      </Box>
-    </Box>
+      {/* Main content — single column, generous margins */}
+      <main className={`flex-1 overflow-y-auto ${isLoggedIn ? 'ml-64' : ''}`}>
+        <div className="mx-auto max-w-6xl px-12 py-10">{renderContent()}</div>
+      </main>
+    </div>
   );
 }
