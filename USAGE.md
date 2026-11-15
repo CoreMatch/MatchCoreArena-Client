@@ -16,23 +16,36 @@
    - If TOTP is enabled, enter the 6-digit code from your authenticator app
 
 3. **Navigate the app**:
-   - **Home**: View your profile, stats, and recent activity
-   - **Friends**: Manage your friend list
-   - **Rankings**: View leaderboards and your ranking
+   - **Play**: Queue for a match (solo or party), watch the queue cycle, see your rank card and recent matches
+   - **Career**: Browse your recorded match history (read-only)
+   - **Rankings**: View leaderboards and your rank card
+   - **Friends**: View your friend list (read-only)
+   - **Settings**: Account data, language, about
+
+> The client never writes match data: match reporting is operated through
+> the maintenance panel (MatchCoreArena-MaintenanceView) and the game-side
+> reporter.
 
 ## Features
 
 ### Authentication
 - Email/password login
 - Two-factor authentication (TOTP)
-- Automatic token refresh
+- Automatic token refresh on expiry; the app returns to the login screen when a refresh fails
 - Secure logout
 
-### Friend System
-- View your friends list
-- Send friend requests by user ID
-- Accept/reject incoming friend requests
-- Remove friends
+### Play (matchmaking)
+- Queue solo or as a party (member UUID roster; the party queues and settles together)
+- Queue cycle: In Queue (wait timer, cancel) → Match Found → In Match → Results In
+- When the result is reported, the recorded match id links straight into Career detail
+- The settled match is handed off to SamuelClient automatically (loopback channel, no credentials). The game server address comes from the arena server (`join_target`); the Settings → Game Server values are only an optional fallback. When no address is available at all you get a copyable host:port to join manually
+
+### Career
+- Paginated list of your recorded matches (time, mode, map, winner, duration)
+- Per-match detail with participants (kills/deaths/survival) and server-computed score deltas
+
+### Friend List
+- View your friends list (read-only; sending or handling requests is not available in this client)
 
 ### Rankings
 - View top players by ranking type (1v1, 2v2)
@@ -43,7 +56,6 @@
 ### User Profile
 - View your level and experience points
 - See your current rank score
-- Track your gaming statistics
 
 ## Configuration
 
@@ -51,7 +63,7 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 
 ```json
 {
-  "server_url": "http://localhost:8080",
+  "server_url": "https://arena.mcnb.dev/",
   "debug": false
 }
 ```
@@ -60,8 +72,20 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `server_url` | string | `http://localhost:8080` | MatchCoreArena server URL |
+| `server_url` | string | `https://arena.mcnb.dev/` | MatchCoreArena server URL |
 | `debug` | boolean | `false` | Enable debug logging |
+| `game_server_host` | string | `""` | Optional fallback game server host, used only when a formed match carries no join_target |
+| `game_server_port` | number | `0` | Optional fallback game server port, used only when a formed match carries no join_target |
+
+### `server_url` precedence
+
+Highest first:
+
+1. **Explicit config file** — a non-empty `server_url` in `~/.matchcorearena/config.json` always wins.
+2. **Environment variable** — `MCA_SERVER_URL` is used when the config file does not explicitly set `server_url` (or the file is absent).
+3. **Built-in default** — `https://arena.mcnb.dev/`.
+
+All other options come from the config file when present, falling back to their defaults.
 
 ## Keyboard Shortcuts
 
@@ -72,7 +96,7 @@ The application configuration is stored at `~/.matchcorearena/config.json`:
 ## Troubleshooting
 
 ### Application won't start
-1. Ensure Go 1.25+ is installed
+1. Ensure Go 1.26+ is installed
 2. Ensure Node.js 18+ is installed
 3. Run `go mod tidy` to install Go dependencies
 4. Run `cd frontend && npm install` to install frontend dependencies
@@ -116,12 +140,16 @@ make check  # Runs fmt, vet, lint, and typecheck
 
 ## API Integration
 
-This client connects to the MatchCoreArena server API. The following endpoints are used:
+This client connects to the MatchCoreArena server API. It performs read queries plus the player's own session and queue operations:
 
 - **Authentication**: Login, TOTP verification, token refresh, logout
-- **Users**: Get user profile, add experience
-- **Friends**: Friend list management, friend requests
+- **Users**: Get user profile
+- **Friends**: View friend list
+- **Matches**: Match history and per-match detail
+- **Matchmaking**: Join queue (solo or party roster), leave queue, poll status
 - **Rankings**: Leaderboards and personal ranking
+
+Match reporting is handled by the game-side reporter and the maintenance panel (MatchCoreArena-MaintenanceView), not by this client.
 
 ## Support
 
@@ -132,4 +160,4 @@ For issues or questions:
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the AGPL-3.0 License. See the LICENSE file for details.
