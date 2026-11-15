@@ -1,35 +1,39 @@
 import { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  Link
-} from '@mui/material';
-import { Login as LoginIcon } from '@mui/icons-material';
+import { Asset, Banner, Button, Field, Input, Panel, Spinner } from '@ha/ui';
 import { Login, VerifyTOTP, SetToken } from '../../wailsjs/go/main/App';
+import { t } from '../i18n';
+
+export interface TokenData {
+  access_token: string;
+  refresh_token: string;
+}
 
 interface LoginViewProps {
-  onLoginSuccess: (tokenData: any) => void;
+  onLoginSuccess: (tokenData: TokenData) => void;
 }
 
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
+  const msg = t();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [showTotp, setShowTotp] = useState(false);
   const [loginTicket, setLoginTicket] = useState('');
   const [totpCode, setTotpCode] = useState('');
+
+  const fail = (message: string, err: unknown) => {
+    setError(message);
+    const raw = err instanceof Error ? err.message || String(err) : String(err);
+    setErrorDetail(raw && raw !== message ? raw : null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
 
     try {
       const resp = await Login(email, password);
@@ -47,8 +51,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       } else {
         throw new Error(resp?.message || 'Unexpected login response');
       }
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Login failed');
+    } catch (err: unknown) {
+      fail(msg.login.failed, err);
     } finally {
       setLoading(false);
     }
@@ -58,6 +62,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
 
     try {
       const tokenData = await VerifyTOTP(loginTicket, totpCode);
@@ -68,196 +73,84 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       } else {
         throw new Error('Unexpected TOTP response');
       }
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'TOTP verification failed');
+    } catch (err: unknown) {
+      fail(msg.login.totpInvalid, err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '80vh',
-      }}
-    >
-      <Card
-        sx={{
-          maxWidth: 400,
-          width: '100%',
-          backgroundColor: '#16213e',
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-        }}
-      >
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <LoginIcon sx={{ fontSize: 48, color: '#e94560', mb: 1 }} />
-            <Typography variant="h4" component="h1" gutterBottom>
-              MatchCoreArena
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-              Sign in to your account
-            </Typography>
-          </Box>
+    <div className="flex min-h-[85vh] items-center justify-center">
+      <Panel className="w-full max-w-lg p-10">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <Asset id="brand-mca" size={64} className="text-accent" />
+          </div>
+          <h1 className="text-display font-bold tracking-tight text-ink">
+            MatchCore<span className="text-accent">Arena</span>
+          </h1>
+          <p className="mt-2 text-base text-ink-muted">{msg.login.subtitle}</p>
+        </div>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
+        {error && (
+          <div className="mb-6">
+            <Banner tone="danger">
               {error}
-            </Alert>
-          )}
+              {errorDetail && <div className="mt-1 break-all text-sm opacity-80">{errorDetail}</div>}
+            </Banner>
+          </div>
+        )}
 
-          {!showTotp ? (
-            <form onSubmit={handleLogin}>
-              <TextField
-                fullWidth
-                label="Email"
+        {!showTotp ? (
+          <form onSubmit={handleLogin} className="space-y-5">
+            <Field label={msg.login.email}>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255,255,255,0.3)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255,255,255,0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#e94560',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(255,255,255,0.7)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#e94560',
-                  },
-                }}
+                autoComplete="email"
               />
-              <TextField
-                fullWidth
-                label="Password"
+            </Field>
+            <Field label={msg.login.password}>
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255,255,255,0.3)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255,255,255,0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#e94560',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(255,255,255,0.7)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#e94560',
-                  },
-                }}
+                autoComplete="current-password"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{
-                  backgroundColor: '#e94560',
-                  '&:hover': {
-                    backgroundColor: '#c81e45',
-                  },
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                }}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Sign In'}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleTotpVerify}>
-              <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
-                Enter the 6-digit code from your authenticator app
-              </Typography>
-              <TextField
-                fullWidth
-                label="TOTP Code"
+            </Field>
+            <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+              {loading ? <Spinner /> : msg.login.signIn}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleTotpVerify} className="space-y-5">
+            <p className="text-center text-base text-ink-muted">{msg.login.totpPrompt}</p>
+            <Field label={msg.login.totpCode}>
+              <Input
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
                 required
-                slotProps={{
-                  htmlInput: { maxLength: 6 }
-                }}
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255,255,255,0.3)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255,255,255,0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#e94560',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(255,255,255,0.7)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#e94560',
-                  },
-                }}
+                maxLength={6}
+                className="text-center font-mono tracking-[0.4em]"
+                autoComplete="one-time-code"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{
-                  backgroundColor: '#e94560',
-                  '&:hover': {
-                    backgroundColor: '#c81e45',
-                  },
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                }}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Verify'}
-              </Button>
-            </form>
-          )}
+            </Field>
+            <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+              {loading ? <Spinner /> : msg.login.verify}
+            </Button>
+          </form>
+        )}
 
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Link
-              href="#"
-              sx={{
-                color: 'rgba(255,255,255,0.7)',
-                textDecoration: 'none',
-                '&:hover': {
-                  color: '#e94560',
-                },
-              }}
-            >
-              Forgot password?
-            </Link>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
+        <div className="mt-8 text-center">
+          <a href="#" className="text-sm text-ink-faint transition-colors duration-150 hover:text-accent">
+            {msg.login.forgotPassword}
+          </a>
+        </div>
+      </Panel>
+    </div>
   );
 }

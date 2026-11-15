@@ -1,48 +1,29 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-  Alert,
-  Avatar,
-  IconButton,
-} from '@mui/material';
-import {
-  EmojiEvents as TrophyIcon,
-  Refresh as RefreshIcon,
-  Star as StarIcon
-} from '@mui/icons-material';
-import { GetTopRankings, GetMyRanking } from '../../wailsjs/go/main/App';
+import { Trophy } from 'lucide-react';
+import { Asset, EmptyState, ErrorState, Field, Icon, Panel, Select, Skeleton, Table, Td, Th } from '@ha/ui';
+import { GetTopRankings } from '../../wailsjs/go/main/App';
+import { authFetch } from '../session';
+import { t, loadErrorMessage } from '../i18n';
+import RankCard from './RankCard';
 
 interface RankingEntry {
   id: number;
-  user_uuid: string;
+  user_uid: number;
   rank_type: string;
   score: number;
   rank_position: number;
   season: number;
   updated_at: string;
-  username?: string;
-  level?: number;
 }
 
-export default function RankingView() {
+interface RankingViewProps {
+  winsCount?: number;
+}
+
+export default function RankingView({ winsCount }: RankingViewProps) {
+  const msg = t();
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
-  const [myRanking, setMyRanking] = useState<RankingEntry | null>(null);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rankType, setRankType] = useState('1v1');
@@ -56,23 +37,22 @@ export default function RankingView() {
   const fetchRankings = async () => {
     setLoading(true);
     setError(null);
-    
-    try {
-      // Fetch top rankings using Go bindings
-      const rankingsResp = await GetTopRankings(rankType, limit, season);
-      const rankingsData = rankingsResp?.data ?? rankingsResp;
-      setRankings(rankingsData || []);
 
-      // Fetch my ranking using Go bindings
-      try {
-        const myRankResp = await GetMyRanking(rankType, season);
-        const myRankData = myRankResp?.data ?? myRankResp;
-        setMyRanking(myRankData);
-      } catch (e) {
-        console.error('Failed to fetch my ranking:', e);
+    try {
+      // Fetch top rankings using Go bindings (authFetch refreshes expired tokens)
+      const rankingsResp = await authFetch(() => GetTopRankings(rankType, limit, season));
+      const response = rankingsResp?.data ?? rankingsResp;
+      // New server format: {rankings: [...], total_count: N}
+      // Legacy fallback: plain array
+      if (Array.isArray(response)) {
+        setRankings(response);
+        setTotalCount(response.length);
+      } else {
+        setRankings(response?.rankings ?? []);
+        setTotalCount(response?.total_count ?? 0);
       }
-    } catch (err: any) {
-      setError(err?.message || String(err) || 'Failed to load rankings');
+    } catch {
+      setError(loadErrorMessage(t().common.dataRankings));
     } finally {
       setLoading(false);
     }
@@ -80,312 +60,149 @@ export default function RankingView() {
 
   const getRankColor = (position: number) => {
     switch (position) {
-      case 1: return '#ffd700'; // Gold
-      case 2: return '#c0c0c0'; // Silver
-      case 3: return '#cd7f32'; // Bronze
-      default: return 'rgba(255,255,255,0.7)';
+      case 1: return 'text-gold';
+      case 2: return 'text-silver';
+      case 3: return 'text-bronze';
+      default: return 'text-ink-muted';
     }
   };
 
-  const getRankIcon = (position: number) => {
-    if (position <= 3) {
-      return <TrophyIcon sx={{ color: getRankColor(position), mr: 1 }} />;
-    }
-    return null;
-  };
+  const topLabel = (count: number) => msg.rankings.topTemplate.replace('{count}', String(count));
+  const playerLabel = (uid: number) => msg.rankings.playerTemplate.replace('{uid}', String(uid));
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress sx={{ color: '#e94560' }} />
-      </Box>
+      <div className="space-y-8">
+        <Skeleton className="h-12 w-64" />
+        <Panel className="p-8">
+          <Skeleton className="mb-4 h-7 w-48" />
+          <Skeleton className="h-14 w-full" />
+        </Panel>
+        <Panel className="p-6">
+          <div className="space-y-3">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </Panel>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ color: 'white' }}>
-          Rankings
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel sx={{ color: 'rgba(255,255,255,0.7)' }}>Type</InputLabel>
+    <div className="space-y-8">
+      {/* Header + filters */}
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <h1 className="text-display font-bold tracking-tight text-ink">
+          {msg.nav.rankings}
+          {totalCount > 0 && (
+            <span className="ml-3 font-mono text-xl font-medium tabular-nums text-ink-faint">
+              ({totalCount.toLocaleString()})
+            </span>
+          )}
+        </h1>
+        <div className="flex flex-wrap items-end gap-4">
+          <Field label={msg.rankings.type}>
             <Select
               value={rankType}
-              label="Type"
-              onChange={(e) => setRankType(e.target.value)}
-              sx={{
-                color: 'white',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.3)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.5)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e94560',
-                },
-                '& .MuiSvgIcon-root': {
-                  color: 'white',
-                },
-              }}
-              MenuProps={{
-                slotProps: {
-                  paper: {
-                    sx: {
-                      backgroundColor: '#16213e',
-                      color: 'white',
-                    },
-                  }
-                }
-              }}
-            >
-              <MenuItem value="1v1">1v1</MenuItem>
-              <MenuItem value="2v2">2v2</MenuItem>
-            </Select>
-          </FormControl>
-          
-          <FormControl sx={{ minWidth: 100 }}>
-            <InputLabel sx={{ color: 'rgba(255,255,255,0.7)' }}>Season</InputLabel>
+              onValueChange={setRankType}
+              ariaLabel={msg.rankings.type}
+              options={[
+                { value: '1v1', label: '1v1' },
+                { value: '2v2', label: '2v2' },
+              ]}
+              className="w-28"
+            />
+          </Field>
+          <Field label={msg.rankings.season}>
             <Select
-              value={season}
-              label="Season"
-              onChange={(e) => setSeason(e.target.value as number)}
-              sx={{
-                color: 'white',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.3)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.5)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e94560',
-                },
-                '& .MuiSvgIcon-root': {
-                  color: 'white',
-                },
-              }}
-              MenuProps={{
-                slotProps: {
-                  paper: {
-                    sx: {
-                      backgroundColor: '#16213e',
-                      color: 'white',
-                    },
-                  }
-                }
-              }}
-            >
-              <MenuItem value={1}>Season 1</MenuItem>
-              <MenuItem value={2}>Season 2</MenuItem>
-              <MenuItem value={3}>Season 3</MenuItem>
-            </Select>
-          </FormControl>
-          
-          <FormControl sx={{ minWidth: 100 }}>
-            <InputLabel sx={{ color: 'rgba(255,255,255,0.7)' }}>Limit</InputLabel>
+              value={String(season)}
+              onValueChange={(v) => setSeason(Number(v))}
+              ariaLabel={msg.rankings.season}
+              options={[1, 2, 3].map((n) => ({ value: String(n), label: `${msg.rankCard.season} ${n}` }))}
+              className="w-32"
+            />
+          </Field>
+          <Field label={msg.rankings.limit}>
             <Select
-              value={limit}
-              label="Limit"
-              onChange={(e) => setLimit(e.target.value as number)}
-              sx={{
-                color: 'white',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.3)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255,255,255,0.5)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e94560',
-                },
-                '& .MuiSvgIcon-root': {
-                  color: 'white',
-                },
-              }}
-              MenuProps={{
-                slotProps: {
-                  paper: {
-                    sx: {
-                      backgroundColor: '#16213e',
-                      color: 'white',
-                    },
-                  }
-                }
-              }}
-            >
-              <MenuItem value={50}>Top 50</MenuItem>
-              <MenuItem value={100}>Top 100</MenuItem>
-              <MenuItem value={200}>Top 200</MenuItem>
-              <MenuItem value={500}>Top 500</MenuItem>
-            </Select>
-          </FormControl>
-          
-          <IconButton 
-            onClick={fetchRankings} 
-            sx={{ color: 'white' }}
-            title="Refresh"
+              value={String(limit)}
+              onValueChange={(v) => setLimit(Number(v))}
+              ariaLabel={msg.rankings.limit}
+              options={[50, 100, 200, 500].map((n) => ({ value: String(n), label: topLabel(n) }))}
+              className="w-32"
+            />
+          </Field>
+          <button
+            type="button"
+            onClick={fetchRankings}
+            title={msg.common.refresh}
+            className="mb-0.5 rounded-md border border-edge-strong p-3 text-ink-muted transition-colors duration-150 hover:bg-raised hover:text-ink"
           >
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-      </Box>
+            <Asset id="icon-refresh" size={18} />
+          </button>
+        </div>
+      </div>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2, backgroundColor: 'rgba(211, 47, 47, 0.1)', color: '#ff6b6b' }}>
-          {error}
-        </Alert>
+      {/* My Rank Card (A4) */}
+      <RankCard rankType={rankType} season={season} winsCount={winsCount} />
+
+      {/* Rankings table */}
+      {error ? (
+        <Panel>
+          <ErrorState
+            message={error}
+            onRetry={fetchRankings}
+            illustration={<Asset id="state-network-failure" size={240} />}
+          />
+        </Panel>
+      ) : (
+        <Panel>
+          {rankings.length === 0 ? (
+            <EmptyState
+              illustration={<Asset id="state-nothing-playable" size={240} />}
+              title={msg.rankings.emptyTitle}
+              hint={msg.rankings.emptyHint}
+            />
+          ) : (
+            <Table>
+              <thead>
+                <tr>
+                  <Th className="w-28">{msg.rankings.colRank}</Th>
+                  <Th>{msg.rankings.colPlayer}</Th>
+                  <Th className="text-right">{msg.rankings.colScore}</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {rankings.map((entry) => (
+                  <tr key={entry.id} className="transition-colors duration-150 hover:bg-raised">
+                    <Td>
+                      <span className="flex items-center gap-2.5">
+                        {entry.rank_position <= 3 && (
+                          <Icon as={Trophy} size={18} className={getRankColor(entry.rank_position)} />
+                        )}
+                        <span className={`font-mono text-lg font-bold tabular-nums ${getRankColor(entry.rank_position)}`}>
+                          {entry.rank_position}
+                        </span>
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="flex items-center gap-3.5">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-accent text-sm font-bold text-on-accent">
+                          P
+                        </span>
+                        <span className="text-base text-ink">{playerLabel(entry.user_uid)}</span>
+                      </span>
+                    </Td>
+                    <Td className="text-right font-mono text-lg font-bold tabular-nums text-ink">
+                      {entry.score.toLocaleString()}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Panel>
       )}
-
-      {/* My Ranking Card */}
-      {myRanking && (
-        <Card sx={{ 
-          backgroundColor: '#16213e', 
-          color: 'white',
-          mb: 3,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-          border: '2px solid #e94560'
-        }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <StarIcon sx={{ color: '#ffd700', mr: 1, fontSize: 32 }} />
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    Your Ranking
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    {rankType} • Season {season}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="h4" sx={{ 
-                  color: getRankColor(myRanking.rank_position),
-                  fontWeight: 'bold'
-                }}>
-                  #{myRanking.rank_position}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Score: {myRanking.score.toLocaleString()}
-                </Typography>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Rankings Table */}
-      <Card sx={{ 
-        backgroundColor: '#16213e', 
-        color: 'white',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-      }}>
-        <TableContainer component={Paper} sx={{ backgroundColor: 'transparent' }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontWeight: 'bold',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)'
-                }}>
-                  Rank
-                </TableCell>
-                <TableCell sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontWeight: 'bold',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)'
-                }}>
-                  Player
-                </TableCell>
-                <TableCell sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontWeight: 'bold',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  textAlign: 'right'
-                }}>
-                  Score
-                </TableCell>
-                <TableCell sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  fontWeight: 'bold',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  textAlign: 'right'
-                }}>
-                  Level
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rankings.map((entry) => (
-                <TableRow 
-                  key={entry.id}
-                  sx={{ 
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                    },
-                    '&:last-child td': {
-                      borderBottom: 0
-                    }
-                  }}
-                >
-                  <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {getRankIcon(entry.rank_position)}
-                      <Typography sx={{ 
-                        color: getRankColor(entry.rank_position),
-                        fontWeight: 'bold'
-                      }}>
-                        {entry.rank_position}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar sx={{ 
-                        bgcolor: '#e94560', 
-                        width: 32, 
-                        height: 32,
-                        mr: 1,
-                        fontSize: '0.875rem'
-                      }}>
-                        {entry.username?.charAt(0)?.toUpperCase() || 'U'}
-                      </Avatar>
-                      <Typography>
-                        {entry.username || `User ${entry.user_uuid}`}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ 
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    textAlign: 'right',
-                    fontWeight: 'bold'
-                  }}>
-                    {entry.score.toLocaleString()}
-                  </TableCell>
-                  <TableCell sx={{ 
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    textAlign: 'right'
-                  }}>
-                    <Chip 
-                      label={`Lv. ${entry.level || '?'}`} 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: 'rgba(233, 69, 96, 0.2)',
-                        color: '#e94560',
-                      }} 
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-    </Box>
+    </div>
   );
 }

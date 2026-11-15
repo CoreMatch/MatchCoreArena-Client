@@ -2,21 +2,23 @@
 
 A cross-platform desktop client for MatchCoreArena built with [Wails](https://wails.io/) (Go + React/TypeScript).
 
+The client is the player-facing companion for MatchCoreArena: it queues matches (solo or party), shows your career, rankings and friends, and never writes match data — match reporting stays with the game-side reporter and the maintenance panel (MatchCoreArena-MaintenanceView).
+
 ## Features
 
 - **User Authentication** — Login with email/password, TOTP verification, token management
-- **Friend System** — View friends, send/accept/reject friend requests, delete friends
-- **Team Management** — Create/disband teams, manage members and roles
-- **Match Reporting** — Record and view match history
+- **Play** — Matchmaking queue (solo or party via UUID roster), queue state cycle with wait timer and cancel, rank card, recent matches; settled matches are handed off to SamuelClient over a loopback channel (INTEROP-SPEC v1) with a manual-join fallback
+- **Career** — Browse your recorded match history with per-match detail (participants, kills/deaths/survival, server-computed score deltas)
 - **Rankings** — View top rankings by type and season, see your current ranking
-- **User Profile** — View and manage your profile, level, and experience
+- **Friend List** — View your friends (read-only)
+- **Settings** — Account data, language, about
 
 ## Tech Stack
 
 | Layer    | Technology |
 |----------|------------|
-| Backend  | Go 1.25, [Wails v2](https://wails.io/), [Gin](https://gin-gonic.com/) |
-| Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), [Material UI v6](https://mui.com/) |
+| Backend  | Go 1.26, [Wails v2](https://wails.io/), standard library `net/http` for API calls |
+| Frontend | React 19, TypeScript 5, [Vite 6](https://vitejs.dev/), Tailwind CSS v4 + Radix UI primitives (shared `@ha/ui` design system) |
 | Build    | Wails CLI (WebKitGTK 2.41+ on Linux) |
 
 ## Project Layout
@@ -30,11 +32,12 @@ MatchCoreArena-Client/
 ├── internal/
 │   ├── config/             # Configuration loading
 │   ├── handlers/           # Wails binding handlers
+│   ├── interop/            # Match handoff sender (INTEROP-SPEC v1, loopback channel to SamuelClient)
 │   ├── models/             # Domain & API models
 │   └── services/           # API service layer
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # React views (Login, Home, Friends, Rankings)
+│   │   ├── components/     # React views (Login, Play, Career, Rankings, Friends, Settings)
 │   │   ├── App.tsx         # Main app shell with navigation drawer
 │   │   └── main.tsx        # React entry point
 │   ├── index.html
@@ -49,17 +52,19 @@ MatchCoreArena-Client/
 
 ### Prerequisites
 
-- Go 1.25+
+- Go 1.26+
 - Node.js 18+
 - Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 
 ### Setup
 
-1. Clone the repository:
+1. Clone the repository (the `ha-ui` design-system submodule must come along,
+   the frontend depends on it via `file:../ha-ui`):
    ```bash
-   git clone <repository-url>
+   git clone --recurse-submodules <repository-url>
    cd MatchCoreArena-Client
    ```
+   (Existing checkouts: `git submodule update --init`.)
 
 2. Install dependencies:
    ```bash
@@ -93,23 +98,33 @@ The application stores configuration in `~/.matchcorearena/config.json`:
 ```json
 {
   "server_url": "https://arena.mcnb.dev/",
-  "debug": false
+  "debug": false,
+  "game_server_host": "",
+  "game_server_port": 0
 }
 ```
 
+`game_server_host` / `game_server_port` (editable in Settings) are an **optional fallback** for the match handoff: matches normally carry their own server address from the arena server (`join_target`, contract v1.6.0); the local values are only used when a formed match does not provide one.
+
+`server_url` precedence (highest first): an explicit non-empty `server_url` in the config file wins; otherwise the `MCA_SERVER_URL` environment variable applies; otherwise the built-in default `https://arena.mcnb.dev/` is used.
+
 ## API Integration
 
-This client connects to the MatchCoreArena server API. Make sure the server is running and accessible at the configured URL.
+This client connects to the MatchCoreArena server API. It performs read queries plus the player's own session and queue operations; match reporting is not part of the client. Make sure the server is running and accessible at the configured URL.
 
 ### API Endpoints Used
 
 - **Authentication**: `/api/auth/login-ticket`, `/api/auth/totp-verify`, `/api/auth/refresh`, `/api/auth/logout`
-- **Users**: `/api/users/me`, `/api/users/{uuid}`, `/api/users/me/experience`
-- **Friends**: `/api/friends`, `/api/friends/{id}/accept`, `/api/friends/{id}/reject`, `/api/friends/{id}`
-- **Teams**: `/api/teams`, `/api/teams/{id}`, `/api/teams/{id}/members`, `/api/teams/{id}/members/{uuid}/role`
-- **Matches**: `/api/matches`, `/api/matches/{id}`, `/api/matches/me`
-- **Rankings**: `/api/rankings/{type}`, `/api/rankings/me`
+- **Users**: `/api/users/me`
+- **Friends**: `GET /api/friends`
+- **Matches**: `GET /api/matches/{id}`, `GET /api/matches/me`
+- **Matchmaking**: `POST /api/matchmaking/join` (solo or `party_members` roster), `DELETE /api/matchmaking/leave`, `GET /api/matchmaking/status`
+- **Rankings**: `GET /api/rankings/{type}`, `GET /api/rankings/me`
+
+Expired access tokens are refreshed automatically via `/api/auth/refresh`; when a refresh fails the app returns to the login screen.
+
+Match reporting is operated through the maintenance panel (MatchCoreArena-MaintenanceView) and the game-side reporter, not by this client.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
