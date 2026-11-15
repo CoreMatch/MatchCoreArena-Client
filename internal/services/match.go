@@ -6,30 +6,14 @@ import (
 	"fmt"
 )
 
+// MatchService 仅提供只读对局查询；对局上报与虚拟对局已迁往
+// 运维面板（MatchCoreArena-MaintenanceView）。
 type MatchService struct {
 	api *APIService
 }
 
 func NewMatchService(api *APIService) *MatchService {
 	return &MatchService{api: api}
-}
-
-func (s *MatchService) ReportMatchResult(report models.TeamReportInput) (*models.Match, error) {
-	resp, err := s.api.Post("/api/matches", report)
-	if err != nil {
-		return nil, fmt.Errorf("failed to report match result: %w", err)
-	}
-
-	var matchResp models.SuccessEnvelope
-	if err := json.Unmarshal(resp, &matchResp); err != nil {
-		return nil, fmt.Errorf("failed to parse match response: %w", err)
-	}
-
-	dataBytes, _ := json.Marshal(matchResp.Data)
-	var match models.Match
-	json.Unmarshal(dataBytes, &match)
-
-	return &match, nil
 }
 
 func (s *MatchService) GetMatch(id int64) (*models.Match, error) {
