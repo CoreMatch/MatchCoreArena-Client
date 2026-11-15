@@ -23,6 +23,13 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
+    ignore:
+      # typescript 7 (the Go-based compiler) is not yet supported by
+      # @typescript-eslint 8.x — its peer range requires typescript <6.1.0,
+      # so npm ci fails ERESOLVE and CI goes red (PR #14, closed 2026-11-15).
+      # Remove this ignore once typescript-eslint ships TS 7 support.
+      - dependency-name: "typescript"
+        versions: ["7.x"]
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
