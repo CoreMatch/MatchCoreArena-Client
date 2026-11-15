@@ -31,10 +31,7 @@ export default function FriendList() {
   const [error, setError] = useState<string | null>(null);
   const [notImplemented, setNotImplemented] = useState(false);
 
-  useEffect(() => {
-    fetchFriends();
-  }, []);
-
+  // Declared before the effect that calls it (no use-before-declaration).
   const fetchFriends = async () => {
     setLoading(true);
     setError(null);
@@ -55,6 +52,12 @@ export default function FriendList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Deferred so the loading flags aren't set synchronously on mount
+    // (react-hooks/set-state-in-effect).
+    queueMicrotask(fetchFriends);
+  }, []);
 
   const getStatusLabel = (status: number) => {
     switch (status) {

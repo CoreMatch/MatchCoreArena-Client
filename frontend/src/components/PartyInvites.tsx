@@ -95,7 +95,10 @@ export default function PartyInvites({ userUid, onChange }: PartyInvitesProps) {
   }, []);
 
   useEffect(() => {
-    loadInvites();
+    // Deferred so the loading flag isn't set synchronously on mount
+    // (react-hooks/set-state-in-effect); interval ticks are callbacks and
+    // already fine.
+    queueMicrotask(() => loadInvites());
     pollRef.current = setInterval(() => loadInvites(true), POLL_MS);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);

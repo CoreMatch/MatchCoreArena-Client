@@ -204,7 +204,12 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   const baselineGroupIds = useRef<Set<number>>(new Set());
   const maxKnownMatchId = useRef(0);
   const phaseRef = useRef<QueuePhase>('idle');
-  phaseRef.current = phase;
+
+  // Mirror the current phase for async readers (poll) — kept in an effect:
+  // writing refs during render is forbidden by the React Compiler rules.
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const refreshRecent = useCallback(async () => {
     setRecentLoading(true);
@@ -291,7 +296,10 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
     if (phase !== 'queued' && phase !== 'found' && phase !== 'in_match') {
       return;
     }
-    poll();
+    // First tick deferred out of the render → effect synchronous path
+    // (set-state-in-effect): the interval callbacks below are already
+    // asynchronous subscriptions.
+    queueMicrotask(poll);
     const pollHandle = setInterval(poll, POLL_MS);
     const tickHandle = setInterval(() => setNow(Date.now()), 1000);
     return () => {
@@ -303,7 +311,9 @@ export default function PlayView({ user, onViewMatch, onOpenRankings }: PlayView
   // Restore an interrupted cycle (app restart while queued) and load the
   // recent-matches list.
   useEffect(() => {
-    refreshRecent();
+    // Deferred so the loading flag isn't set synchronously on mount
+    // (react-hooks/set-state-in-effect).
+    queueMicrotask(refreshRecent);
     (async () => {
       try {
         const resp = await authFetch(() => GetMatchmakingStatus());

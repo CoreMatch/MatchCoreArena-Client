@@ -34,6 +34,36 @@ export default function App() {
   // (deep navigation from Play's settled match / recent matches).
   const [careerFocusMatchId, setCareerFocusMatchId] = useState<number | null>(null);
 
+  // Declared before the effects that reference them (the compiler rules
+  // reject use-before-declaration inside effect bodies).
+  const fetchUserProfile = async () => {
+    try {
+      // authFetch transparently refreshes the access token on 401.
+      const resp = await authFetch(() => GetCurrentUser());
+      const userData = resp?.data ?? resp;
+      setUser(userData);
+    } catch (error) {
+      // Non-auth failures (e.g. the profile row is not provisioned until the
+      // first settled match) keep the session and render the empty profile.
+      console.error('Failed to fetch user profile:', error);
+      setUser(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await LogoutAPI();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      setIsLoggedIn(false);
+      setUser(null);
+      setSelectedView('play');
+    }
+  };
+
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem('access_token');
@@ -58,40 +88,12 @@ export default function App() {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
-  const fetchUserProfile = async () => {
-    try {
-      // authFetch transparently refreshes the access token on 401.
-      const resp = await authFetch(() => GetCurrentUser());
-      const userData = resp?.data ?? resp;
-      setUser(userData);
-    } catch (error) {
-      // Non-auth failures (e.g. the profile row is not provisioned until the
-      // first settled match) keep the session and render the empty profile.
-      console.error('Failed to fetch user profile:', error);
-      setUser(null);
-    }
-  };
-
   const handleLoginSuccess = (tokenData: TokenData) => {
     localStorage.setItem('access_token', tokenData.access_token);
     localStorage.setItem('refresh_token', tokenData.refresh_token);
     setIsLoggedIn(true);
     fetchUserProfile();
     setSelectedView('play');
-  };
-
-  const handleLogout = async () => {
-    try {
-      await LogoutAPI();
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      setIsLoggedIn(false);
-      setUser(null);
-      setSelectedView('play');
-    }
   };
 
   const handleViewMatch = (id: number) => {
