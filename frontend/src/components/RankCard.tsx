@@ -116,7 +116,9 @@ export default function RankCard({ rankType, season, winsCount, embedded = false
   }, [rankType, season]);
 
   useEffect(() => {
-    load();
+    // Deferred so the loading transition isn't set synchronously on mount
+    // (react-hooks/set-state-in-effect).
+    queueMicrotask(load);
   }, [load]);
 
   if (state === 'loading') {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Trophy } from 'lucide-react';
 import { Asset, EmptyState, ErrorState, Field, Icon, Panel, Select, Skeleton, Table, Td, Th } from '@ha/ui';
 import { GetTopRankings } from '../../wailsjs/go/main/App';
@@ -30,11 +30,9 @@ export default function RankingView({ winsCount }: RankingViewProps) {
   const [season, setSeason] = useState(1);
   const [limit, setLimit] = useState(100);
 
-  useEffect(() => {
-    fetchRankings();
-  }, [rankType, season, limit]);
-
-  const fetchRankings = async () => {
+  // Declared before the effect that calls it; keyed on the query params so
+  // the effect re-fetches when they change.
+  const fetchRankings = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -56,7 +54,13 @@ export default function RankingView({ winsCount }: RankingViewProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [rankType, season, limit]);
+
+  useEffect(() => {
+    // Deferred so the loading flags aren't set synchronously
+    // (react-hooks/set-state-in-effect).
+    queueMicrotask(fetchRankings);
+  }, [fetchRankings]);
 
   const getRankColor = (position: number) => {
     switch (position) {

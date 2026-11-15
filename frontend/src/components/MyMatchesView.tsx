@@ -137,19 +137,8 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
     }
   }, [pageNum, pageSize]);
 
-  useEffect(() => {
-    fetchMatches();
-  }, [fetchMatches]);
-
-  // Deep navigation from Play: open the requested match detail once.
-  useEffect(() => {
-    if (focusMatchId != null) {
-      openDetail(focusMatchId, null);
-      onConsumeFocus?.();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusMatchId]);
-
+  // Declared before the focus effect that calls it (no
+  // use-before-declaration).
   const openDetail = async (id: number, selfSummary: SelfSummaryView | null) => {
     setDetail({ id } as MatchDetail);
     setDetailSelfSummary(selfSummary);
@@ -165,6 +154,25 @@ export default function MyMatchesView({ userUid, focusMatchId, onConsumeFocus, o
       setDetailLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Deferred so the loading flags aren't set synchronously
+    // (react-hooks/set-state-in-effect).
+    queueMicrotask(fetchMatches);
+  }, [fetchMatches]);
+
+  // Deep navigation from Play: open the requested match detail once.
+  useEffect(() => {
+    if (focusMatchId != null) {
+      // Deferred for the same reason as above (openDetail sets loading
+      // state synchronously).
+      queueMicrotask(() => {
+        openDetail(focusMatchId, null);
+        onConsumeFocus?.();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusMatchId]);
 
   const closeDetail = () => {
     setDetail(null);
