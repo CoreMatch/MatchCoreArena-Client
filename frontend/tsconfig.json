@@ -17,7 +17,16 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      /* @ha/ui is consumed as TS source via its file: link; it carries its
+         own node_modules, so react/react-dom/lucide-react are pinned to
+         this project's copies to keep a single type identity (and a single
+         React at runtime, together with the matching vite aliases). */
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"],
+      "lucide-react": ["./node_modules/lucide-react"]
     }
   },
   "include": ["src"]
